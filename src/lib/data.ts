@@ -34,7 +34,7 @@ export const categories = [
   "Drinks",
 ] as const;
 
-export const cities = ["Lakewood", "Toms River"] as const;
+export const cities = ["Lakewood", "Toms River", "Deal", "Brooklyn"] as const;
 
 export const reviewers: Reviewer[] = ["David", "Shmuel", "David & Shmuel"];
 

@@ -207,15 +207,21 @@ export default function ReviewForm({ mode, initial }: Props) {
           </div>
           <div>
             <label className="mb-1 block text-sm font-semibold text-foreground">
-              City
+              City / Town
             </label>
-            <select value={city} onChange={(e) => setCity(e.target.value)} className={inputClass}>
+            <input
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              list="city-suggestions"
+              placeholder="Pick a suggestion or type any town"
+              required
+              className={inputClass}
+            />
+            <datalist id="city-suggestions">
               {cities.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
+                <option key={c} value={c} />
               ))}
-            </select>
+            </datalist>
           </div>
         </div>
 
