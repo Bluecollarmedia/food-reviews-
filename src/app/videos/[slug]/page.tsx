@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
@@ -9,9 +10,40 @@ import { getPublicFileUrl } from "@/lib/media-url";
 import ScoreBadge from "@/components/ScoreBadge";
 import CommentSection from "@/components/CommentSection";
 import RelatedVideosRow from "@/components/RelatedVideosRow";
+import ReactionBar from "@/components/ReactionBar";
 import VideoPlayer from "@/components/VideoPlayer";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const review = await getPublishedReview(slug);
+  if (!review) return {};
+
+  const thumbnailUrl = getPublicFileUrl(review.thumbnailKey);
+  const description = `${review.store} · ${review.city} · ${review.rating}/10 — ${review.description}`;
+
+  return {
+    title: `${review.title} | D&S Food Reviews`,
+    description,
+    openGraph: {
+      title: review.title,
+      description,
+      type: "article",
+      images: thumbnailUrl ? [{ url: thumbnailUrl, width: 1280, height: 720 }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: review.title,
+      description,
+      images: thumbnailUrl ? [thumbnailUrl] : undefined,
+    },
+  };
+}
 
 export default async function VideoPage({
   params,
@@ -85,6 +117,10 @@ export default async function VideoPage({
       <p className="mt-6 max-w-2xl text-foreground/80 leading-relaxed">
         {review.description}
       </p>
+
+      <div className="mt-6">
+        <ReactionBar slug={review.slug} title={review.title} />
+      </div>
 
       <div className="mt-10 border-t border-border pt-8">
         <CommentSection slug={review.slug} />
