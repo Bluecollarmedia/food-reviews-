@@ -1,13 +1,16 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getReviewBySlug, getRelatedReviews, reviews } from "@/lib/data";
+import {
+  getPublishedReview,
+  listPublishedReviews,
+} from "@/lib/reviews-store";
+import { getRelatedReviews } from "@/lib/data";
+import { getPublicVideoUrl } from "@/lib/r2";
 import ScoreBadge from "@/components/ScoreBadge";
 import CommentSection from "@/components/CommentSection";
 import VideoCard from "@/components/VideoCard";
 
-export function generateStaticParams() {
-  return reviews.map((r) => ({ slug: r.slug }));
-}
+export const dynamic = "force-dynamic";
 
 export default async function VideoPage({
   params,
@@ -15,10 +18,12 @@ export default async function VideoPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const review = getReviewBySlug(slug);
+  const review = await getPublishedReview(slug);
   if (!review) notFound();
 
-  const related = getRelatedReviews(review);
+  const allPublished = await listPublishedReviews();
+  const related = getRelatedReviews(review, allPublished);
+  const videoUrl = review.videoKey ? getPublicVideoUrl(review.videoKey) : null;
 
   return (
     <div className="mx-auto w-full max-w-4xl px-5 py-10">
@@ -26,19 +31,29 @@ export default async function VideoPage({
         &larr; Back to all reviews
       </Link>
 
-      <div className="relative mt-4 flex aspect-video items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-accent shadow-lg">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_15%,rgba(255,255,255,0.2),transparent_60%)]" />
-        <div className="relative flex flex-col items-center gap-3 text-white">
-          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 text-primary shadow-md">
-            <svg viewBox="0 0 24 24" fill="currentColor" className="ml-1 h-7 w-7">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </span>
-          <span className="rounded-full bg-black/50 px-4 py-1.5 text-sm font-semibold uppercase tracking-wide">
-            Video Coming Soon
-          </span>
+      {videoUrl ? (
+        <video
+          key={videoUrl}
+          controls
+          className="mt-4 aspect-video w-full rounded-2xl bg-black shadow-lg"
+        >
+          <source src={videoUrl} />
+        </video>
+      ) : (
+        <div className="relative mt-4 flex aspect-video items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-accent shadow-lg">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_15%,rgba(255,255,255,0.2),transparent_60%)]" />
+          <div className="relative flex flex-col items-center gap-3 text-white">
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 text-primary shadow-md">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="ml-1 h-7 w-7">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </span>
+            <span className="rounded-full bg-black/50 px-4 py-1.5 text-sm font-semibold uppercase tracking-wide">
+              Video Coming Soon
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="mt-6 flex flex-wrap items-start justify-between gap-4">
         <div>

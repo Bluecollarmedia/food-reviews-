@@ -15,9 +15,11 @@ export default function VideoCard({ review }: { review: Review }) {
             <path d="M8 5v14l11-7z" />
           </svg>
         </span>
-        <span className="absolute right-3 bottom-3 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
-          Coming Soon
-        </span>
+        {!review.videoKey && (
+          <span className="absolute right-3 bottom-3 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
+            Coming Soon
+          </span>
+        )}
         <div className="absolute left-3 top-3 right-3 flex flex-wrap gap-1.5">
           {review.categories.map((c) => (
             <span

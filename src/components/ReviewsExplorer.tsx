@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { categories, reviewers, reviews, type Reviewer } from "@/lib/data";
+import { categories, reviewers, type Review, type Reviewer } from "@/lib/data";
 import VideoCard from "./VideoCard";
 
-export default function ReviewsExplorer() {
+export default function ReviewsExplorer({ reviews }: { reviews: Review[] }) {
   const [category, setCategory] = useState<string>("All");
   const [reviewer, setReviewer] = useState<"All" | Reviewer>("All");
   const [query, setQuery] = useState("");
@@ -23,7 +23,7 @@ export default function ReviewsExplorer() {
         r.description.toLowerCase().includes(q)
       );
     });
-  }, [category, reviewer, query]);
+  }, [category, reviewer, query, reviews]);
 
   return (
     <div>

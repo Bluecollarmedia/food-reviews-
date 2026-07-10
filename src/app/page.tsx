@@ -1,7 +1,12 @@
 import Image from "next/image";
 import ReviewsExplorer from "@/components/ReviewsExplorer";
+import { listPublishedReviews } from "@/lib/reviews-store";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const reviews = await listPublishedReviews();
+
   return (
     <div className="flex flex-1 flex-col">
       <section className="relative overflow-hidden bg-gradient-to-br from-primary via-primary-dark to-accent px-5 py-20 text-center text-white">
@@ -34,7 +39,7 @@ export default function Home() {
           Videos are on the way — here's a preview of what's coming.
         </p>
         <div className="mt-6">
-          <ReviewsExplorer />
+          <ReviewsExplorer reviews={reviews} />
         </div>
       </section>
     </div>
