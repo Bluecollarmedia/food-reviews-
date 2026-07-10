@@ -10,6 +10,110 @@ type Props = {
   initial?: Review;
 };
 
+function MediaUploadFields({
+  label,
+  thumbnailKey,
+  thumbnailPreviewUrl,
+  thumbnailProgress,
+  onThumbnailPicked,
+  videoKey,
+  videoFile,
+  videoProgress,
+  onVideoPicked,
+}: {
+  label?: string;
+  thumbnailKey?: string;
+  thumbnailPreviewUrl: string | null;
+  thumbnailProgress: number | null;
+  onThumbnailPicked: (file: File | undefined) => void;
+  videoKey?: string;
+  videoFile: File | null;
+  videoProgress: number | null;
+  onVideoPicked: (file: File | undefined) => void;
+}) {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div>
+        <label className="mb-1 block text-sm font-semibold text-foreground">
+          {label ? `${label}'s thumbnail` : "Thumbnail image"}
+        </label>
+        {thumbnailKey && !thumbnailPreviewUrl && (
+          <p className="mb-2 text-xs text-foreground/60">
+            A thumbnail is already set. Choose a new image only if you want to replace it.
+          </p>
+        )}
+        {thumbnailPreviewUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={thumbnailPreviewUrl}
+            alt="Thumbnail preview"
+            className="mb-2 aspect-video w-full rounded-lg border border-border object-cover"
+          />
+        )}
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            onThumbnailPicked(e.target.files?.[0]);
+            e.target.value = "";
+          }}
+          className="text-sm"
+        />
+        {thumbnailProgress !== null && (
+          <div className="mt-3">
+            <div className="mb-1 flex items-center justify-between text-sm font-semibold text-foreground">
+              <span>Uploading...</span>
+              <span>{thumbnailProgress}%</span>
+            </div>
+            <div className="h-3 w-full overflow-hidden rounded-full border border-border bg-surface-muted">
+              <div
+                className="h-full bg-accent transition-[width] duration-150 ease-out"
+                style={{ width: `${thumbnailProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div>
+        <label className="mb-1 block text-sm font-semibold text-foreground">
+          {label ? `${label}'s video` : "Video file"}
+        </label>
+        {videoKey && !videoFile && (
+          <p className="mb-2 text-xs text-foreground/60">
+            A video is already uploaded. Choose a new file only if you want to replace it.
+          </p>
+        )}
+        <input
+          type="file"
+          accept="video/*"
+          onChange={(e) => onVideoPicked(e.target.files?.[0])}
+          className="text-sm"
+        />
+        {videoFile && videoProgress === null && (
+          <p className="mt-2 text-xs text-foreground/60">
+            Selected: {videoFile.name} ({(videoFile.size / 1024 / 1024).toFixed(1)} MB)
+          </p>
+        )}
+        {videoProgress !== null && (
+          <div className="mt-3">
+            <div className="mb-1 flex items-center justify-between text-sm font-semibold text-foreground">
+              <span>Uploading...</span>
+              <span>{videoProgress}%</span>
+            </div>
+            <div className="h-3 w-full overflow-hidden rounded-full border border-border bg-surface-muted">
+              <div
+                className="h-full bg-primary transition-[width] duration-150 ease-out"
+                style={{ width: `${videoProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function uploadFile(
   file: File | Blob,
   filename: string,
@@ -71,6 +175,24 @@ export default function ReviewForm({ mode, initial }: Props) {
   const [thumbnailPreviewUrl, setThumbnailPreviewUrl] = useState<string | null>(null);
   const [thumbnailProgress, setThumbnailProgress] = useState<number | null>(null);
 
+  const [shmuelVideoKey, setShmuelVideoKey] = useState<string | undefined>(
+    initial?.shmuelVideoKey
+  );
+  const [shmuelVideoFile, setShmuelVideoFile] = useState<File | null>(null);
+  const [shmuelVideoProgress, setShmuelVideoProgress] = useState<number | null>(null);
+
+  const [shmuelThumbnailKey, setShmuelThumbnailKey] = useState<string | undefined>(
+    initial?.shmuelThumbnailKey
+  );
+  const [shmuelCropperFile, setShmuelCropperFile] = useState<File | null>(null);
+  const [shmuelThumbnailBlob, setShmuelThumbnailBlob] = useState<Blob | null>(null);
+  const [shmuelThumbnailPreviewUrl, setShmuelThumbnailPreviewUrl] = useState<
+    string | null
+  >(null);
+  const [shmuelThumbnailProgress, setShmuelThumbnailProgress] = useState<
+    number | null
+  >(null);
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -89,6 +211,17 @@ export default function ReviewForm({ mode, initial }: Props) {
     setThumbnailBlob(blob);
     setThumbnailPreviewUrl(URL.createObjectURL(blob));
     setCropperFile(null);
+  }
+
+  function handleShmuelThumbnailPicked(file: File | undefined) {
+    if (!file) return;
+    setShmuelCropperFile(file);
+  }
+
+  function handleShmuelCropConfirm(blob: Blob) {
+    setShmuelThumbnailBlob(blob);
+    setShmuelThumbnailPreviewUrl(URL.createObjectURL(blob));
+    setShmuelCropperFile(null);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -125,6 +258,30 @@ export default function ReviewForm({ mode, initial }: Props) {
         setVideoProgress(null);
       }
 
+      let finalShmuelThumbnailKey = shmuelThumbnailKey;
+      if (shmuelThumbnailBlob) {
+        setShmuelThumbnailProgress(0);
+        finalShmuelThumbnailKey = await uploadFile(
+          shmuelThumbnailBlob,
+          "thumbnail.jpg",
+          "thumbnails",
+          setShmuelThumbnailProgress
+        );
+        setShmuelThumbnailProgress(null);
+      }
+
+      let finalShmuelVideoKey = shmuelVideoKey;
+      if (shmuelVideoFile) {
+        setShmuelVideoProgress(0);
+        finalShmuelVideoKey = await uploadFile(
+          shmuelVideoFile,
+          shmuelVideoFile.name,
+          "videos",
+          setShmuelVideoProgress
+        );
+        setShmuelVideoProgress(null);
+      }
+
       const payload = {
         title: title.trim(),
         store: store.trim(),
@@ -137,6 +294,8 @@ export default function ReviewForm({ mode, initial }: Props) {
         status,
         videoKey: finalVideoKey,
         thumbnailKey: finalThumbnailKey,
+        shmuelVideoKey: finalShmuelVideoKey,
+        shmuelThumbnailKey: finalShmuelThumbnailKey,
       };
 
       const url =
@@ -176,6 +335,13 @@ export default function ReviewForm({ mode, initial }: Props) {
           file={cropperFile}
           onConfirm={handleCropConfirm}
           onCancel={() => setCropperFile(null)}
+        />
+      )}
+      {shmuelCropperFile && (
+        <ImageCropper
+          file={shmuelCropperFile}
+          onConfirm={handleShmuelCropConfirm}
+          onCancel={() => setShmuelCropperFile(null)}
         />
       )}
 
@@ -314,85 +480,44 @@ export default function ReviewForm({ mode, initial }: Props) {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-semibold text-foreground">
-            Thumbnail image
-          </label>
-          {thumbnailKey && !thumbnailPreviewUrl && (
-            <p className="mb-2 text-xs text-foreground/60">
-              A thumbnail is already set. Choose a new image only if you want to replace it.
-            </p>
-          )}
-          {thumbnailPreviewUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={thumbnailPreviewUrl}
-              alt="Thumbnail preview"
-              className="mb-2 aspect-video w-full max-w-xs rounded-lg border border-border object-cover"
-            />
-          )}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => {
-              handleThumbnailPicked(e.target.files?.[0]);
-              e.target.value = "";
-            }}
-            className="text-sm"
-          />
-          <p className="mt-1 text-xs text-foreground/50">
-            You'll be able to drag and zoom to position it before it uploads.
+          <p className="mb-1 text-sm font-semibold text-foreground">
+            {reviewer === "David & Shmuel" ? "David's video &amp; thumbnail" : "Video & thumbnail"}
           </p>
-          {thumbnailProgress !== null && (
-            <div className="mt-3">
-              <div className="mb-1 flex items-center justify-between text-sm font-semibold text-foreground">
-                <span>Uploading thumbnail...</span>
-                <span>{thumbnailProgress}%</span>
-              </div>
-              <div className="h-3 w-full overflow-hidden rounded-full border border-border bg-surface-muted">
-                <div
-                  className="h-full bg-accent transition-[width] duration-150 ease-out"
-                  style={{ width: `${thumbnailProgress}%` }}
-                />
-              </div>
-            </div>
-          )}
+          <MediaUploadFields
+            label={reviewer === "David & Shmuel" ? "David" : undefined}
+            thumbnailKey={thumbnailKey}
+            thumbnailPreviewUrl={thumbnailPreviewUrl}
+            thumbnailProgress={thumbnailProgress}
+            onThumbnailPicked={handleThumbnailPicked}
+            videoKey={videoKey}
+            videoFile={videoFile}
+            videoProgress={videoProgress}
+            onVideoPicked={(file) => setVideoFile(file ?? null)}
+          />
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-semibold text-foreground">
-            Video file
-          </label>
-          {videoKey && !videoFile && (
-            <p className="mb-2 text-xs text-foreground/60">
-              A video is already uploaded. Choose a new file only if you want to replace it.
+        {reviewer === "David & Shmuel" && (
+          <div>
+            <p className="mb-1 text-sm font-semibold text-foreground">
+              Shmuel&apos;s video &amp; thumbnail
             </p>
-          )}
-          <input
-            type="file"
-            accept="video/*"
-            onChange={(e) => setVideoFile(e.target.files?.[0] ?? null)}
-            className="text-sm"
-          />
-          {videoFile && videoProgress === null && (
-            <p className="mt-2 text-xs text-foreground/60">
-              Selected: {videoFile.name} ({(videoFile.size / 1024 / 1024).toFixed(1)} MB)
+            <p className="mb-2 text-xs text-foreground/50">
+              Optional — only add this if David and Shmuel filmed separate reactions.
+              Viewers will get a David / Shmuel switch on the review page.
             </p>
-          )}
-          {videoProgress !== null && (
-            <div className="mt-3">
-              <div className="mb-1 flex items-center justify-between text-sm font-semibold text-foreground">
-                <span>Uploading video...</span>
-                <span>{videoProgress}%</span>
-              </div>
-              <div className="h-3 w-full overflow-hidden rounded-full border border-border bg-surface-muted">
-                <div
-                  className="h-full bg-primary transition-[width] duration-150 ease-out"
-                  style={{ width: `${videoProgress}%` }}
-                />
-              </div>
-            </div>
-          )}
-        </div>
+            <MediaUploadFields
+              label="Shmuel"
+              thumbnailKey={shmuelThumbnailKey}
+              thumbnailPreviewUrl={shmuelThumbnailPreviewUrl}
+              thumbnailProgress={shmuelThumbnailProgress}
+              onThumbnailPicked={handleShmuelThumbnailPicked}
+              videoKey={shmuelVideoKey}
+              videoFile={shmuelVideoFile}
+              videoProgress={shmuelVideoProgress}
+              onVideoPicked={(file) => setShmuelVideoFile(file ?? null)}
+            />
+          </div>
+        )}
 
         <div>
           <label className="mb-1 block text-sm font-semibold text-foreground">

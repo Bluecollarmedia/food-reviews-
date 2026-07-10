@@ -21,6 +21,8 @@ export type Review = {
   status: ReviewStatus;
   videoKey?: string;
   thumbnailKey?: string;
+  shmuelVideoKey?: string;
+  shmuelThumbnailKey?: string;
   createdAt: string;
   updatedAt: string;
 };

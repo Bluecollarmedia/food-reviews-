@@ -190,6 +190,8 @@ export type ReviewInput = {
   status: ReviewStatus;
   videoKey?: string;
   thumbnailKey?: string;
+  shmuelVideoKey?: string;
+  shmuelThumbnailKey?: string;
 };
 
 export async function createReview(input: ReviewInput): Promise<Review> {

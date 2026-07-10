@@ -13,6 +13,7 @@ import CommentSection from "@/components/CommentSection";
 import RelatedVideosRow from "@/components/RelatedVideosRow";
 import ReactionBar from "@/components/ReactionBar";
 import VideoPlayer from "@/components/VideoPlayer";
+import ReviewerVideoSwitcher from "@/components/ReviewerVideoSwitcher";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +62,9 @@ export default async function VideoPage({
   const related = getRelatedReviews(review, allPublished);
   const videoUrl = getPublicFileUrl(review.videoKey);
   const thumbnailUrl = getPublicFileUrl(review.thumbnailKey);
+  const shmuelVideoUrl = getPublicFileUrl(review.shmuelVideoKey);
+  const shmuelThumbnailUrl = getPublicFileUrl(review.shmuelThumbnailKey);
+  const hasSplitReviews = review.reviewer === "David & Shmuel" && !!shmuelVideoUrl;
 
   return (
     <div className="mx-auto w-full max-w-4xl px-5 py-10">
@@ -68,7 +72,14 @@ export default async function VideoPage({
         &larr; Back to all reviews
       </Link>
 
-      {videoUrl ? (
+      {hasSplitReviews ? (
+        <ReviewerVideoSwitcher
+          davidVideoUrl={videoUrl}
+          davidThumbnailUrl={thumbnailUrl}
+          shmuelVideoUrl={shmuelVideoUrl}
+          shmuelThumbnailUrl={shmuelThumbnailUrl}
+        />
+      ) : videoUrl ? (
         <div className="mt-4">
           <VideoPlayer key={videoUrl} src={videoUrl} poster={thumbnailUrl} />
         </div>

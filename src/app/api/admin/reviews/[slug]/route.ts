@@ -45,6 +45,12 @@ export async function DELETE(
   if (existing?.thumbnailKey) {
     await deleteFile(existing.thumbnailKey).catch(() => {});
   }
+  if (existing?.shmuelVideoKey) {
+    await deleteFile(existing.shmuelVideoKey).catch(() => {});
+  }
+  if (existing?.shmuelThumbnailKey) {
+    await deleteFile(existing.shmuelThumbnailKey).catch(() => {});
+  }
   await deleteReview(slug);
   return NextResponse.json({ ok: true });
 }
