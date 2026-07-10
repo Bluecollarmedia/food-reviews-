@@ -244,13 +244,13 @@ export default function ReviewForm({ mode, initial }: Props) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="mb-1 block text-sm font-semibold text-foreground">
-              Rating (1-10, we never give a 10)
+              Rating (1-9.9, we never give a 10)
             </label>
             <input
               type="number"
               min={1}
-              max={9.5}
-              step={0.5}
+              max={9.9}
+              step={0.1}
               value={rating}
               onChange={(e) => setRating(e.target.value)}
               required
