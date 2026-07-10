@@ -1,5 +1,5 @@
 import Image from "next/image";
-import CategoryFilterGrid from "@/components/CategoryFilterGrid";
+import ReviewsExplorer from "@/components/ReviewsExplorer";
 
 export default function Home() {
   return (
@@ -19,9 +19,9 @@ export default function Home() {
             Honest. Brutal. Non-Biased.
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-white/90">
-            D &amp; S taste it, argue about it, and tell you exactly what to
-            skip and what's worth the drive. We do honest, brutal reviews on
-            food &mdash; no sponsorships, no sugarcoating.
+            David &amp; Shmuel taste it, argue about it, and tell you exactly
+            what to skip and what's worth the drive. We do honest, brutal
+            reviews on food &mdash; no sponsorships, no sugarcoating.
           </p>
         </div>
       </section>
@@ -34,7 +34,7 @@ export default function Home() {
           Videos are on the way — here's a preview of what's coming.
         </p>
         <div className="mt-6">
-          <CategoryFilterGrid />
+          <ReviewsExplorer />
         </div>
       </section>
     </div>

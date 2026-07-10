@@ -46,7 +46,7 @@ export default async function VideoPage({
             {review.title}
           </h1>
           <p className="mt-1 text-foreground/60">
-            {review.location} &middot; Reviewed by {review.reviewer}
+            {review.store} &middot; {review.city} &middot; Reviewed by {review.reviewer}
           </p>
         </div>
         <ScoreBadge rating={review.rating} size="lg" />

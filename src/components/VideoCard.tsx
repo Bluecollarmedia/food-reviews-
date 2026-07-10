@@ -26,7 +26,9 @@ export default function VideoCard({ review }: { review: Review }) {
         <h3 className="font-display text-xl leading-tight tracking-wide text-foreground">
           {review.title}
         </h3>
-        <p className="text-sm text-foreground/60">{review.location}</p>
+        <p className="text-sm text-foreground/60">
+          {review.store} &middot; {review.city}
+        </p>
         <div className="mt-auto flex items-center justify-between pt-2">
           <ScoreBadge rating={review.rating} size="sm" />
           <span className="text-xs font-medium text-foreground/50">by {review.reviewer}</span>

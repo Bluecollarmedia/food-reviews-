@@ -5,14 +5,17 @@ export type Comment = {
   timeAgo: string;
 };
 
+export type Reviewer = "David" | "Shmuel" | "David & Shmuel";
+
 export type Review = {
   slug: string;
   title: string;
   category: string;
-  location: string;
+  store: string;
+  city: string;
   rating: number;
   description: string;
-  reviewer: "D" | "S" | "D & S";
+  reviewer: Reviewer;
   comments: Comment[];
 };
 
@@ -26,16 +29,21 @@ export const categories = [
   "Desserts",
 ] as const;
 
+export const cities = ["Lakewood", "Toms River"] as const;
+
+export const reviewers: Reviewer[] = ["David", "Shmuel", "David & Shmuel"];
+
 export const reviews: Review[] = [
   {
     slug: "downtown-pepperoni-slice",
     title: "This Pizza Almost Made Us Fight",
     category: "Pizza",
-    location: "Tony's Slice House",
+    store: "Tony's Slice House",
+    city: "Lakewood",
     rating: 9,
     description:
-      "A thin-crust pepperoni slice that split the room. D loved the crispy edge, S thought the sauce was way too sweet. We argue it out and give our honest, brutal verdict.",
-    reviewer: "D & S",
+      "A thin-crust pepperoni slice that split the room. David loved the crispy edge, Shmuel thought the sauce was way too sweet. We argue it out and give our honest, brutal verdict.",
+    reviewer: "David & Shmuel",
     comments: [
       { id: "c1", name: "Marcus", message: "Been waiting for you two to hit this place!", timeAgo: "2d" },
       { id: "c2", name: "Priya", message: "Sauce being sweet is a dealbreaker for me too.", timeAgo: "1d" },
@@ -45,11 +53,12 @@ export const reviews: Review[] = [
     slug: "double-smash-burger",
     title: "Double Smash Burger Showdown",
     category: "Burgers",
-    location: "Grease & Griddle",
+    store: "Grease & Griddle",
+    city: "Toms River",
     rating: 8,
     description:
       "Crispy lace edges, but is it worth the price? We break down the bun-to-patty ratio and don't hold back on the value verdict.",
-    reviewer: "D",
+    reviewer: "David",
     comments: [
       { id: "c3", name: "Alex", message: "That price point though...", timeAgo: "5h" },
     ],
@@ -58,22 +67,24 @@ export const reviews: Review[] = [
     slug: "street-cart-al-pastor",
     title: "Street Cart Al Pastor - Hidden Gem?",
     category: "Tacos",
-    location: "El Trompo Cart",
+    store: "El Trompo Cart",
+    city: "Lakewood",
     rating: 9.5,
     description:
       "No seating, no menu, just a spinning trompo and pure flavor. This might be the highest score we've ever given.",
-    reviewer: "S",
+    reviewer: "Shmuel",
     comments: [],
   },
   {
     slug: "nashville-hot-wings",
     title: "Nashville Hot Wings Nearly Broke Us",
     category: "Wings",
-    location: "Firehouse Wing Co.",
+    store: "Firehouse Wing Co.",
+    city: "Toms River",
     rating: 7,
     description:
       "Heat that's more pain than flavor past level 3. We rank every heat level so you know exactly what you're walking into.",
-    reviewer: "D & S",
+    reviewer: "David & Shmuel",
     comments: [
       { id: "c4", name: "Jordan", message: "Level 5 destroyed me too, respect for finishing it", timeAgo: "3d" },
     ],
@@ -82,22 +93,24 @@ export const reviews: Review[] = [
     slug: "omakase-on-a-budget",
     title: "Omakase On a Budget - Worth It?",
     category: "Sushi",
-    location: "Sato's Counter",
+    store: "Sato's Counter",
+    city: "Lakewood",
     rating: 9,
     description:
       "Twelve pieces, one chef, zero pretension. We compare it against the fancy uptown spot and the results surprised us.",
-    reviewer: "D",
+    reviewer: "David",
     comments: [],
   },
   {
     slug: "backyard-brisket",
-    title: "12-Hour Brisket That Made S Cry",
+    title: "12-Hour Brisket That Made Shmuel Cry",
     category: "BBQ",
-    location: "Smoke Ring BBQ",
+    store: "Smoke Ring BBQ",
+    city: "Toms River",
     rating: 9.5,
     description:
       "Bark, smoke ring, and a texture that shouldn't be legal. This is the review that made us BBQ believers.",
-    reviewer: "D & S",
+    reviewer: "David & Shmuel",
     comments: [
       { id: "c5", name: "Casey", message: "The bark on that thing looks insane", timeAgo: "1w" },
     ],
@@ -106,22 +119,24 @@ export const reviews: Review[] = [
     slug: "mall-food-court-cheesecake",
     title: "We Tried Mall Food Court Cheesecake",
     category: "Desserts",
-    location: "Food Court Bakery Stand",
+    store: "Food Court Bakery Stand",
+    city: "Lakewood",
     rating: 5,
     description:
       "Low expectations, even lower results. A brutally honest breakdown of why mall dessert stands live and die on frosting alone.",
-    reviewer: "S",
+    reviewer: "Shmuel",
     comments: [],
   },
   {
     slug: "detroit-style-deep-dish",
     title: "Detroit-Style Deep Dish, Explained",
     category: "Pizza",
-    location: "Motor City Pie Co.",
+    store: "Motor City Pie Co.",
+    city: "Toms River",
     rating: 8,
     description:
       "Caramelized cheese edges change everything. We explain why this style might be underrated in our market.",
-    reviewer: "D",
+    reviewer: "David",
     comments: [],
   },
 ];
