@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateReview, deleteReview, getReview, type ReviewInput } from "@/lib/reviews-store";
-import { deleteVideo } from "@/lib/r2";
+import { deleteFile } from "@/lib/r2";
 
 export async function PUT(
   req: NextRequest,
@@ -40,7 +40,10 @@ export async function DELETE(
   const { slug } = await params;
   const existing = await getReview(slug);
   if (existing?.videoKey) {
-    await deleteVideo(existing.videoKey).catch(() => {});
+    await deleteFile(existing.videoKey).catch(() => {});
+  }
+  if (existing?.thumbnailKey) {
+    await deleteFile(existing.thumbnailKey).catch(() => {});
   }
   await deleteReview(slug);
   return NextResponse.json({ ok: true });

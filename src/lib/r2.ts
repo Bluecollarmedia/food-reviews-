@@ -23,12 +23,6 @@ export async function getUploadUrl(key: string, contentType: string) {
   return getSignedUrl(client(), command, { expiresIn: 60 * 10 });
 }
 
-export async function deleteVideo(key: string) {
+export async function deleteFile(key: string) {
   await client().send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
-}
-
-export function getPublicVideoUrl(key: string) {
-  const base = process.env.R2_PUBLIC_BASE_URL;
-  if (!base) return null;
-  return `${base.replace(/\/$/, "")}/${key}`;
 }

@@ -24,6 +24,7 @@ export default function AdminReviewRow({ review }: { review: Review }) {
         description: review.description,
         reviewer: review.reviewer,
         videoKey: review.videoKey,
+        thumbnailKey: review.thumbnailKey,
         status: review.status === "published" ? "draft" : "published",
       }),
     });

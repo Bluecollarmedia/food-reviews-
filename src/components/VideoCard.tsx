@@ -1,15 +1,24 @@
 import Link from "next/link";
 import ScoreBadge from "./ScoreBadge";
+import { getPublicFileUrl } from "@/lib/media-url";
 import type { Review } from "@/lib/data";
 
 export default function VideoCard({ review }: { review: Review }) {
+  const thumbnailUrl = getPublicFileUrl(review.thumbnailKey);
+
   return (
     <Link
       href={`/videos/${review.slug}`}
       className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg"
     >
-      <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-gradient-to-br from-primary to-accent">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.25),transparent_60%)]" />
+      <div
+        className="relative flex aspect-video items-center justify-center overflow-hidden bg-gradient-to-br from-primary to-accent bg-cover bg-center"
+        style={thumbnailUrl ? { backgroundImage: `url(${thumbnailUrl})` } : undefined}
+      >
+        {!thumbnailUrl && (
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.25),transparent_60%)]" />
+        )}
+        {thumbnailUrl && <div className="absolute inset-0 bg-black/20 transition-colors group-hover:bg-black/35" />}
         <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/90 text-primary shadow-md transition-transform group-hover:scale-110">
           <svg viewBox="0 0 24 24" fill="currentColor" className="ml-1 h-6 w-6">
             <path d="M8 5v14l11-7z" />

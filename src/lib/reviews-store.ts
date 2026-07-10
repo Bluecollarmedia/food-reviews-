@@ -189,6 +189,7 @@ export type ReviewInput = {
   reviewer: Reviewer;
   status: ReviewStatus;
   videoKey?: string;
+  thumbnailKey?: string;
 };
 
 export async function createReview(input: ReviewInput): Promise<Review> {

@@ -20,6 +20,7 @@ export type Review = {
   reviewer: Reviewer;
   status: ReviewStatus;
   videoKey?: string;
+  thumbnailKey?: string;
   createdAt: string;
   updatedAt: string;
 };

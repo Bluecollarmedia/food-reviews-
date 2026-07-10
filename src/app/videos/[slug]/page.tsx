@@ -5,7 +5,7 @@ import {
   listPublishedReviews,
 } from "@/lib/reviews-store";
 import { getRelatedReviews } from "@/lib/data";
-import { getPublicVideoUrl } from "@/lib/r2";
+import { getPublicFileUrl } from "@/lib/media-url";
 import ScoreBadge from "@/components/ScoreBadge";
 import CommentSection from "@/components/CommentSection";
 import VideoCard from "@/components/VideoCard";
@@ -23,7 +23,8 @@ export default async function VideoPage({
 
   const allPublished = await listPublishedReviews();
   const related = getRelatedReviews(review, allPublished);
-  const videoUrl = review.videoKey ? getPublicVideoUrl(review.videoKey) : null;
+  const videoUrl = getPublicFileUrl(review.videoKey);
+  const thumbnailUrl = getPublicFileUrl(review.thumbnailKey);
 
   return (
     <div className="mx-auto w-full max-w-4xl px-5 py-10">
@@ -35,13 +36,20 @@ export default async function VideoPage({
         <video
           key={videoUrl}
           controls
+          poster={thumbnailUrl ?? undefined}
           className="mt-4 aspect-video w-full rounded-2xl bg-black shadow-lg"
         >
           <source src={videoUrl} />
         </video>
       ) : (
-        <div className="relative mt-4 flex aspect-video items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-accent shadow-lg">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_15%,rgba(255,255,255,0.2),transparent_60%)]" />
+        <div
+          className="relative mt-4 flex aspect-video items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-accent shadow-lg bg-cover bg-center"
+          style={thumbnailUrl ? { backgroundImage: `url(${thumbnailUrl})` } : undefined}
+        >
+          {!thumbnailUrl && (
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_15%,rgba(255,255,255,0.2),transparent_60%)]" />
+          )}
+          {thumbnailUrl && <div className="absolute inset-0 bg-black/30" />}
           <div className="relative flex flex-col items-center gap-3 text-white">
             <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 text-primary shadow-md">
               <svg viewBox="0 0 24 24" fill="currentColor" className="ml-1 h-7 w-7">
