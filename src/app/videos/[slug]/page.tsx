@@ -48,10 +48,13 @@ export async function generateMetadata({
 
 export default async function VideoPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ debug?: string }>;
 }) {
   const { slug } = await params;
+  const { debug } = await searchParams;
   const review = await getPublishedReview(slug);
   if (!review) notFound();
 
@@ -64,6 +67,15 @@ export default async function VideoPage({
 
   return (
     <div className="mx-auto w-full max-w-4xl px-5 py-10">
+      {debug && (
+        <pre className="mb-4 overflow-x-auto whitespace-pre-wrap rounded-lg border border-primary bg-black p-4 text-xs text-emerald-400">
+{`videoKey: ${review.videoKey ?? "(none)"}
+thumbnailKey: ${review.thumbnailKey ?? "(none)"}
+videoUrl: ${videoUrl ?? "(none)"}
+thumbnailUrl: ${thumbnailUrl ?? "(none)"}
+BASE_URL env: ${process.env.NEXT_PUBLIC_R2_PUBLIC_BASE_URL ?? "(unset)"}`}
+        </pre>
+      )}
       <Link href="/reviews" className="text-sm font-medium text-primary hover:underline">
         &larr; Back to all reviews
       </Link>
