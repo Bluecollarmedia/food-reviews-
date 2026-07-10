@@ -27,9 +27,9 @@ export type Review = {
 
 export const categories = [
   "Pizza",
-  "Fast Food",
   "Dairy",
   "Meat",
+  "Fast Food",
   "Desserts",
   "Drinks",
 ] as const;
