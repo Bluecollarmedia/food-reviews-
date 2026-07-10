@@ -1,12 +1,16 @@
+import Image from "next/image";
+
 const reviewers = [
   {
     initial: "D",
     name: "D",
+    photo: "/images/reviewers/d.jpeg",
     bio: "The heat-seeker. If it's not spicy, crispy, or dripping in sauce, D isn't interested — and won't pretend otherwise.",
   },
   {
     initial: "S",
     name: "S",
+    photo: "/images/reviewers/s.jpeg",
     bio: "The skeptic. S calls out overpriced portions and soggy crusts on sight. Hardest score to earn a 5 from.",
   },
 ];
@@ -29,19 +33,15 @@ export default function AboutPage() {
             key={r.initial}
             className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-surface p-8 text-center shadow-sm"
           >
-            <span className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent font-display text-4xl text-white shadow-md">
-              {r.initial}
-            </span>
+            <div className="relative h-24 w-24 overflow-hidden rounded-full border-4 border-accent-light shadow-md">
+              <Image src={r.photo} alt={r.name} fill className="object-cover" />
+            </div>
             <h2 className="font-display text-2xl tracking-wide text-foreground">
               {r.name}
             </h2>
             <p className="text-sm text-foreground/70">{r.bio}</p>
           </div>
         ))}
-      </div>
-
-      <div className="mt-10 rounded-2xl border border-dashed border-border bg-surface-muted p-6 text-center text-sm text-foreground/60">
-        Reviewer photos coming soon — send them over and we'll swap these in.
       </div>
     </div>
   );
