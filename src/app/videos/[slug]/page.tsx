@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getReviewBySlug, reviews } from "@/lib/data";
-import RatingStars from "@/components/RatingStars";
+import ScoreBadge from "@/components/ScoreBadge";
 import CommentSection from "@/components/CommentSection";
 
 export function generateStaticParams() {
@@ -49,7 +49,7 @@ export default async function VideoPage({
             {review.location} &middot; Reviewed by {review.reviewer}
           </p>
         </div>
-        <RatingStars rating={review.rating} size="lg" />
+        <ScoreBadge rating={review.rating} size="lg" />
       </div>
 
       <p className="mt-6 max-w-2xl text-foreground/80 leading-relaxed">

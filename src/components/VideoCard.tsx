@@ -1,5 +1,5 @@
 import Link from "next/link";
-import RatingStars from "./RatingStars";
+import ScoreBadge from "./ScoreBadge";
 import type { Review } from "@/lib/data";
 
 export default function VideoCard({ review }: { review: Review }) {
@@ -28,7 +28,7 @@ export default function VideoCard({ review }: { review: Review }) {
         </h3>
         <p className="text-sm text-foreground/60">{review.location}</p>
         <div className="mt-auto flex items-center justify-between pt-2">
-          <RatingStars rating={review.rating} size="sm" />
+          <ScoreBadge rating={review.rating} size="sm" />
           <span className="text-xs font-medium text-foreground/50">by {review.reviewer}</span>
         </div>
       </div>

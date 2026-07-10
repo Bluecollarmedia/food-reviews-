@@ -11,7 +11,7 @@ const reviewers = [
     initial: "S",
     name: "Shmuel",
     photo: "/images/reviewers/s.jpeg",
-    bio: "The skeptic. Shmuel calls out overpriced portions and soggy crusts on sight. Hardest score to earn a 5 from.",
+    bio: "The skeptic. Shmuel calls out overpriced portions and soggy crusts on sight. Hardest score to earn over an 8 from.",
   },
 ];
 
