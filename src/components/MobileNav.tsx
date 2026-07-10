@@ -7,7 +7,7 @@ export default function MobileNav() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="relative md:hidden">
+    <div className="md:hidden">
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Close menu" : "Open menu"}
@@ -41,23 +41,23 @@ export default function MobileNav() {
       />
 
       <div
-        className={`absolute right-0 z-50 mt-2 w-48 origin-top-right overflow-hidden rounded-2xl border border-border bg-surface shadow-xl transition-all duration-200 ease-out ${
+        className={`absolute inset-x-0 top-full z-50 origin-top border-b border-border bg-surface shadow-xl transition-all duration-[250ms] ease-out ${
           open
-            ? "translate-y-0 scale-100 opacity-100"
-            : "pointer-events-none -translate-y-2 scale-95 opacity-0"
+            ? "translate-y-0 opacity-100"
+            : "pointer-events-none -translate-y-3 opacity-0"
         }`}
       >
         <Link
           href="/reviews"
           onClick={() => setOpen(false)}
-          className="block px-5 py-3.5 text-base font-semibold text-foreground/80 transition-colors hover:bg-surface-muted hover:text-primary"
+          className="block border-b border-border px-5 py-4 text-base font-semibold text-foreground/80 transition-colors hover:bg-surface-muted hover:text-primary"
         >
           Reviews
         </Link>
         <Link
           href="/about"
           onClick={() => setOpen(false)}
-          className="block px-5 py-3.5 text-base font-semibold text-foreground/80 transition-colors hover:bg-surface-muted hover:text-primary"
+          className="block px-5 py-4 text-base font-semibold text-foreground/80 transition-colors hover:bg-surface-muted hover:text-primary"
         >
           About
         </Link>
