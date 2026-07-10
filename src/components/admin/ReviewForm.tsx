@@ -269,12 +269,23 @@ export default function ReviewForm({ mode, initial }: Props) {
           onChange={(e) => setVideoFile(e.target.files?.[0] ?? null)}
           className="text-sm"
         />
+        {videoFile && uploadProgress === null && (
+          <p className="mt-2 text-xs text-foreground/60">
+            Selected: {videoFile.name} ({(videoFile.size / 1024 / 1024).toFixed(1)} MB)
+          </p>
+        )}
         {uploadProgress !== null && (
-          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-surface-muted">
-            <div
-              className="h-full bg-primary transition-all"
-              style={{ width: `${uploadProgress}%` }}
-            />
+          <div className="mt-3">
+            <div className="mb-1 flex items-center justify-between text-sm font-semibold text-foreground">
+              <span>Uploading video...</span>
+              <span>{uploadProgress}%</span>
+            </div>
+            <div className="h-3 w-full overflow-hidden rounded-full border border-border bg-surface-muted">
+              <div
+                className="h-full bg-primary transition-[width] duration-150 ease-out"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
           </div>
         )}
       </div>
