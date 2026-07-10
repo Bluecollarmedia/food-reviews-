@@ -72,8 +72,48 @@ function MediaUploadFields({
   onVideoPicked: (file: File | undefined) => void;
 }) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div className="flex flex-col gap-6">
       <div>
+        <p className="mb-1 text-base font-bold text-foreground">
+          {label ? `Upload ${label}'s video` : "Upload the video"}
+        </p>
+        <UploadDropzone
+          accept="video/*"
+          icon={uploadIcon}
+          title={
+            videoKey || videoFile
+              ? `Tap here to replace ${label ? `${label}'s` : "the"} video`
+              : `Tap here to upload ${label ? `${label}'s` : "the"} video`
+          }
+          subtitle={
+            videoFile
+              ? `Selected: ${videoFile.name} (${(videoFile.size / 1024 / 1024).toFixed(1)} MB)`
+              : videoKey
+              ? "A video is already uploaded ✓"
+              : "The review video file from your phone or computer"
+          }
+          onPicked={onVideoPicked}
+        />
+        {videoProgress !== null && (
+          <div className="mt-3">
+            <div className="mb-1 flex items-center justify-between text-sm font-semibold text-foreground">
+              <span>Uploading...</span>
+              <span>{videoProgress}%</span>
+            </div>
+            <div className="h-3 w-full overflow-hidden rounded-full border border-border bg-surface-muted">
+              <div
+                className="h-full bg-primary transition-[width] duration-150 ease-out"
+                style={{ width: `${videoProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div>
+        <p className="mb-1 text-base font-bold text-foreground">
+          {label ? `Upload ${label}'s thumbnail` : "Upload a thumbnail"}
+        </p>
         {thumbnailPreviewUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -107,40 +147,6 @@ function MediaUploadFields({
               <div
                 className="h-full bg-accent transition-[width] duration-150 ease-out"
                 style={{ width: `${thumbnailProgress}%` }}
-              />
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div>
-        <UploadDropzone
-          accept="video/*"
-          icon={uploadIcon}
-          title={
-            videoKey || videoFile
-              ? `Tap here to replace ${label ? `${label}'s` : "the"} video`
-              : `Tap here to upload ${label ? `${label}'s` : "the"} video`
-          }
-          subtitle={
-            videoFile
-              ? `Selected: ${videoFile.name} (${(videoFile.size / 1024 / 1024).toFixed(1)} MB)`
-              : videoKey
-              ? "A video is already uploaded ✓"
-              : "The review video file from your phone or computer"
-          }
-          onPicked={onVideoPicked}
-        />
-        {videoProgress !== null && (
-          <div className="mt-3">
-            <div className="mb-1 flex items-center justify-between text-sm font-semibold text-foreground">
-              <span>Uploading...</span>
-              <span>{videoProgress}%</span>
-            </div>
-            <div className="h-3 w-full overflow-hidden rounded-full border border-border bg-surface-muted">
-              <div
-                className="h-full bg-primary transition-[width] duration-150 ease-out"
-                style={{ width: `${videoProgress}%` }}
               />
             </div>
           </div>
@@ -561,9 +567,6 @@ export default function ReviewForm({ mode, initial }: Props) {
         </div>
 
         <div>
-          <p className="mb-1 text-base font-bold text-foreground">
-            {reviewer === "David & Shmuel" ? "Upload David's video" : "Upload the video"}
-          </p>
           <MediaUploadFields
             label={reviewer === "David & Shmuel" ? "David" : undefined}
             thumbnailKey={thumbnailKey}
@@ -579,11 +582,8 @@ export default function ReviewForm({ mode, initial }: Props) {
 
         {reviewer === "David & Shmuel" && (
           <div>
-            <p className="mb-1 text-base font-bold text-foreground">
-              Upload Shmuel&apos;s video
-            </p>
             <p className="mb-2 text-xs text-foreground/50">
-              Optional — only add this if David and Shmuel filmed separate reactions.
+              Optional — only add Shmuel&apos;s video/thumbnail below if David and Shmuel filmed separate reactions.
               Viewers will get a David / Shmuel switch on the review page.
             </p>
             <MediaUploadFields
