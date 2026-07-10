@@ -12,14 +12,14 @@ export default function ReviewsExplorer() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return reviews.filter((r) => {
-      if (category !== "All" && r.category !== category) return false;
+      if (category !== "All" && !r.categories.includes(category)) return false;
       if (reviewer !== "All" && !r.reviewer.includes(reviewer)) return false;
       if (!q) return true;
       return (
         r.title.toLowerCase().includes(q) ||
         r.store.toLowerCase().includes(q) ||
         r.city.toLowerCase().includes(q) ||
-        r.category.toLowerCase().includes(q) ||
+        r.categories.some((c) => c.toLowerCase().includes(q)) ||
         r.description.toLowerCase().includes(q)
       );
     });

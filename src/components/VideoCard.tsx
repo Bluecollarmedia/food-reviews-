@@ -18,9 +18,16 @@ export default function VideoCard({ review }: { review: Review }) {
         <span className="absolute right-3 top-3 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
           Coming Soon
         </span>
-        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-primary-dark">
-          {review.category}
-        </span>
+        <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+          {review.categories.map((c) => (
+            <span
+              key={c}
+              className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-primary-dark"
+            >
+              {c}
+            </span>
+          ))}
+        </div>
       </div>
       <div className="flex flex-1 flex-col gap-2 p-4">
         <h3 className="font-display text-xl leading-tight tracking-wide text-foreground">
@@ -28,6 +35,7 @@ export default function VideoCard({ review }: { review: Review }) {
         </h3>
         <p className="text-sm text-foreground/60">
           {review.store} &middot; {review.city}
+          {review.price ? ` · ${review.price}` : ""}
         </p>
         <div className="mt-auto flex items-center justify-between pt-2">
           <ScoreBadge rating={review.rating} size="sm" />

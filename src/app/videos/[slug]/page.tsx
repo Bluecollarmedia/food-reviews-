@@ -39,14 +39,22 @@ export default async function VideoPage({
 
       <div className="mt-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-semibold text-primary-dark">
-            {review.category}
-          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {review.categories.map((c) => (
+              <span
+                key={c}
+                className="rounded-full bg-surface-muted px-3 py-1 text-xs font-semibold text-primary-dark"
+              >
+                {c}
+              </span>
+            ))}
+          </div>
           <h1 className="mt-3 font-display text-4xl tracking-wide text-foreground">
             {review.title}
           </h1>
           <p className="mt-1 text-foreground/60">
-            {review.store} &middot; {review.city} &middot; Reviewed by {review.reviewer}
+            {review.store} &middot; {review.city}
+            {review.price ? ` · ${review.price}` : ""} &middot; Reviewed by {review.reviewer}
           </p>
         </div>
         <ScoreBadge rating={review.rating} size="lg" />

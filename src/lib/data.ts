@@ -10,10 +10,11 @@ export type Reviewer = "David" | "Shmuel" | "David & Shmuel";
 export type Review = {
   slug: string;
   title: string;
-  category: string;
+  categories: string[];
   store: string;
   city: string;
   rating: number;
+  price?: "$" | "$$" | "$$$";
   description: string;
   reviewer: Reviewer;
   comments: Comment[];
@@ -21,12 +22,11 @@ export type Review = {
 
 export const categories = [
   "Pizza",
-  "Burgers",
-  "Tacos",
-  "Wings",
-  "Sushi",
-  "BBQ",
+  "Fast Food",
+  "Dairy",
+  "Meat",
   "Desserts",
+  "Drinks",
 ] as const;
 
 export const cities = ["Lakewood", "Toms River"] as const;
@@ -37,10 +37,11 @@ export const reviews: Review[] = [
   {
     slug: "downtown-pepperoni-slice",
     title: "This Pizza Almost Made Us Fight",
-    category: "Pizza",
+    categories: ["Pizza", "Dairy"],
     store: "Tony's Slice House",
     city: "Lakewood",
     rating: 9,
+    price: "$",
     description:
       "A thin-crust pepperoni slice that split the room. David loved the crispy edge, Shmuel thought the sauce was way too sweet. We argue it out and give our honest, brutal verdict.",
     reviewer: "David & Shmuel",
@@ -52,10 +53,11 @@ export const reviews: Review[] = [
   {
     slug: "double-smash-burger",
     title: "Double Smash Burger Showdown",
-    category: "Burgers",
+    categories: ["Fast Food", "Meat"],
     store: "Grease & Griddle",
     city: "Toms River",
     rating: 8,
+    price: "$$",
     description:
       "Crispy lace edges, but is it worth the price? We break down the bun-to-patty ratio and don't hold back on the value verdict.",
     reviewer: "David",
@@ -66,7 +68,7 @@ export const reviews: Review[] = [
   {
     slug: "street-cart-al-pastor",
     title: "Street Cart Al Pastor - Hidden Gem?",
-    category: "Tacos",
+    categories: ["Fast Food", "Meat"],
     store: "El Trompo Cart",
     city: "Lakewood",
     rating: 9.5,
@@ -78,10 +80,11 @@ export const reviews: Review[] = [
   {
     slug: "nashville-hot-wings",
     title: "Nashville Hot Wings Nearly Broke Us",
-    category: "Wings",
+    categories: ["Fast Food", "Meat"],
     store: "Firehouse Wing Co.",
     city: "Toms River",
     rating: 7,
+    price: "$$",
     description:
       "Heat that's more pain than flavor past level 3. We rank every heat level so you know exactly what you're walking into.",
     reviewer: "David & Shmuel",
@@ -92,10 +95,11 @@ export const reviews: Review[] = [
   {
     slug: "omakase-on-a-budget",
     title: "Omakase On a Budget - Worth It?",
-    category: "Sushi",
+    categories: ["Fast Food"],
     store: "Sato's Counter",
     city: "Lakewood",
     rating: 9,
+    price: "$$$",
     description:
       "Twelve pieces, one chef, zero pretension. We compare it against the fancy uptown spot and the results surprised us.",
     reviewer: "David",
@@ -104,10 +108,11 @@ export const reviews: Review[] = [
   {
     slug: "backyard-brisket",
     title: "12-Hour Brisket That Made Shmuel Cry",
-    category: "BBQ",
+    categories: ["Fast Food", "Meat"],
     store: "Smoke Ring BBQ",
     city: "Toms River",
     rating: 9.5,
+    price: "$$",
     description:
       "Bark, smoke ring, and a texture that shouldn't be legal. This is the review that made us BBQ believers.",
     reviewer: "David & Shmuel",
@@ -118,10 +123,11 @@ export const reviews: Review[] = [
   {
     slug: "mall-food-court-cheesecake",
     title: "We Tried Mall Food Court Cheesecake",
-    category: "Desserts",
+    categories: ["Desserts", "Dairy"],
     store: "Food Court Bakery Stand",
     city: "Lakewood",
     rating: 5,
+    price: "$",
     description:
       "Low expectations, even lower results. A brutally honest breakdown of why mall dessert stands live and die on frosting alone.",
     reviewer: "Shmuel",
@@ -130,10 +136,11 @@ export const reviews: Review[] = [
   {
     slug: "detroit-style-deep-dish",
     title: "Detroit-Style Deep Dish, Explained",
-    category: "Pizza",
+    categories: ["Pizza", "Dairy"],
     store: "Motor City Pie Co.",
     city: "Toms River",
     rating: 8,
+    price: "$$",
     description:
       "Caramelized cheese edges change everything. We explain why this style might be underrated in our market.",
     reviewer: "David",
