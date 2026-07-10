@@ -7,6 +7,7 @@ import {
 } from "@/lib/reviews-store";
 import { getRelatedReviews } from "@/lib/data";
 import { getPublicFileUrl } from "@/lib/media-url";
+import { incrementViews } from "@/lib/views";
 import ScoreBadge from "@/components/ScoreBadge";
 import CommentSection from "@/components/CommentSection";
 import RelatedVideosRow from "@/components/RelatedVideosRow";
@@ -53,6 +54,8 @@ export default async function VideoPage({
   const { slug } = await params;
   const review = await getPublishedReview(slug);
   if (!review) notFound();
+
+  await incrementViews(slug).catch(() => {});
 
   const allPublished = await listPublishedReviews();
   const related = getRelatedReviews(review, allPublished);

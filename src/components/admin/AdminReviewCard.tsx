@@ -6,7 +6,13 @@ import { useRouter } from "next/navigation";
 import { getPublicFileUrl } from "@/lib/media-url";
 import type { Review } from "@/lib/data";
 
-export default function AdminReviewCard({ review }: { review: Review }) {
+export default function AdminReviewCard({
+  review,
+  views,
+}: {
+  review: Review;
+  views: number;
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const thumbnailUrl = getPublicFileUrl(review.thumbnailKey);
@@ -54,7 +60,7 @@ export default function AdminReviewCard({ review }: { review: Review }) {
             {review.title}
           </h3>
           <p className="truncate text-xs text-foreground/60">
-            {review.store} &middot; {review.city} &middot; {review.rating}/10
+            {review.store} &middot; {review.city} &middot; {review.rating}/10 &middot; {views} {views === 1 ? "view" : "views"}
           </p>
           <p className="mt-1 truncate text-xs text-foreground/50">
             {review.categories.join(", ")}
