@@ -10,6 +10,46 @@ type Props = {
   initial?: Review;
 };
 
+function UploadDropzone({
+  accept,
+  icon,
+  title,
+  subtitle,
+  onPicked,
+}: {
+  accept: string;
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  onPicked: (file: File | undefined) => void;
+}) {
+  return (
+    <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-background px-4 py-8 text-center transition-colors hover:border-primary hover:bg-primary/5">
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+        {icon}
+      </span>
+      <span className="text-sm font-bold text-foreground">{title}</span>
+      <span className="text-xs text-foreground/50">{subtitle}</span>
+      <input
+        type="file"
+        accept={accept}
+        className="hidden"
+        onChange={(e) => {
+          onPicked(e.target.files?.[0]);
+          e.target.value = "";
+        }}
+      />
+    </label>
+  );
+}
+
+const uploadIcon = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-6 w-6">
+    <path d="M12 16V4m0 0L7 9m5-5l5 5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 function MediaUploadFields({
   label,
   thumbnailKey,
@@ -34,14 +74,6 @@ function MediaUploadFields({
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <div>
-        <label className="mb-1 block text-sm font-semibold text-foreground">
-          {label ? `${label}'s thumbnail` : "Thumbnail image"}
-        </label>
-        {thumbnailKey && !thumbnailPreviewUrl && (
-          <p className="mb-2 text-xs text-foreground/60">
-            A thumbnail is already set. Choose a new image only if you want to replace it.
-          </p>
-        )}
         {thumbnailPreviewUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -50,14 +82,20 @@ function MediaUploadFields({
             className="mb-2 aspect-video w-full rounded-lg border border-border object-cover"
           />
         )}
-        <input
-          type="file"
+        <UploadDropzone
           accept="image/*"
-          onChange={(e) => {
-            onThumbnailPicked(e.target.files?.[0]);
-            e.target.value = "";
-          }}
-          className="text-sm"
+          icon={uploadIcon}
+          title={
+            thumbnailKey || thumbnailPreviewUrl
+              ? `Tap here to replace ${label ? `${label}'s` : "the"} thumbnail`
+              : `Tap here to upload ${label ? `${label}'s` : "a"} thumbnail image`
+          }
+          subtitle={
+            thumbnailKey && !thumbnailPreviewUrl
+              ? "A thumbnail is already uploaded ✓"
+              : "JPG or PNG photo of the food"
+          }
+          onPicked={onThumbnailPicked}
         />
         {thumbnailProgress !== null && (
           <div className="mt-3">
@@ -76,25 +114,23 @@ function MediaUploadFields({
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-semibold text-foreground">
-          {label ? `${label}'s video` : "Video file"}
-        </label>
-        {videoKey && !videoFile && (
-          <p className="mb-2 text-xs text-foreground/60">
-            A video is already uploaded. Choose a new file only if you want to replace it.
-          </p>
-        )}
-        <input
-          type="file"
+        <UploadDropzone
           accept="video/*"
-          onChange={(e) => onVideoPicked(e.target.files?.[0])}
-          className="text-sm"
+          icon={uploadIcon}
+          title={
+            videoKey || videoFile
+              ? `Tap here to replace ${label ? `${label}'s` : "the"} video`
+              : `Tap here to upload ${label ? `${label}'s` : "the"} video`
+          }
+          subtitle={
+            videoFile
+              ? `Selected: ${videoFile.name} (${(videoFile.size / 1024 / 1024).toFixed(1)} MB)`
+              : videoKey
+              ? "A video is already uploaded ✓"
+              : "The review video file from your phone or computer"
+          }
+          onPicked={onVideoPicked}
         />
-        {videoFile && videoProgress === null && (
-          <p className="mt-2 text-xs text-foreground/60">
-            Selected: {videoFile.name} ({(videoFile.size / 1024 / 1024).toFixed(1)} MB)
-          </p>
-        )}
         {videoProgress !== null && (
           <div className="mt-3">
             <div className="mb-1 flex items-center justify-between text-sm font-semibold text-foreground">
@@ -350,6 +386,13 @@ export default function ReviewForm({ mode, initial }: Props) {
       )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-2xl">
+        <div className="rounded-xl border border-border bg-surface-muted p-4 text-sm text-foreground/70">
+          <p className="font-bold text-foreground">How to add a review</p>
+          <p className="mt-1">
+            Fill in the details below. Near the bottom, tap the boxes to upload the video and a thumbnail photo. When you&apos;re done, hit the big red button at the very bottom to save it.
+          </p>
+        </div>
+
         <div>
           <label className="mb-1 block text-sm font-semibold text-foreground">
             Video title
@@ -518,8 +561,8 @@ export default function ReviewForm({ mode, initial }: Props) {
         </div>
 
         <div>
-          <p className="mb-1 text-sm font-semibold text-foreground">
-            {reviewer === "David & Shmuel" ? "David's video &amp; thumbnail" : "Video & thumbnail"}
+          <p className="mb-1 text-base font-bold text-foreground">
+            {reviewer === "David & Shmuel" ? "Upload David's video" : "Upload the video"}
           </p>
           <MediaUploadFields
             label={reviewer === "David & Shmuel" ? "David" : undefined}
@@ -536,8 +579,8 @@ export default function ReviewForm({ mode, initial }: Props) {
 
         {reviewer === "David & Shmuel" && (
           <div>
-            <p className="mb-1 text-sm font-semibold text-foreground">
-              Shmuel&apos;s video &amp; thumbnail
+            <p className="mb-1 text-base font-bold text-foreground">
+              Upload Shmuel&apos;s video
             </p>
             <p className="mb-2 text-xs text-foreground/50">
               Optional — only add this if David and Shmuel filmed separate reactions.

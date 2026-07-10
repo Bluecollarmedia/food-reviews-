@@ -2,10 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const EDITOR_WIDTH = 480;
-const EDITOR_HEIGHT = 270; // 16:9
 const OUTPUT_WIDTH = 1280;
 const OUTPUT_HEIGHT = 720;
+const ASPECT = OUTPUT_WIDTH / OUTPUT_HEIGHT; // 16:9
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -20,73 +19,154 @@ export default function ImageCropper({
   onConfirm: (blob: Blob) => void;
   onCancel: () => void;
 }) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
-  const [imgUrl, setImgUrl] = useState<string | null>(null);
+  const [box, setBox] = useState({ w: 480, h: 270 });
   const [imgSize, setImgSize] = useState<{ w: number; h: number } | null>(null);
   const [minScale, setMinScale] = useState(1);
   const [scale, setScale] = useState(1);
   const [pos, setPos] = useState({ x: 0, y: 0 });
-  const dragRef = useRef<{ startX: number; startY: number; posX: number; posY: number } | null>(
-    null
-  );
 
+  const [imgUrl, setImgUrl] = useState<string | null>(null);
   useEffect(() => {
     const url = URL.createObjectURL(file);
     setImgUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
-  function handleImageLoad() {
+  const scaleRef = useRef(scale);
+  const posRef = useRef(pos);
+  useEffect(() => {
+    scaleRef.current = scale;
+    posRef.current = pos;
+  }, [scale, pos]);
+
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const dragStart = useRef<{ x: number; y: number; posX: number; posY: number } | null>(null);
+  const pinchStart = useRef<{ dist: number; scale: number; mid: { x: number; y: number } } | null>(
+    null
+  );
+
+  useEffect(() => {
+    function measure() {
+      const el = containerRef.current;
+      if (!el) return;
+      const w = el.clientWidth;
+      setBox({ w, h: w / ASPECT });
+    }
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+
+  function clampPos(x: number, y: number, s: number, size: { w: number; h: number }, b = box) {
+    return {
+      x: clamp(x, b.w - size.w * s, 0),
+      y: clamp(y, b.h - size.h * s, 0),
+    };
+  }
+
+  function fitImage() {
     const img = imgRef.current;
     if (!img) return;
     const w = img.naturalWidth;
     const h = img.naturalHeight;
-    const s = Math.max(EDITOR_WIDTH / w, EDITOR_HEIGHT / h);
+    const s = Math.max(box.w / w, box.h / h);
     setImgSize({ w, h });
     setMinScale(s);
     setScale(s);
-    setPos({
-      x: (EDITOR_WIDTH - w * s) / 2,
-      y: (EDITOR_HEIGHT - h * s) / 2,
-    });
+    setPos({ x: (box.w - w * s) / 2, y: (box.h - h * s) / 2 });
   }
 
-  function clampPos(x: number, y: number, s: number, size: { w: number; h: number }) {
-    return {
-      x: clamp(x, EDITOR_WIDTH - size.w * s, 0),
-      y: clamp(y, EDITOR_HEIGHT - size.h * s, 0),
-    };
+  useEffect(() => {
+    if (imgSize) fitImage();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [box.w, box.h]);
+
+  function applyZoom(newScale: number, anchor: { x: number; y: number }) {
+    if (!imgSize) return;
+    const clampedScale = clamp(newScale, minScale, minScale * 4);
+    const imgPtX = (anchor.x - posRef.current.x) / scaleRef.current;
+    const imgPtY = (anchor.y - posRef.current.y) / scaleRef.current;
+    const rawX = anchor.x - imgPtX * clampedScale;
+    const rawY = anchor.y - imgPtY * clampedScale;
+    const next = clampPos(rawX, rawY, clampedScale, imgSize);
+    setScale(clampedScale);
+    setPos(next);
   }
 
   function onPointerDown(e: React.PointerEvent) {
     (e.target as Element).setPointerCapture(e.pointerId);
-    dragRef.current = { startX: e.clientX, startY: e.clientY, posX: pos.x, posY: pos.y };
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (pointers.current.size === 1) {
+      dragStart.current = { x: e.clientX, y: e.clientY, posX: pos.x, posY: pos.y };
+    } else if (pointers.current.size === 2) {
+      dragStart.current = null;
+      const [a, b] = [...pointers.current.values()];
+      pinchStart.current = {
+        dist: Math.hypot(a.x - b.x, a.y - b.y),
+        scale: scaleRef.current,
+        mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+      };
+    }
   }
 
   function onPointerMove(e: React.PointerEvent) {
-    if (!dragRef.current || !imgSize) return;
-    const dx = e.clientX - dragRef.current.startX;
-    const dy = e.clientY - dragRef.current.startY;
-    const next = clampPos(dragRef.current.posX + dx, dragRef.current.posY + dy, scale, imgSize);
-    setPos(next);
+    if (!pointers.current.has(e.pointerId)) return;
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (pointers.current.size === 2 && pinchStart.current && imgSize) {
+      const [a, b] = [...pointers.current.values()];
+      const dist = Math.hypot(a.x - b.x, a.y - b.y);
+      const ratio = dist / pinchStart.current.dist;
+      const rect = containerRef.current?.getBoundingClientRect();
+      const anchor = rect
+        ? { x: pinchStart.current.mid.x - rect.left, y: pinchStart.current.mid.y - rect.top }
+        : { x: box.w / 2, y: box.h / 2 };
+      applyZoom(pinchStart.current.scale * ratio, anchor);
+      return;
+    }
+
+    if (pointers.current.size === 1 && dragStart.current && imgSize) {
+      const dx = e.clientX - dragStart.current.x;
+      const dy = e.clientY - dragStart.current.y;
+      const next = clampPos(
+        dragStart.current.posX + dx,
+        dragStart.current.posY + dy,
+        scaleRef.current,
+        imgSize
+      );
+      setPos(next);
+    }
   }
 
-  function onPointerUp() {
-    dragRef.current = null;
+  function onPointerUp(e: React.PointerEvent) {
+    pointers.current.delete(e.pointerId);
+    dragStart.current = null;
+    pinchStart.current = null;
+    if (pointers.current.size === 1) {
+      const [p] = [...pointers.current.values()];
+      dragStart.current = { x: p.x, y: p.y, posX: posRef.current.x, posY: posRef.current.y };
+    }
   }
 
-  function handleZoom(newScale: number) {
-    if (!imgSize) return;
-    const cx = EDITOR_WIDTH / 2;
-    const cy = EDITOR_HEIGHT / 2;
-    const imgPtX = (cx - pos.x) / scale;
-    const imgPtY = (cy - pos.y) / scale;
-    const rawX = cx - imgPtX * newScale;
-    const rawY = cy - imgPtY * newScale;
-    const next = clampPos(rawX, rawY, newScale, imgSize);
-    setScale(newScale);
-    setPos(next);
-  }
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || !imgSize) return;
+
+    function handleWheel(e: WheelEvent) {
+      e.preventDefault();
+      const rect = el!.getBoundingClientRect();
+      const anchor = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+      const factor = Math.exp(-e.deltaY * 0.002);
+      applyZoom(scaleRef.current * factor, anchor);
+    }
+
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [imgSize, box.w, box.h, minScale]);
 
   function handleConfirm() {
     const img = imgRef.current;
@@ -99,8 +179,8 @@ export default function ImageCropper({
 
     const sourceX = -pos.x / scale;
     const sourceY = -pos.y / scale;
-    const sourceW = EDITOR_WIDTH / scale;
-    const sourceH = EDITOR_HEIGHT / scale;
+    const sourceW = box.w / scale;
+    const sourceH = box.h / scale;
 
     ctx.drawImage(img, sourceX, sourceY, sourceW, sourceH, 0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT);
     canvas.toBlob(
@@ -119,16 +199,17 @@ export default function ImageCropper({
           Position the Thumbnail
         </h3>
         <p className="mt-1 text-xs text-foreground/60">
-          Drag to reposition, use the slider to zoom. This will be the 16:9 thumbnail shown on the site.
+          Drag to move the photo. Pinch (or scroll) to zoom in and out.
         </p>
 
         <div
+          ref={containerRef}
           className="relative mt-4 touch-none overflow-hidden rounded-lg border border-border bg-black"
-          style={{ width: EDITOR_WIDTH, height: EDITOR_HEIGHT, maxWidth: "100%" }}
+          style={{ width: "100%", height: box.h }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
-          onPointerLeave={onPointerUp}
+          onPointerCancel={onPointerUp}
         >
           {imgUrl && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -136,7 +217,7 @@ export default function ImageCropper({
               ref={imgRef}
               src={imgUrl}
               alt="Crop preview"
-              onLoad={handleImageLoad}
+              onLoad={fitImage}
               draggable={false}
               className="absolute left-0 top-0 max-w-none cursor-grab select-none active:cursor-grabbing"
               style={
@@ -150,19 +231,6 @@ export default function ImageCropper({
               }
             />
           )}
-        </div>
-
-        <div className="mt-3 flex items-center gap-3">
-          <span className="text-xs text-foreground/60">Zoom</span>
-          <input
-            type="range"
-            min={minScale}
-            max={minScale * 3}
-            step={0.01}
-            value={scale}
-            onChange={(e) => handleZoom(parseFloat(e.target.value))}
-            className="flex-1"
-          />
         </div>
 
         <div className="mt-5 flex justify-end gap-3">
