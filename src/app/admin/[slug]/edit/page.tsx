@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getReview } from "@/lib/reviews-store";
 import ReviewForm from "@/components/admin/ReviewForm";
+import AdminCommentsPanel from "@/components/admin/AdminCommentsPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,7 @@ export default async function EditReviewPage({
       <div className="mt-6">
         <ReviewForm mode="edit" initial={review} />
       </div>
+      <AdminCommentsPanel slug={review.slug} />
     </div>
   );
 }

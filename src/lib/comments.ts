@@ -44,3 +44,10 @@ export async function addComment(slug: string, name: string, message: string): P
   await commentsStore().setJSON(slug, [...list, entry]);
   return getComments(slug);
 }
+
+export async function deleteComment(slug: string, commentId: string): Promise<Comment[]> {
+  const stored = (await commentsStore().get(slug, { type: "json" })) as StoredComment[] | null;
+  const list = (stored ?? []).filter((c) => c.id !== commentId);
+  await commentsStore().setJSON(slug, list);
+  return getComments(slug);
+}
