@@ -1,0 +1,50 @@
+import { NextRequest, NextResponse } from "next/server";
+import { updateReview, deleteReview, getReview, type ReviewInput } from "@/lib/reviews-store";
+import { deleteFile } from "@/lib/r2";
+
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  const { slug } = await params;
+  const body = (await req.json().catch(() => null)) as ReviewInput | null;
+
+  if (
+    !body ||
+    !body.title?.trim() ||
+    !body.store?.trim() ||
+    !body.city ||
+    !body.description?.trim() ||
+    !body.reviewer ||
+    !Array.isArray(body.categories) ||
+    body.categories.length === 0 ||
+    typeof body.rating !== "number"
+  ) {
+    return NextResponse.json(
+      { error: "Missing required fields." },
+      { status: 400 }
+    );
+  }
+
+  const review = await updateReview(slug, body);
+  if (!review) {
+    return NextResponse.json({ error: "Review not found." }, { status: 404 });
+  }
+  return NextResponse.json({ review });
+}
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  const { slug } = await params;
+  const existing = await getReview(slug);
+  if (existing?.videoKey) {
+    await deleteFile(existing.videoKey).catch(() => {});
+  }
+  if (existing?.thumbnailKey) {
+    await deleteFile(existing.thumbnailKey).catch(() => {});
+  }
+  await deleteReview(slug);
+  return NextResponse.json({ ok: true });
+}
