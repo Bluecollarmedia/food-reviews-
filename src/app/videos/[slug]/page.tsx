@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getReviewBySlug, reviews } from "@/lib/data";
+import { getReviewBySlug, getRelatedReviews, reviews } from "@/lib/data";
 import ScoreBadge from "@/components/ScoreBadge";
 import CommentSection from "@/components/CommentSection";
+import VideoCard from "@/components/VideoCard";
 
 export function generateStaticParams() {
   return reviews.map((r) => ({ slug: r.slug }));
@@ -16,6 +17,8 @@ export default async function VideoPage({
   const { slug } = await params;
   const review = getReviewBySlug(slug);
   if (!review) notFound();
+
+  const related = getRelatedReviews(review);
 
   return (
     <div className="mx-auto w-full max-w-4xl px-5 py-10">
@@ -67,6 +70,19 @@ export default async function VideoPage({
       <div className="mt-10 border-t border-border pt-8">
         <CommentSection initialComments={review.comments} />
       </div>
+
+      {related.length > 0 && (
+        <div className="mt-12 border-t border-border pt-8">
+          <h2 className="font-display text-2xl tracking-wide text-foreground">
+            You Might Also Like
+          </h2>
+          <div className="mt-5 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {related.map((r) => (
+              <VideoCard key={r.slug} review={r} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

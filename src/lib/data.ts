@@ -151,3 +151,17 @@ export const reviews: Review[] = [
 export function getReviewBySlug(slug: string) {
   return reviews.find((r) => r.slug === slug);
 }
+
+export function getRelatedReviews(review: Review, limit = 3) {
+  const scored = reviews
+    .filter((r) => r.slug !== review.slug)
+    .map((r) => ({
+      review: r,
+      score:
+        r.categories.filter((c) => review.categories.includes(c)).length +
+        (r.city === review.city ? 1 : 0),
+    }))
+    .sort((a, b) => b.score - a.score);
+
+  return scored.slice(0, limit).map((s) => s.review);
+}
