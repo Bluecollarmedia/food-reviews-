@@ -14,10 +14,19 @@ export default function MobileNav() {
         aria-expanded={open}
         className="relative z-50 flex h-11 w-11 items-center justify-center rounded-full transition-transform active:scale-90"
       >
-        <span className="relative block h-4 w-6">
+        <span
+          className={`absolute inset-0 rounded-full bg-primary transition-all duration-300 ease-out ${
+            open ? "scale-100 opacity-100" : "scale-0 opacity-0"
+          }`}
+        />
+        <span
+          className={`relative block h-4 w-6 transition-transform duration-300 ease-out ${
+            open ? "rotate-[180deg]" : "rotate-0"
+          }`}
+        >
           <span
             className={`absolute left-0 h-0.5 w-6 rounded-full transition-all duration-300 ease-in-out ${
-              open ? "top-[7px] rotate-45 bg-primary" : "top-0 rotate-0 bg-foreground/80"
+              open ? "top-[7px] rotate-45 bg-white" : "top-0 rotate-0 bg-foreground/80"
             }`}
           />
           <span
@@ -27,7 +36,7 @@ export default function MobileNav() {
           />
           <span
             className={`absolute left-0 h-0.5 w-6 rounded-full transition-all duration-300 ease-in-out ${
-              open ? "top-[7px] -rotate-45 bg-primary" : "top-[14px] rotate-0 bg-foreground/80"
+              open ? "top-[7px] -rotate-45 bg-white" : "top-[14px] rotate-0 bg-foreground/80"
             }`}
           />
         </span>
@@ -41,7 +50,7 @@ export default function MobileNav() {
       />
 
       <div
-        className={`absolute inset-x-0 top-full z-50 origin-top border-b border-border bg-surface shadow-xl transition-all duration-[250ms] ease-out ${
+        className={`absolute inset-x-3 top-full z-50 origin-top divide-y divide-border overflow-hidden rounded-b-3xl border border-t-0 border-border bg-surface shadow-xl transition-all duration-[250ms] ease-out ${
           open
             ? "translate-y-0 opacity-100"
             : "pointer-events-none -translate-y-3 opacity-0"
@@ -50,14 +59,14 @@ export default function MobileNav() {
         <Link
           href="/reviews"
           onClick={() => setOpen(false)}
-          className="block border-b border-border px-5 py-4 text-base font-semibold text-foreground/80 transition-colors hover:bg-surface-muted hover:text-primary"
+          className="block px-5 py-4 text-base font-bold text-primary transition-colors hover:bg-primary/10"
         >
           Reviews
         </Link>
         <Link
           href="/about"
           onClick={() => setOpen(false)}
-          className="block px-5 py-4 text-base font-semibold text-foreground/80 transition-colors hover:bg-surface-muted hover:text-primary"
+          className="block px-5 py-4 text-base font-bold text-primary transition-colors hover:bg-primary/10"
         >
           About
         </Link>
