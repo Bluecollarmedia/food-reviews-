@@ -7,8 +7,8 @@ import {
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
-  const username = typeof body?.username === "string" ? body.username : "";
-  const password = typeof body?.password === "string" ? body.password : "";
+  const username = typeof body?.username === "string" ? body.username.trim() : "";
+  const password = typeof body?.password === "string" ? body.password.trim() : "";
 
   if (
     !username ||
