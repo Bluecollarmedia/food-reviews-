@@ -23,6 +23,7 @@ export type Review = {
   thumbnailKey?: string;
   shmuelVideoKey?: string;
   shmuelThumbnailKey?: string;
+  shmuelRating?: number;
   createdAt: string;
   updatedAt: string;
 };

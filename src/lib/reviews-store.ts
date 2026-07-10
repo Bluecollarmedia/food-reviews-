@@ -192,6 +192,7 @@ export type ReviewInput = {
   thumbnailKey?: string;
   shmuelVideoKey?: string;
   shmuelThumbnailKey?: string;
+  shmuelRating?: number;
 };
 
 export async function createReview(input: ReviewInput): Promise<Review> {

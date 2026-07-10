@@ -13,7 +13,7 @@ import CommentSection from "@/components/CommentSection";
 import RelatedVideosRow from "@/components/RelatedVideosRow";
 import ReactionBar from "@/components/ReactionBar";
 import VideoPlayer from "@/components/VideoPlayer";
-import ReviewerVideoSwitcher from "@/components/ReviewerVideoSwitcher";
+import SplitReviewHeader from "@/components/SplitReviewHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -73,60 +73,71 @@ export default async function VideoPage({
       </Link>
 
       {hasSplitReviews ? (
-        <ReviewerVideoSwitcher
+        <SplitReviewHeader
+          categories={review.categories}
+          title={review.title}
+          store={review.store}
+          city={review.city}
+          price={review.price}
           davidVideoUrl={videoUrl}
           davidThumbnailUrl={thumbnailUrl}
+          davidRating={review.rating}
           shmuelVideoUrl={shmuelVideoUrl}
           shmuelThumbnailUrl={shmuelThumbnailUrl}
+          shmuelRating={review.shmuelRating}
         />
-      ) : videoUrl ? (
-        <div className="mt-4">
-          <VideoPlayer key={videoUrl} src={videoUrl} poster={thumbnailUrl} />
-        </div>
       ) : (
-        <div
-          className="relative mt-4 flex aspect-video items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-accent shadow-lg bg-cover bg-center"
-          style={thumbnailUrl ? { backgroundImage: `url(${thumbnailUrl})` } : undefined}
-        >
-          {!thumbnailUrl && (
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_15%,rgba(255,255,255,0.2),transparent_60%)]" />
+        <>
+          {videoUrl ? (
+            <div className="mt-4">
+              <VideoPlayer key={videoUrl} src={videoUrl} poster={thumbnailUrl} />
+            </div>
+          ) : (
+            <div
+              className="relative mt-4 flex aspect-video items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-accent shadow-lg bg-cover bg-center"
+              style={thumbnailUrl ? { backgroundImage: `url(${thumbnailUrl})` } : undefined}
+            >
+              {!thumbnailUrl && (
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_15%,rgba(255,255,255,0.2),transparent_60%)]" />
+              )}
+              {thumbnailUrl && <div className="absolute inset-0 bg-black/30" />}
+              <div className="relative flex flex-col items-center gap-3 text-white">
+                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 text-primary shadow-md">
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="ml-1 h-7 w-7">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </span>
+                <span className="rounded-full bg-black/50 px-4 py-1.5 text-sm font-semibold uppercase tracking-wide">
+                  Video Coming Soon
+                </span>
+              </div>
+            </div>
           )}
-          {thumbnailUrl && <div className="absolute inset-0 bg-black/30" />}
-          <div className="relative flex flex-col items-center gap-3 text-white">
-            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 text-primary shadow-md">
-              <svg viewBox="0 0 24 24" fill="currentColor" className="ml-1 h-7 w-7">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </span>
-            <span className="rounded-full bg-black/50 px-4 py-1.5 text-sm font-semibold uppercase tracking-wide">
-              Video Coming Soon
-            </span>
-          </div>
-        </div>
-      )}
 
-      <div className="mt-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="flex flex-wrap gap-1.5">
-            {review.categories.map((c) => (
-              <span
-                key={c}
-                className="rounded-full bg-surface-muted px-3 py-1 text-xs font-semibold text-primary-dark"
-              >
-                {c}
-              </span>
-            ))}
+          <div className="mt-6 flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <div className="flex flex-wrap gap-1.5">
+                {review.categories.map((c) => (
+                  <span
+                    key={c}
+                    className="rounded-full bg-surface-muted px-3 py-1 text-xs font-semibold text-primary-dark"
+                  >
+                    {c}
+                  </span>
+                ))}
+              </div>
+              <h1 className="mt-3 font-display text-4xl tracking-wide text-foreground">
+                {review.title}
+              </h1>
+              <p className="mt-1 text-foreground/60">
+                {review.store} &middot; {review.city}
+                {review.price ? ` · ${review.price}` : ""} &middot; Reviewed by {review.reviewer}
+              </p>
+            </div>
+            <ScoreBadge rating={review.rating} size="lg" />
           </div>
-          <h1 className="mt-3 font-display text-4xl tracking-wide text-foreground">
-            {review.title}
-          </h1>
-          <p className="mt-1 text-foreground/60">
-            {review.store} &middot; {review.city}
-            {review.price ? ` · ${review.price}` : ""} &middot; Reviewed by {review.reviewer}
-          </p>
-        </div>
-        <ScoreBadge rating={review.rating} size="lg" />
-      </div>
+        </>
+      )}
 
       <p className="mt-6 max-w-2xl text-foreground/80 leading-relaxed">
         {review.description}

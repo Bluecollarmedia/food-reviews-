@@ -157,6 +157,9 @@ export default function ReviewForm({ mode, initial }: Props) {
     initial?.categories ?? []
   );
   const [rating, setRating] = useState(initial?.rating?.toString() ?? "8");
+  const [shmuelRating, setShmuelRating] = useState(
+    initial?.shmuelRating?.toString() ?? ""
+  );
   const [price, setPrice] = useState<string>(initial?.price ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [reviewer, setReviewer] = useState(initial?.reviewer ?? reviewers[0]);
@@ -296,6 +299,7 @@ export default function ReviewForm({ mode, initial }: Props) {
         thumbnailKey: finalThumbnailKey,
         shmuelVideoKey: finalShmuelVideoKey,
         shmuelThumbnailKey: finalShmuelThumbnailKey,
+        shmuelRating: shmuelRating ? parseFloat(shmuelRating) : undefined,
       };
 
       const url =
@@ -416,7 +420,7 @@ export default function ReviewForm({ mode, initial }: Props) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="mb-1 block text-sm font-semibold text-foreground">
-              Rating (1-10)
+              {reviewer === "David & Shmuel" ? "David's rating (1-10)" : "Rating (1-10)"}
             </label>
             <input
               type="number"
@@ -429,6 +433,40 @@ export default function ReviewForm({ mode, initial }: Props) {
               className={inputClass}
             />
           </div>
+          {reviewer === "David & Shmuel" ? (
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-foreground">
+                Shmuel&apos;s rating (1-10)
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={10}
+                step={0.1}
+                value={shmuelRating}
+                onChange={(e) => setShmuelRating(e.target.value)}
+                placeholder="Leave blank to reuse David's rating"
+                className={inputClass}
+              />
+            </div>
+          ) : (
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-foreground">
+                Price (optional)
+              </label>
+              <select value={price} onChange={(e) => setPrice(e.target.value)} className={inputClass}>
+                <option value="">Not set</option>
+                {prices.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+
+        {reviewer === "David & Shmuel" && (
           <div>
             <label className="mb-1 block text-sm font-semibold text-foreground">
               Price (optional)
@@ -442,7 +480,7 @@ export default function ReviewForm({ mode, initial }: Props) {
               ))}
             </select>
           </div>
-        </div>
+        )}
 
         <div>
           <label className="mb-1 block text-sm font-semibold text-foreground">
