@@ -8,7 +8,8 @@ import { getRelatedReviews } from "@/lib/data";
 import { getPublicFileUrl } from "@/lib/media-url";
 import ScoreBadge from "@/components/ScoreBadge";
 import CommentSection from "@/components/CommentSection";
-import VideoCard from "@/components/VideoCard";
+import RelatedVideosRow from "@/components/RelatedVideosRow";
+import VideoPlayer from "@/components/VideoPlayer";
 
 export const dynamic = "force-dynamic";
 
@@ -33,14 +34,9 @@ export default async function VideoPage({
       </Link>
 
       {videoUrl ? (
-        <video
-          key={videoUrl}
-          controls
-          poster={thumbnailUrl ?? undefined}
-          className="mt-4 aspect-video w-full rounded-2xl bg-black shadow-lg"
-        >
-          <source src={videoUrl} />
-        </video>
+        <div className="mt-4">
+          <VideoPlayer key={videoUrl} src={videoUrl} poster={thumbnailUrl} />
+        </div>
       ) : (
         <div
           className="relative mt-4 flex aspect-video items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-accent shadow-lg bg-cover bg-center"
@@ -99,13 +95,7 @@ export default async function VideoPage({
           <h2 className="font-display text-2xl tracking-wide text-foreground">
             You Might Also Like
           </h2>
-          <div className="-mx-5 mt-5 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2">
-            {related.map((r) => (
-              <div key={r.slug} className="w-64 shrink-0 snap-start sm:w-72">
-                <VideoCard review={r} />
-              </div>
-            ))}
-          </div>
+          <RelatedVideosRow related={related} />
         </div>
       )}
     </div>

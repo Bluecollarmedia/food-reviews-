@@ -40,7 +40,7 @@ export const reviewers: Reviewer[] = ["David", "Shmuel", "David & Shmuel"];
 
 export const prices = ["$", "$$", "$$$"] as const;
 
-export function getRelatedReviews(review: Review, pool: Review[], limit = 3) {
+export function getRelatedReviews(review: Review, pool: Review[], limit = 8) {
   const scored = pool
     .filter((r) => r.slug !== review.slug)
     .map((r) => ({
