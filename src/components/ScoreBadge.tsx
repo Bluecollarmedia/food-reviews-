@@ -1,6 +1,6 @@
 function scoreColor(score: number) {
   if (score >= 8) return "bg-emerald-600";
-  if (score >= 6) return "bg-accent";
+  if (score >= 6) return "bg-amber-500";
   return "bg-primary";
 }
 
