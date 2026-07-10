@@ -154,7 +154,7 @@ export default async function VideoPage({
       </p>
 
       <div className="mt-6">
-        <ReactionBar slug={review.slug} title={review.title} />
+        <ReactionBar slug={review.slug} title={review.title} videoUrl={videoUrl} />
       </div>
 
       <div className="mt-10 border-t border-border pt-8">
