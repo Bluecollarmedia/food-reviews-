@@ -64,7 +64,7 @@ export default async function VideoPage({
 
   return (
     <div className="mx-auto w-full max-w-4xl px-5 py-10">
-      <Link href="/" className="text-sm font-medium text-primary hover:underline">
+      <Link href="/reviews" className="text-sm font-medium text-primary hover:underline">
         &larr; Back to all reviews
       </Link>
 

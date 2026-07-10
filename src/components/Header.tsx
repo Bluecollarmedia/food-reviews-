@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import MobileNav from "./MobileNav";
 
 export default function Header() {
   return (
@@ -18,14 +19,17 @@ export default function Header() {
             D&amp;S Food Reviews
           </span>
         </Link>
-        <nav className="flex items-center gap-6 text-sm font-medium text-foreground/80">
-          <Link href="/" className="transition-colors hover:text-primary">
+
+        <nav className="hidden items-center gap-6 text-sm font-medium text-foreground/80 md:flex">
+          <Link href="/reviews" className="transition-colors hover:text-primary">
             Reviews
           </Link>
           <Link href="/about" className="transition-colors hover:text-primary">
             About
           </Link>
         </nav>
+
+        <MobileNav />
       </div>
     </header>
   );
