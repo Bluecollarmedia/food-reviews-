@@ -8,15 +8,12 @@ export default async function Home() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <picture>
-        <source media="(min-width: 768px)" srcSet="/images/brand/banner-desktop.webp" />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/images/brand/banner-mobile.webp"
-          alt="D&S Food Reviews — David and Shmuel"
-          className="block h-auto w-full"
-        />
-      </picture>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/images/brand/banner-desktop.webp"
+        alt="D&S Food Reviews — David and Shmuel"
+        className="block h-auto w-full"
+      />
 
       <section className="border-b border-border bg-surface px-5 py-10 text-center">
         <h1 className="font-display text-3xl tracking-wide text-foreground sm:text-4xl">
