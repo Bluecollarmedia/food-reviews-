@@ -1,6 +1,9 @@
 export const ADMIN_SESSION_COOKIE = "admin_session";
 export const ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 90; // 90 days
 
+export const LOCKED_SESSION_COOKIE = "locked_session";
+export const LOCKED_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 90; // 90 days
+
 function base64url(bytes: ArrayBuffer | Uint8Array) {
   const arr = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
   let str = "";
@@ -26,9 +29,12 @@ async function getKey(secret: string) {
   );
 }
 
-export async function createSessionToken(secret: string): Promise<string> {
+export async function createSessionToken(
+  secret: string,
+  maxAgeSeconds: number = ADMIN_SESSION_MAX_AGE_SECONDS
+): Promise<string> {
   const payload = JSON.stringify({
-    exp: Date.now() + ADMIN_SESSION_MAX_AGE_SECONDS * 1000,
+    exp: Date.now() + maxAgeSeconds * 1000,
   });
   const payloadB64 = base64url(new TextEncoder().encode(payload));
   const key = await getKey(secret);

@@ -70,10 +70,16 @@ export default function AdminReviewCard({
               className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
                 review.status === "published"
                   ? "bg-emerald-100 text-emerald-700"
+                  : review.status === "locked"
+                  ? "bg-amber-100 text-amber-700"
                   : "bg-foreground/10 text-foreground/60"
               }`}
             >
-              {review.status === "published" ? "Published" : "Draft"}
+              {review.status === "published"
+                ? "Published"
+                : review.status === "locked"
+                ? "Locked"
+                : "Draft"}
             </span>
             <span
               className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${

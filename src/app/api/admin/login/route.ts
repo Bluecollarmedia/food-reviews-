@@ -3,7 +3,7 @@ import {
   createSessionToken,
   ADMIN_SESSION_COOKIE,
   ADMIN_SESSION_MAX_AGE_SECONDS,
-} from "@/lib/admin-session";
+} from "@/lib/session";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);

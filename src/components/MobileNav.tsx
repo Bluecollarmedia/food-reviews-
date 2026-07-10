@@ -70,6 +70,13 @@ export default function MobileNav() {
         >
           About
         </Link>
+        <Link
+          href="/locked"
+          onClick={() => setOpen(false)}
+          className="block px-5 py-4 text-base font-bold text-primary transition-colors hover:bg-primary/10"
+        >
+          Locked
+        </Link>
       </div>
     </div>
   );

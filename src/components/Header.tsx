@@ -27,6 +27,9 @@ export default function Header() {
           <Link href="/about" className="transition-colors hover:text-primary">
             About
           </Link>
+          <Link href="/locked" className="transition-colors hover:text-primary">
+            Locked
+          </Link>
         </nav>
 
         <MobileNav />

@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import {
   getPublishedReview,
+  getReview,
   listPublishedReviews,
 } from "@/lib/reviews-store";
 import { getRelatedReviews } from "@/lib/data";
 import { getPublicFileUrl } from "@/lib/media-url";
 import { incrementViews } from "@/lib/views";
+import { LOCKED_SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 import ScoreBadge from "@/components/ScoreBadge";
 import CommentSection from "@/components/CommentSection";
 import RelatedVideosRow from "@/components/RelatedVideosRow";
@@ -53,8 +56,15 @@ export default async function VideoPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const review = await getPublishedReview(slug);
-  if (!review) notFound();
+  const review = await getReview(slug);
+  if (!review || review.status === "draft") notFound();
+
+  if (review.status === "locked") {
+    const cookieStore = await cookies();
+    const token = cookieStore.get(LOCKED_SESSION_COOKIE)?.value;
+    const valid = await verifySessionToken(token, process.env.LOCKED_PASSCODE ?? "");
+    if (!valid) redirect(`/locked/login?redirect=/videos/${slug}`);
+  }
 
   await incrementViews(slug).catch(() => {});
 

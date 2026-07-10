@@ -6,7 +6,7 @@ export type Comment = {
 };
 
 export type Reviewer = "David" | "Shmuel" | "David & Shmuel";
-export type ReviewStatus = "published" | "draft";
+export type ReviewStatus = "published" | "draft" | "locked";
 
 export type Review = {
   slug: string;

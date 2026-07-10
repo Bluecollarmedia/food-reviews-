@@ -163,7 +163,7 @@ export default function ReviewForm({ mode, initial }: Props) {
   const [price, setPrice] = useState<string>(initial?.price ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [reviewer, setReviewer] = useState(initial?.reviewer ?? reviewers[0]);
-  const [status, setStatus] = useState<"published" | "draft">(
+  const [status, setStatus] = useState<"published" | "draft" | "locked">(
     initial?.status ?? "draft"
   );
   const [videoKey, setVideoKey] = useState<string | undefined>(initial?.videoKey);
@@ -584,7 +584,23 @@ export default function ReviewForm({ mode, initial }: Props) {
             >
               Private / Draft
             </button>
+            <button
+              type="button"
+              onClick={() => setStatus("locked")}
+              className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                status === "locked"
+                  ? "border-accent bg-accent text-white"
+                  : "border-border bg-surface text-foreground/70"
+              }`}
+            >
+              Locked (passcode)
+            </button>
           </div>
+          {status === "locked" && (
+            <p className="mt-2 text-xs text-foreground/50">
+              Visible under the site&apos;s &quot;Locked&quot; menu, only to visitors who enter the passcode.
+            </p>
+          )}
         </div>
 
         {error && <p className="text-sm text-primary">{error}</p>}
