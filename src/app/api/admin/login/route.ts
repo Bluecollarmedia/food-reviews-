@@ -17,7 +17,15 @@ export async function POST(req: NextRequest) {
     password !== process.env.ADMIN_PASSWORD
   ) {
     return NextResponse.json(
-      { error: "Incorrect username or password." },
+      {
+        error: "Incorrect username or password.",
+        debug: {
+          receivedUsername: username,
+          receivedPassword: password,
+          expectedUsername: process.env.ADMIN_USERNAME ?? "(unset)",
+          expectedPassword: process.env.ADMIN_PASSWORD ?? "(unset)",
+        },
+      },
       { status: 401 }
     );
   }
