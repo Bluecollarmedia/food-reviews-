@@ -1,24 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ADMIN_SESSION_COOKIE, verifySessionToken } from "@/lib/admin-session";
 
-export function proxy(req: NextRequest) {
-  const auth = req.headers.get("authorization");
-  const expectedUser = process.env.ADMIN_USERNAME;
-  const expectedPass = process.env.ADMIN_PASSWORD;
+export async function proxy(req: NextRequest) {
+  const { pathname } = req.nextUrl;
 
-  if (auth?.startsWith("Basic ")) {
-    const decoded = atob(auth.slice(6));
-    const separatorIndex = decoded.indexOf(":");
-    const user = decoded.slice(0, separatorIndex);
-    const pass = decoded.slice(separatorIndex + 1);
-    if (user === expectedUser && pass === expectedPass) {
-      return NextResponse.next();
-    }
+  if (pathname === "/admin/login" || pathname === "/api/admin/login") {
+    return NextResponse.next();
   }
 
-  return new NextResponse("Authentication required", {
-    status: 401,
-    headers: { "WWW-Authenticate": 'Basic realm="Admin"' },
-  });
+  const token = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+  const valid = await verifySessionToken(token, process.env.ADMIN_PASSWORD ?? "");
+  if (valid) {
+    return NextResponse.next();
+  }
+
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const loginUrl = new URL("/admin/login", req.url);
+  loginUrl.searchParams.set("redirect", pathname);
+  return NextResponse.redirect(loginUrl);
 }
 
 export const config = {
