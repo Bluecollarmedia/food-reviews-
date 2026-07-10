@@ -8,11 +8,11 @@ export default function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(255,255,255,0.18),transparent_55%)]" />
         <div className="relative mx-auto max-w-3xl">
           <div className="mb-6 flex items-center justify-center">
-            <div className="relative h-20 w-20 overflow-hidden rounded-full border-4 border-white shadow-lg">
-              <Image src="/images/reviewers/d.jpeg" alt="D" fill className="object-cover" priority />
+            <div className="relative h-36 w-36 overflow-hidden rounded-full border-4 border-white shadow-lg sm:h-44 sm:w-44">
+              <Image src="/images/reviewers/d.jpeg" alt="David" fill className="object-cover" priority />
             </div>
-            <div className="relative -ml-5 h-20 w-20 overflow-hidden rounded-full border-4 border-white shadow-lg">
-              <Image src="/images/reviewers/s.jpeg" alt="S" fill className="object-cover" priority />
+            <div className="relative -ml-8 h-36 w-36 overflow-hidden rounded-full border-4 border-white shadow-lg sm:h-44 sm:w-44">
+              <Image src="/images/reviewers/s.jpeg" alt="Shmuel" fill className="object-cover" priority />
             </div>
           </div>
           <h1 className="font-display text-5xl leading-tight tracking-wide sm:text-6xl">

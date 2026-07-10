@@ -3,15 +3,15 @@ import Image from "next/image";
 const reviewers = [
   {
     initial: "D",
-    name: "D",
+    name: "David",
     photo: "/images/reviewers/d.jpeg",
-    bio: "The heat-seeker. If it's not spicy, crispy, or dripping in sauce, D isn't interested — and won't pretend otherwise.",
+    bio: "The heat-seeker. If it's not spicy, crispy, or dripping in sauce, David isn't interested — and won't pretend otherwise.",
   },
   {
     initial: "S",
-    name: "S",
+    name: "Shmuel",
     photo: "/images/reviewers/s.jpeg",
-    bio: "The skeptic. S calls out overpriced portions and soggy crusts on sight. Hardest score to earn a 5 from.",
+    bio: "The skeptic. Shmuel calls out overpriced portions and soggy crusts on sight. Hardest score to earn a 5 from.",
   },
 ];
 
