@@ -15,7 +15,9 @@ export function proxy(req: NextRequest) {
     }
   }
 
-  return new NextResponse("Authentication required", {
+  const debugInfo = `DEBUG expectedUser="${expectedUser ?? "(unset)"}" expectedPass="${expectedPass ?? "(unset)"}" authHeaderReceived=${auth ? "yes" : "no"}`;
+
+  return new NextResponse(`Authentication required\n\n${debugInfo}`, {
     status: 401,
     headers: { "WWW-Authenticate": 'Basic realm="Admin"' },
   });
