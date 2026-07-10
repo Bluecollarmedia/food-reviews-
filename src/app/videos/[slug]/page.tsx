@@ -99,9 +99,11 @@ export default async function VideoPage({
           <h2 className="font-display text-2xl tracking-wide text-foreground">
             You Might Also Like
           </h2>
-          <div className="mt-5 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="-mx-5 mt-5 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2">
             {related.map((r) => (
-              <VideoCard key={r.slug} review={r} />
+              <div key={r.slug} className="w-64 shrink-0 snap-start sm:w-72">
+                <VideoCard review={r} />
+              </div>
             ))}
           </div>
         </div>
