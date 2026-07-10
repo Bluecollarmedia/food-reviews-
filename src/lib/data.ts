@@ -17,7 +17,6 @@ export type Review = {
   price?: "$" | "$$" | "$$$";
   description: string;
   reviewer: Reviewer;
-  comments: Comment[];
 };
 
 export const categories = [
@@ -45,10 +44,6 @@ export const reviews: Review[] = [
     description:
       "A thin-crust pepperoni slice that split the room. David loved the crispy edge, Shmuel thought the sauce was way too sweet. We argue it out and give our honest, brutal verdict.",
     reviewer: "David & Shmuel",
-    comments: [
-      { id: "c1", name: "Marcus", message: "Been waiting for you two to hit this place!", timeAgo: "2d" },
-      { id: "c2", name: "Priya", message: "Sauce being sweet is a dealbreaker for me too.", timeAgo: "1d" },
-    ],
   },
   {
     slug: "double-smash-burger",
@@ -61,9 +56,6 @@ export const reviews: Review[] = [
     description:
       "Crispy lace edges, but is it worth the price? We break down the bun-to-patty ratio and don't hold back on the value verdict.",
     reviewer: "David",
-    comments: [
-      { id: "c3", name: "Alex", message: "That price point though...", timeAgo: "5h" },
-    ],
   },
   {
     slug: "street-cart-al-pastor",
@@ -75,7 +67,6 @@ export const reviews: Review[] = [
     description:
       "No seating, no menu, just a spinning trompo and pure flavor. This might be the highest score we've ever given.",
     reviewer: "Shmuel",
-    comments: [],
   },
   {
     slug: "nashville-hot-wings",
@@ -88,9 +79,6 @@ export const reviews: Review[] = [
     description:
       "Heat that's more pain than flavor past level 3. We rank every heat level so you know exactly what you're walking into.",
     reviewer: "David & Shmuel",
-    comments: [
-      { id: "c4", name: "Jordan", message: "Level 5 destroyed me too, respect for finishing it", timeAgo: "3d" },
-    ],
   },
   {
     slug: "omakase-on-a-budget",
@@ -103,7 +91,6 @@ export const reviews: Review[] = [
     description:
       "Twelve pieces, one chef, zero pretension. We compare it against the fancy uptown spot and the results surprised us.",
     reviewer: "David",
-    comments: [],
   },
   {
     slug: "backyard-brisket",
@@ -116,9 +103,6 @@ export const reviews: Review[] = [
     description:
       "Bark, smoke ring, and a texture that shouldn't be legal. This is the review that made us BBQ believers.",
     reviewer: "David & Shmuel",
-    comments: [
-      { id: "c5", name: "Casey", message: "The bark on that thing looks insane", timeAgo: "1w" },
-    ],
   },
   {
     slug: "mall-food-court-cheesecake",
@@ -131,7 +115,6 @@ export const reviews: Review[] = [
     description:
       "Low expectations, even lower results. A brutally honest breakdown of why mall dessert stands live and die on frosting alone.",
     reviewer: "Shmuel",
-    comments: [],
   },
   {
     slug: "detroit-style-deep-dish",
@@ -144,7 +127,6 @@ export const reviews: Review[] = [
     description:
       "Caramelized cheese edges change everything. We explain why this style might be underrated in our market.",
     reviewer: "David",
-    comments: [],
   },
 ];
 

@@ -68,7 +68,7 @@ export default async function VideoPage({
       </p>
 
       <div className="mt-10 border-t border-border pt-8">
-        <CommentSection initialComments={review.comments} />
+        <CommentSection slug={review.slug} />
       </div>
 
       {related.length > 0 && (
