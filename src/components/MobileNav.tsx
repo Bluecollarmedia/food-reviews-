@@ -1,11 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import AuthStatus from "./AuthStatus";
 
 export default function MobileNav() {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const linkClass =
+    "block px-5 py-4 text-base font-semibold text-foreground/80 transition-colors hover:bg-surface-muted hover:text-primary";
 
   return (
     <div className="md:hidden">
@@ -43,43 +52,36 @@ export default function MobileNav() {
         </span>
       </button>
 
-      <div
-        className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 ${
-          open ? "opacity-100" : "pointer-events-none opacity-0"
-        }`}
-        onClick={() => setOpen(false)}
-      />
+      {mounted &&
+        createPortal(
+          <>
+            <div
+              className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 ${
+                open ? "opacity-100" : "pointer-events-none opacity-0"
+              }`}
+              onClick={() => setOpen(false)}
+            />
 
-      <div
-        className={`absolute inset-x-3 top-full z-50 origin-top divide-y divide-border overflow-hidden rounded-b-3xl border border-t-0 border-border bg-surface shadow-xl transition-all duration-[250ms] ease-out ${
-          open
-            ? "translate-y-0 opacity-100"
-            : "pointer-events-none -translate-y-3 opacity-0"
-        }`}
-      >
-        <Link
-          href="/reviews"
-          onClick={() => setOpen(false)}
-          className="block px-5 py-4 text-base font-bold text-primary transition-colors hover:bg-primary/10"
-        >
-          Reviews
-        </Link>
-        <Link
-          href="/about"
-          onClick={() => setOpen(false)}
-          className="block px-5 py-4 text-base font-bold text-primary transition-colors hover:bg-primary/10"
-        >
-          About
-        </Link>
-        <Link
-          href="/locked"
-          onClick={() => setOpen(false)}
-          className="block px-5 py-4 text-base font-bold text-primary transition-colors hover:bg-primary/10"
-        >
-          Locked
-        </Link>
-        <AuthStatus variant="mobile" onNavigate={() => setOpen(false)} />
-      </div>
+            <div
+              className={`fixed inset-y-0 right-0 z-50 flex w-72 max-w-[80%] flex-col divide-y divide-border overflow-y-auto bg-surface shadow-xl transition-transform duration-300 ease-out ${
+                open ? "translate-x-0" : "pointer-events-none translate-x-full"
+              }`}
+            >
+              <div className="h-16 shrink-0" />
+              <Link href="/reviews" onClick={() => setOpen(false)} className={linkClass}>
+                Reviews
+              </Link>
+              <Link href="/about" onClick={() => setOpen(false)} className={linkClass}>
+                About
+              </Link>
+              <Link href="/locked" onClick={() => setOpen(false)} className={linkClass}>
+                Locked
+              </Link>
+              <AuthStatus variant="mobile" onNavigate={() => setOpen(false)} />
+            </div>
+          </>,
+          document.body
+        )}
     </div>
   );
 }

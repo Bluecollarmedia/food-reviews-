@@ -29,7 +29,7 @@ export default function AuthStatus({
 
   const linkClass =
     variant === "mobile"
-      ? "block px-5 py-4 text-base font-bold text-primary transition-colors hover:bg-primary/10"
+      ? "block px-5 py-4 text-base font-semibold text-foreground/80 transition-colors hover:bg-surface-muted hover:text-primary"
       : "transition-colors hover:text-primary";
 
   if (!user) {
