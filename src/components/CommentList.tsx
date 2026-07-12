@@ -10,7 +10,7 @@ import CommentForm from "./CommentForm";
 const REPLIES_BATCH = 4;
 
 function Avatar({ url, name, size = "md" }: { url: string | null; name: string; size?: "sm" | "md" }) {
-  const dims = size === "sm" ? "h-6 w-6 text-[10px]" : "h-8 w-8 text-xs";
+  const dims = size === "sm" ? "h-7 w-7 text-[11px]" : "h-9 w-9 text-sm";
   if (url) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
@@ -43,9 +43,12 @@ function RepliesSection({ replies }: { replies: Comment[] }) {
       <button
         type="button"
         onClick={() => setExpanded(true)}
-        className="mt-2 text-xs font-semibold text-primary hover:underline"
+        className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
       >
-        View {replies.length} {replies.length === 1 ? "reply" : "replies"}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5">
+          <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        {replies.length} {replies.length === 1 ? "reply" : "replies"}
       </button>
     );
   }
@@ -54,30 +57,24 @@ function RepliesSection({ replies }: { replies: Comment[] }) {
   const remaining = replies.length - visible.length;
 
   return (
-    <div className="mt-3">
-      <ul className="flex flex-col gap-3 border-l-2 border-border pl-3">
-        {visible.map((r) => (
-          <li
-            key={r.id}
-            id={`comment-${r.id}`}
-            className="flex gap-2 transition-colors duration-1000"
-          >
-            <Avatar url={r.avatarUrl} name={r.authorName} size="sm" />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-baseline gap-2">
-                <span className="text-xs font-semibold text-foreground">{r.authorName}</span>
-                <span className="text-[10px] text-foreground/40">{relativeTime(r.createdAt)}</span>
-              </div>
-              <p className="mt-0.5 break-words text-xs text-foreground/80">{r.message}</p>
+    <div className="mt-2 flex flex-col gap-3">
+      {visible.map((r) => (
+        <div key={r.id} id={`comment-${r.id}`} className="flex gap-2.5 transition-colors duration-1000">
+          <Avatar url={r.avatarUrl} name={r.authorName} size="sm" />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline gap-2">
+              <span className="text-xs font-semibold text-foreground">{r.authorName}</span>
+              <span className="text-[11px] text-foreground/40">{relativeTime(r.createdAt)}</span>
             </div>
-          </li>
-        ))}
-      </ul>
+            <p className="mt-0.5 break-words text-xs text-foreground/80">{r.message}</p>
+          </div>
+        </div>
+      ))}
       {remaining > 0 ? (
         <button
           type="button"
           onClick={() => setVisibleCount((v) => v + REPLIES_BATCH)}
-          className="mt-2 text-xs font-semibold text-primary hover:underline"
+          className="self-start text-xs font-semibold text-primary hover:underline"
         >
           Load {Math.min(remaining, REPLIES_BATCH)} more {remaining === 1 ? "reply" : "replies"}
         </button>
@@ -88,7 +85,7 @@ function RepliesSection({ replies }: { replies: Comment[] }) {
             setExpanded(false);
             setVisibleCount(REPLIES_BATCH);
           }}
-          className="mt-2 text-xs font-semibold text-foreground/50 hover:text-primary"
+          className="self-start text-xs font-semibold text-foreground/50 hover:text-primary"
         >
           Hide replies
         </button>
@@ -118,12 +115,12 @@ export default function CommentList({
   }
 
   return (
-    <ul className="mt-1">
-      {comments.map((c, i) => (
-        <li
+    <div className="flex flex-col">
+      {comments.map((c) => (
+        <div
           key={c.id}
           id={`comment-${c.id}`}
-          className={`flex gap-3 py-3 transition-colors duration-1000 ${i < comments.length - 1 ? "border-b border-border" : ""}`}
+          className="flex gap-3 py-4 transition-colors duration-1000"
         >
           <Avatar url={c.avatarUrl} name={c.authorName} />
           <div className="min-w-0 flex-1">
@@ -131,20 +128,22 @@ export default function CommentList({
               <span className="text-sm font-semibold text-foreground">{c.authorName}</span>
               <span className="text-xs text-foreground/40">{relativeTime(c.createdAt)}</span>
             </div>
-            <p className="mt-0.5 break-words text-sm text-foreground/80">{c.message}</p>
+            <p className="mt-0.5 break-words text-sm leading-snug text-foreground/80">
+              {c.message}
+            </p>
 
             {user ? (
               <button
                 type="button"
                 onClick={() => setReplyingTo(replyingTo === c.id ? null : c.id)}
-                className="mt-1 text-xs font-semibold text-foreground/50 hover:text-primary"
+                className="mt-1.5 text-xs font-semibold text-foreground/50 hover:text-primary"
               >
                 Reply
               </button>
             ) : (
               <Link
                 href={`/login?redirect=${encodeURIComponent(`/videos/${slug}`)}`}
-                className="mt-1 inline-block text-xs font-semibold text-foreground/50 hover:text-primary hover:underline"
+                className="mt-1.5 inline-block text-xs font-semibold text-foreground/50 hover:text-primary hover:underline"
               >
                 Log in to reply
               </Link>
@@ -166,8 +165,8 @@ export default function CommentList({
 
             <RepliesSection replies={c.replies} />
           </div>
-        </li>
+        </div>
       ))}
-    </ul>
+    </div>
   );
 }
