@@ -108,6 +108,9 @@ create policy "Users can update their own watch history"
 alter table public.profiles add column if not exists email_notifications boolean not null default false;
 alter table public.profiles add column if not exists is_admin boolean not null default false;
 
+-- R2 object key for the user's profile picture (shown next to their comments).
+alter table public.profiles add column if not exists avatar_key text;
+
 -- Notifications for logged-in viewers (currently: "someone replied to your comment").
 create table if not exists public.notifications (
   id uuid primary key default gen_random_uuid(),

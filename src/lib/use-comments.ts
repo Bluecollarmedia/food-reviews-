@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "./supabase/client";
+import { getPublicFileUrl } from "./media-url";
 import type { Comment } from "./data";
 
 type Row = {
@@ -11,7 +12,7 @@ type Row = {
   message: string;
   parent_id: string | null;
   created_at: string;
-  profiles: { display_name: string } | null;
+  profiles: { display_name: string; avatar_key: string | null } | null;
 };
 
 function toComment(row: Row): Comment {
@@ -20,6 +21,7 @@ function toComment(row: Row): Comment {
     message: row.message,
     createdAt: row.created_at,
     authorName: row.profiles?.display_name ?? row.guest_name ?? "Guest",
+    avatarUrl: getPublicFileUrl(row.profiles?.avatar_key),
     isGuest: row.user_id === null,
     userId: row.user_id,
     replies: [],
@@ -50,7 +52,9 @@ export function useComments(slug: string) {
     const supabase = createClient();
     const { data } = await supabase
       .from("comments")
-      .select("id, user_id, guest_name, message, parent_id, created_at, profiles(display_name)")
+      .select(
+        "id, user_id, guest_name, message, parent_id, created_at, profiles(display_name, avatar_key)"
+      )
       .eq("slug", slug)
       .order("created_at", { ascending: true });
     setComments(buildTree((data as unknown as Row[]) ?? []));

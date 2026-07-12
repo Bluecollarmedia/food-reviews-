@@ -3,6 +3,7 @@ export type Comment = {
   message: string;
   createdAt: string;
   authorName: string;
+  avatarUrl: string | null;
   isGuest: boolean;
   userId: string | null;
   replies: Comment[];

@@ -9,6 +9,23 @@ import CommentForm from "./CommentForm";
 
 const REPLIES_BATCH = 4;
 
+function Avatar({ url, name, size = "md" }: { url: string | null; name: string; size?: "sm" | "md" }) {
+  const dims = size === "sm" ? "h-6 w-6 text-[10px]" : "h-8 w-8 text-xs";
+  if (url) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={url} alt={name} className={`${dims} shrink-0 rounded-full object-cover`} />
+    );
+  }
+  return (
+    <span
+      className={`flex ${dims} shrink-0 items-center justify-center rounded-full bg-accent-light font-display text-white`}
+    >
+      {name.charAt(0).toUpperCase()}
+    </span>
+  );
+}
+
 function hashMatchesAny(replies: Comment[]) {
   if (typeof window === "undefined") return false;
   const hash = window.location.hash;
@@ -45,9 +62,7 @@ function RepliesSection({ replies }: { replies: Comment[] }) {
             id={`comment-${r.id}`}
             className="flex gap-2 transition-colors duration-1000"
           >
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-light text-[10px] font-display text-white">
-              {r.authorName.charAt(0).toUpperCase()}
-            </span>
+            <Avatar url={r.avatarUrl} name={r.authorName} size="sm" />
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline gap-2">
                 <span className="text-xs font-semibold text-foreground">{r.authorName}</span>
@@ -110,9 +125,7 @@ export default function CommentList({
           id={`comment-${c.id}`}
           className={`flex gap-3 py-3 transition-colors duration-1000 ${i < comments.length - 1 ? "border-b border-border" : ""}`}
         >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-light text-xs font-display text-white">
-            {c.authorName.charAt(0).toUpperCase()}
-          </span>
+          <Avatar url={c.avatarUrl} name={c.authorName} />
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline gap-2">
               <span className="text-sm font-semibold text-foreground">{c.authorName}</span>

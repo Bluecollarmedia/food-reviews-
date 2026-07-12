@@ -14,7 +14,7 @@ export default function CommentForm({
   placeholder?: string;
   onPosted: () => void;
 }) {
-  const { user, displayName } = useSupabaseUser();
+  const { user, displayName, avatarUrl } = useSupabaseUser();
   const [guestName, setGuestName] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -65,7 +65,13 @@ export default function CommentForm({
         />
       ) : (
         displayName && (
-          <p className="mb-1.5 text-sm font-semibold text-foreground">{displayName}</p>
+          <div className="mb-1.5 flex items-center gap-2">
+            {avatarUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarUrl} alt={displayName} className="h-5 w-5 rounded-full object-cover" />
+            )}
+            <p className="text-sm font-semibold text-foreground">{displayName}</p>
+          </div>
         )
       )}
       <div className="flex items-end gap-2">
