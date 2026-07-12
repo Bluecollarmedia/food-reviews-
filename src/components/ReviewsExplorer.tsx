@@ -1,13 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { categories, reviewers, type Review, type Reviewer } from "@/lib/data";
+import { categories, type Review, type Reviewer } from "@/lib/data";
 import VideoCard from "./VideoCard";
 
 export default function ReviewsExplorer({ reviews }: { reviews: Review[] }) {
   const [category, setCategory] = useState<string>("All");
   const [reviewer, setReviewer] = useState<"All" | Reviewer>("All");
   const [query, setQuery] = useState("");
+
+  const reviewerOptions = useMemo(
+    () => [...new Set(reviews.map((r) => r.reviewer))].sort(),
+    [reviews]
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -52,7 +57,7 @@ export default function ReviewsExplorer({ reviews }: { reviews: Review[] }) {
           className="rounded-full border border-border bg-surface px-4 py-3 text-sm font-semibold text-foreground/70 outline-none focus:border-accent sm:w-48"
         >
           <option value="All">All Reviewers</option>
-          {reviewers.map((r) => (
+          {reviewerOptions.map((r) => (
             <option key={r} value={r}>
               {r}
             </option>

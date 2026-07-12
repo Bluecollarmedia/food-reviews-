@@ -205,6 +205,12 @@ export default function ReviewForm({ mode, initial }: Props) {
   const [price, setPrice] = useState<string>(initial?.price ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [reviewer, setReviewer] = useState(initial?.reviewer ?? reviewers[0]);
+  const [isGuestReviewer, setIsGuestReviewer] = useState(
+    initial ? !reviewers.includes(initial.reviewer) : false
+  );
+  const [guestName, setGuestName] = useState(
+    initial && !reviewers.includes(initial.reviewer) ? initial.reviewer : ""
+  );
   const [status, setStatus] = useState<"published" | "draft" | "locked">(
     initial?.status ?? "draft"
   );
@@ -275,6 +281,10 @@ export default function ReviewForm({ mode, initial }: Props) {
       setError("Pick at least one category.");
       return;
     }
+    if (isGuestReviewer && !guestName.trim()) {
+      setError("Enter the guest reviewer's name.");
+      return;
+    }
     setSubmitting(true);
     setError("");
 
@@ -335,7 +345,7 @@ export default function ReviewForm({ mode, initial }: Props) {
         rating: parseFloat(rating),
         price: price || undefined,
         description: description.trim(),
-        reviewer,
+        reviewer: reviewer.trim(),
         status,
         videoKey: finalVideoKey,
         thumbnailKey: finalThumbnailKey,
@@ -540,9 +550,12 @@ export default function ReviewForm({ mode, initial }: Props) {
               <button
                 type="button"
                 key={r}
-                onClick={() => setReviewer(r)}
+                onClick={() => {
+                  setIsGuestReviewer(false);
+                  setReviewer(r);
+                }}
                 className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
-                  reviewer === r
+                  !isGuestReviewer && reviewer === r
                     ? "border-accent bg-accent text-white"
                     : "border-border bg-surface text-foreground/70 hover:border-accent hover:text-accent"
                 }`}
@@ -550,7 +563,33 @@ export default function ReviewForm({ mode, initial }: Props) {
                 {r}
               </button>
             ))}
+            <button
+              type="button"
+              onClick={() => {
+                setIsGuestReviewer(true);
+                setReviewer(guestName);
+              }}
+              className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                isGuestReviewer
+                  ? "border-accent bg-accent text-white"
+                  : "border-border bg-surface text-foreground/70 hover:border-accent hover:text-accent"
+              }`}
+            >
+              Guest Reviewer
+            </button>
           </div>
+          {isGuestReviewer && (
+            <input
+              value={guestName}
+              onChange={(e) => {
+                setGuestName(e.target.value);
+                setReviewer(e.target.value);
+              }}
+              placeholder="Guest's name"
+              required
+              className={`${inputClass} mt-2 max-w-xs`}
+            />
+          )}
         </div>
 
         <div>

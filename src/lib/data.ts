@@ -5,7 +5,7 @@ export type Comment = {
   timeAgo: string;
 };
 
-export type Reviewer = "David" | "Shmuel" | "David & Shmuel";
+export type Reviewer = string;
 export type ReviewStatus = "published" | "draft" | "locked";
 
 export type Review = {
