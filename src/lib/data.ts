@@ -32,7 +32,6 @@ export const categories = [
   "Pizza",
   "Dairy",
   "Meat",
-  "Fast Food",
   "Desserts",
   "Drinks",
 ] as const;
