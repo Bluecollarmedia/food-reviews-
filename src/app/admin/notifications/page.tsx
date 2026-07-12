@@ -9,7 +9,7 @@ export default async function AdminNotificationsPage() {
 
   const { data: notifications } = await supabase
     .from("admin_notifications")
-    .select("id, type, slug, message, read, created_at")
+    .select("id, type, slug, comment_id, message, read, created_at")
     .order("created_at", { ascending: false })
     .limit(100);
 
@@ -34,7 +34,11 @@ export default async function AdminNotificationsPage() {
           {notifications.map((n) => (
             <li key={n.id}>
               <Link
-                href={`/videos/${n.slug}`}
+                href={
+                  n.comment_id
+                    ? `/videos/${n.slug}/comments#comment-${n.comment_id}`
+                    : `/videos/${n.slug}`
+                }
                 className={`block rounded-2xl border p-4 transition-colors hover:border-primary ${
                   n.read ? "border-border bg-surface" : "border-primary bg-primary/5"
                 }`}

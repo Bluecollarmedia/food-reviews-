@@ -32,7 +32,8 @@ export default function CommentList({
       {comments.map((c, i) => (
         <li
           key={c.id}
-          className={`flex gap-3 py-3 ${i < comments.length - 1 ? "border-b border-border" : ""}`}
+          id={`comment-${c.id}`}
+          className={`flex gap-3 py-3 transition-colors duration-1000 ${i < comments.length - 1 ? "border-b border-border" : ""}`}
         >
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-light text-xs font-display text-white">
             {c.authorName.charAt(0).toUpperCase()}
@@ -78,7 +79,7 @@ export default function CommentList({
             {c.replies.length > 0 && (
               <ul className="mt-3 flex flex-col gap-3 border-l-2 border-border pl-3">
                 {c.replies.map((r) => (
-                  <li key={r.id} className="flex gap-2">
+                  <li key={r.id} id={`comment-${r.id}`} className="flex gap-2 transition-colors duration-1000">
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-light text-[10px] font-display text-white">
                       {r.authorName.charAt(0).toUpperCase()}
                     </span>

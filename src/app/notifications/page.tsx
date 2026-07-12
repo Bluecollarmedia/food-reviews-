@@ -17,7 +17,7 @@ export default async function NotificationsPage() {
 
   const { data: notifications } = await supabase
     .from("notifications")
-    .select("id, type, slug, message, read, created_at")
+    .select("id, type, slug, comment_id, message, read, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -39,7 +39,11 @@ export default async function NotificationsPage() {
           {notifications.map((n) => (
             <li key={n.id}>
               <Link
-                href={`/videos/${n.slug}`}
+                href={
+                  n.comment_id
+                    ? `/videos/${n.slug}/comments#comment-${n.comment_id}`
+                    : `/videos/${n.slug}`
+                }
                 className={`block rounded-2xl border p-4 transition-colors hover:border-primary ${
                   n.read ? "border-border bg-surface" : "border-primary bg-primary/5"
                 }`}
