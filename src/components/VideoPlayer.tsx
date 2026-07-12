@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { useSupabaseUser } from "@/lib/use-supabase-user";
 
 function formatTime(t: number) {
   if (!isFinite(t) || t < 0) return "0:00";
@@ -14,15 +16,37 @@ function formatTime(t: number) {
 export default function VideoPlayer({
   src,
   poster,
+  slug,
 }: {
   src: string;
   poster?: string | null;
+  slug?: string;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
   const [muted, setMuted] = useState(false);
+  const { user } = useSupabaseUser();
+  const lastReportRef = useRef(0);
+
+  function reportProgress(time: number, dur: number) {
+    if (!slug || !user || !dur) return;
+    const supabase = createClient();
+    supabase
+      .from("watch_history")
+      .upsert(
+        {
+          user_id: user.id,
+          slug,
+          progress_seconds: time,
+          duration_seconds: dur,
+          watched_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,slug" }
+      )
+      .then(() => {});
+  }
 
   function togglePlay() {
     const v = videoRef.current;
@@ -65,8 +89,19 @@ export default function VideoPlayer({
         className="aspect-video w-full cursor-pointer"
         onClick={togglePlay}
         onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
-        onTimeUpdate={(e) => setCurrent(e.currentTarget.currentTime)}
+        onPause={(e) => {
+          setPlaying(false);
+          reportProgress(e.currentTarget.currentTime, e.currentTarget.duration);
+        }}
+        onEnded={(e) => reportProgress(e.currentTarget.currentTime, e.currentTarget.duration)}
+        onTimeUpdate={(e) => {
+          const time = e.currentTarget.currentTime;
+          setCurrent(time);
+          if (time - lastReportRef.current >= 10) {
+            lastReportRef.current = time;
+            reportProgress(time, e.currentTarget.duration);
+          }
+        }}
         onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
       />
 

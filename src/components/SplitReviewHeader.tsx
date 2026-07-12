@@ -5,6 +5,7 @@ import VideoPlayer from "./VideoPlayer";
 import ScoreBadge from "./ScoreBadge";
 
 export default function SplitReviewHeader({
+  slug,
   categories,
   title,
   store,
@@ -17,6 +18,7 @@ export default function SplitReviewHeader({
   shmuelThumbnailUrl,
   shmuelRating,
 }: {
+  slug: string;
   categories: string[];
   title: string;
   store: string;
@@ -56,7 +58,7 @@ export default function SplitReviewHeader({
         </div>
 
         {videoUrl ? (
-          <VideoPlayer key={videoUrl} src={videoUrl} poster={thumbnailUrl} />
+          <VideoPlayer key={videoUrl} src={videoUrl} poster={thumbnailUrl} slug={slug} />
         ) : (
           <div className="flex aspect-video items-center justify-center rounded-2xl bg-surface-muted text-sm text-foreground/60">
             {selected}&apos;s video coming soon

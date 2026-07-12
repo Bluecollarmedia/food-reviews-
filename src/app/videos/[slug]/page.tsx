@@ -11,6 +11,7 @@ import { getRelatedReviews } from "@/lib/data";
 import { getPublicFileUrl } from "@/lib/media-url";
 import { incrementViews } from "@/lib/views";
 import { LOCKED_SESSION_COOKIE, verifySessionToken } from "@/lib/session";
+import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
 import ScoreBadge from "@/components/ScoreBadge";
 import CommentSection from "@/components/CommentSection";
 import RelatedVideosRow from "@/components/RelatedVideosRow";
@@ -68,6 +69,23 @@ export default async function VideoPage({
 
   await incrementViews(slug).catch(() => {});
 
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    try {
+      await supabase
+        .from("watch_history")
+        .upsert(
+          { user_id: user.id, slug, watched_at: new Date().toISOString() },
+          { onConflict: "user_id,slug" }
+        );
+    } catch {
+      // non-critical, ignore
+    }
+  }
+
   const allPublished = await listPublishedReviews();
   const related = getRelatedReviews(review, allPublished);
   const videoUrl = getPublicFileUrl(review.videoKey);
@@ -84,6 +102,7 @@ export default async function VideoPage({
 
       {hasSplitReviews ? (
         <SplitReviewHeader
+          slug={review.slug}
           categories={review.categories}
           title={review.title}
           store={review.store}
@@ -100,7 +119,7 @@ export default async function VideoPage({
         <>
           {videoUrl ? (
             <div className="mt-4">
-              <VideoPlayer key={videoUrl} src={videoUrl} poster={thumbnailUrl} />
+              <VideoPlayer key={videoUrl} src={videoUrl} poster={thumbnailUrl} slug={review.slug} />
             </div>
           ) : (
             <div

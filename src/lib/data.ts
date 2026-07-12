@@ -1,8 +1,11 @@
 export type Comment = {
   id: string;
-  name: string;
   message: string;
-  timeAgo: string;
+  createdAt: string;
+  authorName: string;
+  isGuest: boolean;
+  userId: string | null;
+  replies: Comment[];
 };
 
 export type Reviewer = string;

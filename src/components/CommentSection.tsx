@@ -8,8 +8,8 @@ import CommentList from "./CommentList";
 const PREVIEW_LIMIT = 3;
 
 export default function CommentSection({ slug }: { slug: string }) {
-  const { comments, setComments } = useComments(slug);
-  const count = comments?.length ?? 0;
+  const { comments, refresh } = useComments(slug);
+  const count = comments?.reduce((sum, c) => sum + 1 + c.replies.length, 0) ?? 0;
   const preview = comments ? comments.slice(0, PREVIEW_LIMIT) : null;
 
   return (
@@ -19,10 +19,10 @@ export default function CommentSection({ slug }: { slug: string }) {
       </h2>
 
       <div className="mt-4">
-        <CommentForm slug={slug} onPosted={setComments} />
+        <CommentForm slug={slug} onPosted={refresh} />
       </div>
 
-      <CommentList comments={preview} />
+      <CommentList comments={preview} slug={slug} onChanged={refresh} />
 
       {count > PREVIEW_LIMIT && (
         <Link

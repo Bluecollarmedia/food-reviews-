@@ -1,0 +1,206 @@
+-- Run this once in the Supabase SQL Editor (Dashboard -> SQL Editor -> New query -> paste -> Run).
+
+-- One row per signed-up user, holding their display name.
+create table if not exists public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  display_name text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.profiles enable row level security;
+
+drop policy if exists "Profiles are viewable by everyone" on public.profiles;
+create policy "Profiles are viewable by everyone"
+  on public.profiles for select
+  using (true);
+
+drop policy if exists "Users can update their own profile" on public.profiles;
+create policy "Users can update their own profile"
+  on public.profiles for update
+  using (auth.uid() = id);
+
+-- Auto-create a profile row whenever someone signs up.
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  insert into public.profiles (id, display_name)
+  values (new.id, coalesce(new.raw_user_meta_data->>'display_name', split_part(new.email, '@', 1)));
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
+
+-- Comments and replies (a reply is a comment with parent_id set).
+create table if not exists public.comments (
+  id uuid primary key default gen_random_uuid(),
+  slug text not null,
+  user_id uuid references public.profiles(id) on delete set null,
+  guest_name text,
+  message text not null,
+  parent_id uuid references public.comments(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  constraint comments_author_check check (user_id is not null or guest_name is not null),
+  constraint comments_reply_requires_login check (parent_id is null or user_id is not null)
+);
+
+create index if not exists comments_slug_idx on public.comments (slug);
+create index if not exists comments_parent_idx on public.comments (parent_id);
+
+alter table public.comments enable row level security;
+
+drop policy if exists "Comments are viewable by everyone" on public.comments;
+create policy "Comments are viewable by everyone"
+  on public.comments for select
+  using (true);
+
+drop policy if exists "Insert comments" on public.comments;
+create policy "Insert comments"
+  on public.comments for insert
+  with check (
+    (user_id is null and parent_id is null and guest_name is not null)
+    or (user_id is not null and user_id = auth.uid())
+  );
+
+drop policy if exists "Users can delete their own comments" on public.comments;
+create policy "Users can delete their own comments"
+  on public.comments for delete
+  using (auth.uid() = user_id);
+
+-- Per-user watch history, one row per (user, video), updated on every rewatch.
+-- progress_seconds / duration_seconds power a YouTube-style "watched" progress bar.
+create table if not exists public.watch_history (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  slug text not null,
+  watched_at timestamptz not null default now(),
+  progress_seconds numeric not null default 0,
+  duration_seconds numeric not null default 0,
+  primary key (user_id, slug)
+);
+
+alter table public.watch_history add column if not exists progress_seconds numeric not null default 0;
+alter table public.watch_history add column if not exists duration_seconds numeric not null default 0;
+
+alter table public.watch_history enable row level security;
+
+drop policy if exists "Users can view their own watch history" on public.watch_history;
+create policy "Users can view their own watch history"
+  on public.watch_history for select
+  using (auth.uid() = user_id);
+
+drop policy if exists "Users can insert their own watch history" on public.watch_history;
+create policy "Users can insert their own watch history"
+  on public.watch_history for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "Users can update their own watch history" on public.watch_history;
+create policy "Users can update their own watch history"
+  on public.watch_history for update
+  using (auth.uid() = user_id);
+
+-- Notification preferences per viewer + whether their profile is an admin account.
+alter table public.profiles add column if not exists email_notifications boolean not null default false;
+alter table public.profiles add column if not exists is_admin boolean not null default false;
+
+-- Notifications for logged-in viewers (currently: "someone replied to your comment").
+create table if not exists public.notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  type text not null,
+  slug text not null,
+  comment_id uuid references public.comments(id) on delete cascade,
+  message text not null,
+  read boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists notifications_user_idx on public.notifications (user_id, created_at desc);
+
+alter table public.notifications enable row level security;
+
+drop policy if exists "Users can view their own notifications" on public.notifications;
+create policy "Users can view their own notifications"
+  on public.notifications for select
+  using (auth.uid() = user_id);
+
+drop policy if exists "Users can update their own notifications" on public.notifications;
+create policy "Users can update their own notifications"
+  on public.notifications for update
+  using (auth.uid() = user_id);
+
+-- No insert policy for regular users: rows are only ever created by the
+-- trigger below (which runs as security definer), never directly by a client.
+
+-- A running feed of every new comment/reply, for the site admin only.
+-- RLS is enabled with no policies at all, so only the service_role key
+-- (used server-side in the admin panel) can read or write this table.
+create table if not exists public.admin_notifications (
+  id uuid primary key default gen_random_uuid(),
+  type text not null,
+  slug text not null,
+  comment_id uuid references public.comments(id) on delete cascade,
+  message text not null,
+  read boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+alter table public.admin_notifications enable row level security;
+
+-- Single-row table holding the admin's notification preferences.
+-- Also service_role-only (no policies) since there's one shared admin login,
+-- not a Supabase user account.
+create table if not exists public.admin_settings (
+  id smallint primary key default 1,
+  email_notifications boolean not null default false,
+  notify_email text,
+  constraint admin_settings_singleton check (id = 1)
+);
+
+insert into public.admin_settings (id) values (1) on conflict (id) do nothing;
+
+alter table public.admin_settings enable row level security;
+
+-- Whenever a comment or reply is posted: log it for the admin, and if it's a
+-- reply to someone's comment, notify that person (unless they replied to
+-- themselves, or the parent was posted by a guest with no account).
+create or replace function public.handle_new_comment()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  parent_user_id uuid;
+  preview text;
+begin
+  preview := left(new.message, 140);
+
+  insert into public.admin_notifications (type, slug, comment_id, message)
+  values (
+    case when new.parent_id is null then 'new_comment' else 'new_reply' end,
+    new.slug,
+    new.id,
+    preview
+  );
+
+  if new.parent_id is not null then
+    select user_id into parent_user_id from public.comments where id = new.parent_id;
+    if parent_user_id is not null and parent_user_id != new.user_id then
+      insert into public.notifications (user_id, type, slug, comment_id, message)
+      values (parent_user_id, 'reply', new.slug, new.id, preview);
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists on_comment_created on public.comments;
+create trigger on_comment_created
+  after insert on public.comments
+  for each row execute procedure public.handle_new_comment();

@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { deleteComment } from "@/lib/comments";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: Promise<{ slug: string; commentId: string }> }
+  { params }: { params: Promise<{ commentId: string }> }
 ) {
-  const { slug, commentId } = await params;
-  const comments = await deleteComment(slug, commentId);
-  return NextResponse.json({ comments });
+  const { commentId } = await params;
+  const supabase = createAdminClient();
+  const { error } = await supabase.from("comments").delete().eq("id", commentId);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  return NextResponse.json({ ok: true });
 }

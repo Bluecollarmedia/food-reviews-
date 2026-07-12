@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import MobileNav from "./MobileNav";
+import AuthStatus from "./AuthStatus";
 
 export default function Header() {
   return (
@@ -30,6 +31,7 @@ export default function Header() {
           <Link href="/locked" className="transition-colors hover:text-primary">
             Locked
           </Link>
+          <AuthStatus />
         </nav>
 
         <MobileNav />

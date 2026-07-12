@@ -5,12 +5,12 @@ import CommentForm from "./CommentForm";
 import CommentList from "./CommentList";
 
 export default function AllCommentsClient({ slug }: { slug: string }) {
-  const { comments, setComments } = useComments(slug);
+  const { comments, refresh } = useComments(slug);
 
   return (
     <div>
-      <CommentForm slug={slug} onPosted={setComments} />
-      <CommentList comments={comments} />
+      <CommentForm slug={slug} onPosted={refresh} />
+      <CommentList comments={comments} slug={slug} onChanged={refresh} />
     </div>
   );
 }

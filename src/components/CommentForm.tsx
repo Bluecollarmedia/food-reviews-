@@ -1,58 +1,76 @@
 "use client";
 
 import { useState } from "react";
-import type { Comment } from "@/lib/data";
+import { createClient } from "@/lib/supabase/client";
+import { useSupabaseUser } from "@/lib/use-supabase-user";
 
 export default function CommentForm({
   slug,
+  parentId,
+  placeholder = "Add a comment...",
   onPosted,
 }: {
   slug: string;
-  onPosted: (comments: Comment[]) => void;
+  parentId?: string;
+  placeholder?: string;
+  onPosted: () => void;
 }) {
-  const [name, setName] = useState("");
+  const { user, displayName } = useSupabaseUser();
+  const [guestName, setGuestName] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  const needsGuestName = !user;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !message.trim() || submitting) return;
+    if (!message.trim() || (needsGuestName && !guestName.trim()) || submitting) return;
     setSubmitting(true);
     setError("");
-    try {
-      const res = await fetch(`/api/comments/${slug}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, message }),
-      });
-      if (!res.ok) throw new Error("request failed");
-      const data = await res.json();
-      onPosted(data.comments ?? []);
-      setMessage("");
-    } catch {
+
+    const supabase = createClient();
+    const { error } = await supabase.from("comments").insert({
+      slug,
+      message: message.trim().slice(0, 500),
+      parent_id: parentId ?? null,
+      user_id: user?.id ?? null,
+      guest_name: user ? null : guestName.trim().slice(0, 60),
+    });
+
+    if (error) {
       setError("Couldn't post your comment. Try again in a moment.");
-    } finally {
       setSubmitting(false);
+      return;
     }
+
+    setMessage("");
+    setSubmitting(false);
+    onPosted();
   }
 
-  const canSubmit = name.trim() && message.trim() && !submitting;
+  const canSubmit = message.trim() && (!needsGuestName || guestName.trim()) && !submitting;
 
   return (
     <form onSubmit={handleSubmit} className="rounded-2xl bg-surface-muted p-3">
-      <input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="Your name"
-        maxLength={60}
-        className="mb-1.5 w-full bg-transparent text-sm font-semibold text-foreground outline-none placeholder:font-normal placeholder:text-foreground/40"
-      />
+      {needsGuestName ? (
+        <input
+          value={guestName}
+          onChange={(e) => setGuestName(e.target.value)}
+          placeholder="Your name"
+          maxLength={60}
+          className="mb-1.5 w-full bg-transparent text-sm font-semibold text-foreground outline-none placeholder:font-normal placeholder:text-foreground/40"
+        />
+      ) : (
+        displayName && (
+          <p className="mb-1.5 text-sm font-semibold text-foreground">{displayName}</p>
+        )
+      )}
       <div className="flex items-end gap-2">
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="Add a comment..."
+          placeholder={placeholder}
           rows={1}
           maxLength={500}
           className="min-h-[24px] flex-1 resize-none bg-transparent text-sm text-foreground outline-none placeholder:text-foreground/40"

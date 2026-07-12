@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import AuthStatus from "./AuthStatus";
 
 export default function MobileNav() {
   const [open, setOpen] = useState(false);
@@ -77,6 +78,7 @@ export default function MobileNav() {
         >
           Locked
         </Link>
+        <AuthStatus variant="mobile" onNavigate={() => setOpen(false)} />
       </div>
     </div>
   );

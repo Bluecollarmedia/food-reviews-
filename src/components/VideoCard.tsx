@@ -3,7 +3,13 @@ import ScoreBadge from "./ScoreBadge";
 import { getPublicFileUrl } from "@/lib/media-url";
 import type { Review } from "@/lib/data";
 
-export default function VideoCard({ review }: { review: Review }) {
+export default function VideoCard({
+  review,
+  progressPercent,
+}: {
+  review: Review;
+  progressPercent?: number;
+}) {
   const thumbnailUrl = getPublicFileUrl(review.thumbnailKey);
 
   return (
@@ -39,6 +45,14 @@ export default function VideoCard({ review }: { review: Review }) {
             </span>
           ))}
         </div>
+        {typeof progressPercent === "number" && progressPercent > 0 && (
+          <div className="absolute inset-x-0 bottom-0 h-1 bg-white/30">
+            <div
+              className="h-full bg-primary"
+              style={{ width: `${Math.min(100, progressPercent)}%` }}
+            />
+          </div>
+        )}
       </div>
       <div className="flex flex-1 flex-col gap-2 p-4">
         <h3 className="font-display text-xl leading-tight tracking-wide text-foreground">
