@@ -189,7 +189,7 @@ export type ReviewInput = {
   store: string;
   city: string;
   rating: number;
-  price?: "$" | "$$" | "$$$";
+  price?: string;
   description: string;
   reviewer: Reviewer;
   status: ReviewStatus;

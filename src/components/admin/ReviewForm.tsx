@@ -343,7 +343,7 @@ export default function ReviewForm({ mode, initial }: Props) {
         city,
         categories: selectedCategories,
         rating: parseFloat(rating),
-        price: price || undefined,
+        price: price.trim() || undefined,
         description: description.trim(),
         reviewer: reviewer.trim(),
         status,
@@ -513,14 +513,18 @@ export default function ReviewForm({ mode, initial }: Props) {
               <label className="mb-1 block text-sm font-semibold text-foreground">
                 Price (optional)
               </label>
-              <select value={price} onChange={(e) => setPrice(e.target.value)} className={inputClass}>
-                <option value="">Not set</option>
+              <input
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                list="price-suggestions"
+                placeholder="e.g. $, $$, or $12.99"
+                className={inputClass}
+              />
+              <datalist id="price-suggestions">
                 {prices.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
+                  <option key={p} value={p} />
                 ))}
-              </select>
+              </datalist>
             </div>
           )}
         </div>
@@ -530,14 +534,18 @@ export default function ReviewForm({ mode, initial }: Props) {
             <label className="mb-1 block text-sm font-semibold text-foreground">
               Price (optional)
             </label>
-            <select value={price} onChange={(e) => setPrice(e.target.value)} className={inputClass}>
-              <option value="">Not set</option>
+            <input
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              list="price-suggestions"
+              placeholder="e.g. $, $$, or $12.99"
+              className={inputClass}
+            />
+            <datalist id="price-suggestions">
               {prices.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
+                <option key={p} value={p} />
               ))}
-            </select>
+            </datalist>
           </div>
         )}
 
