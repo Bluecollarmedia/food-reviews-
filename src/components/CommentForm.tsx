@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { useSupabaseUser } from "@/lib/use-supabase-user";
 
 export default function CommentForm({
@@ -29,17 +28,20 @@ export default function CommentForm({
     setSubmitting(true);
     setError("");
 
-    const supabase = createClient();
-    const { error } = await supabase.from("comments").insert({
-      slug,
-      message: message.trim().slice(0, 500),
-      parent_id: parentId ?? null,
-      user_id: user?.id ?? null,
-      guest_name: user ? null : guestName.trim().slice(0, 60),
+    const res = await fetch("/api/comments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        slug,
+        message: message.trim(),
+        parentId: parentId ?? null,
+        guestName: user ? undefined : guestName.trim(),
+      }),
     });
 
-    if (error) {
-      setError("Couldn't post your comment. Try again in a moment.");
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      setError(data?.error ?? "Couldn't post your comment. Try again in a moment.");
       setSubmitting(false);
       return;
     }

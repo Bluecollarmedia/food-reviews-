@@ -1,0 +1,57 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
+import { notifyByEmail } from "@/lib/notify";
+
+export async function POST(req: NextRequest) {
+  const body = await req.json().catch(() => null);
+  const slug = typeof body?.slug === "string" ? body.slug : "";
+  const message = typeof body?.message === "string" ? body.message.trim().slice(0, 500) : "";
+  const parentId = typeof body?.parentId === "string" ? body.parentId : null;
+  const guestName =
+    typeof body?.guestName === "string" ? body.guestName.trim().slice(0, 60) : "";
+
+  if (!slug || !message) {
+    return NextResponse.json({ error: "A message is required." }, { status: 400 });
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user && !guestName) {
+    return NextResponse.json({ error: "Your name is required." }, { status: 400 });
+  }
+  if (!user && parentId) {
+    return NextResponse.json({ error: "Log in to reply." }, { status: 401 });
+  }
+
+  const { data: inserted, error } = await supabase
+    .from("comments")
+    .insert({
+      slug,
+      message,
+      parent_id: parentId,
+      user_id: user?.id ?? null,
+      guest_name: user ? null : guestName,
+    })
+    .select("id")
+    .single();
+
+  if (error || !inserted) {
+    return NextResponse.json(
+      { error: error?.message ?? "Couldn't post your comment." },
+      { status: 500 }
+    );
+  }
+
+  notifyByEmail({
+    origin: req.nextUrl.origin,
+    slug,
+    parentId,
+    message,
+    authorId: user?.id ?? null,
+  }).catch(() => {});
+
+  return NextResponse.json({ ok: true });
+}
