@@ -44,7 +44,7 @@ export default function VideoCard({
           </div>
         )}
       </div>
-      <div className="flex flex-1 flex-col gap-2 p-4">
+      <div className="flex flex-1 flex-col gap-1.5 p-3 sm:gap-2 sm:p-4">
         <div className="flex flex-wrap gap-1.5">
           {review.categories.map((c) => (
             <span
@@ -55,16 +55,16 @@ export default function VideoCard({
             </span>
           ))}
         </div>
-        <h3 className="font-display text-xl leading-tight tracking-wide text-foreground">
+        <h3 className="line-clamp-2 font-display text-lg leading-tight tracking-wide text-foreground sm:text-xl">
           {review.title}
         </h3>
-        <p className="text-sm text-foreground/60">
+        <p className="truncate text-sm text-foreground/60">
           {review.store} &middot; {review.city}
           {review.price ? ` · ${review.price}` : ""}
         </p>
-        <div className="mt-auto flex items-center justify-between pt-2">
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-2">
           <ScoreBadge rating={review.rating} size="sm" />
-          <span className="text-xs font-medium text-foreground/50">by {review.reviewer}</span>
+          <span className="truncate text-xs font-medium text-foreground/50">by {review.reviewer}</span>
         </div>
       </div>
     </Link>
