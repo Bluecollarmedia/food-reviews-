@@ -239,7 +239,7 @@ export default function ImageCropper({
           )}
           {round && (
             <div
-              className="pointer-events-none absolute inset-0"
+              className="pointer-events-none absolute inset-0 border-2 border-black"
               style={{ boxShadow: "0 0 0 1000px rgba(0,0,0,0.55)", borderRadius: "9999px" }}
             />
           )}
