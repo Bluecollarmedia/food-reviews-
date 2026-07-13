@@ -50,7 +50,6 @@ export default function VideoPlayer({
     return () => {
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing]);
 
   function reportProgress(time: number, dur: number) {
