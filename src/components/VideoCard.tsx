@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ScoreBadge from "./ScoreBadge";
 import { getPublicFileUrl } from "@/lib/media-url";
 import type { Review } from "@/lib/data";
 
@@ -71,13 +72,9 @@ export default function VideoCard({
     <Link href={`/videos/${review.slug}`} className="group flex flex-col">
       <Thumbnail review={review} thumbnailUrl={thumbnailUrl} progressPercent={progressPercent} compact={compact} />
       <div className={`flex ${compact ? "gap-2 py-2" : "gap-3 py-3"}`}>
-        <span
-          className={`flex shrink-0 items-center justify-center rounded-full bg-accent-light font-display text-white ${
-            compact ? "h-6 w-6 text-xs" : "h-9 w-9 text-sm"
-          }`}
-        >
-          {review.reviewer.charAt(0).toUpperCase()}
-        </span>
+        <div className="shrink-0">
+          <ScoreBadge rating={review.rating} size={compact ? "xs" : "sm"} />
+        </div>
         <div className="min-w-0 flex-1">
           <h3
             className={`line-clamp-2 font-semibold leading-snug text-foreground ${
@@ -87,7 +84,7 @@ export default function VideoCard({
             {review.title}
           </h3>
           <p className={`mt-1 truncate text-foreground/60 ${compact ? "text-[10px]" : "text-xs"}`}>
-            {review.reviewer} &middot; {review.rating}/10 &middot; {review.city}
+            {review.reviewer} &middot; {review.city}
           </p>
         </div>
       </div>
