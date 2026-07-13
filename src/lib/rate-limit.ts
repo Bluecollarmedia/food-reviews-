@@ -7,7 +7,10 @@ const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 type Record = { count: number; firstAttemptAt: number };
 
 function rateLimitStore() {
-  return getStore("rate-limits");
+  // Attempts are read-then-written on every request in quick succession, so
+  // the default eventual consistency can miss the previous write and let
+  // the count appear to never climb — force strong consistency instead.
+  return getStore("rate-limits", { consistency: "strong" });
 }
 
 export function getClientIp(req: NextRequest): string {
