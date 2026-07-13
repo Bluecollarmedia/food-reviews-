@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { listLockedReviews } from "@/lib/reviews-store";
 import { LOCKED_SESSION_COOKIE, verifySessionToken } from "@/lib/session";
+import { getLockedPasscode } from "@/lib/locked-passcode";
 import ReviewsExplorer from "@/components/ReviewsExplorer";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function LockedReviewsPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get(LOCKED_SESSION_COOKIE)?.value;
-  const valid = await verifySessionToken(token, process.env.LOCKED_PASSCODE ?? "");
+  const valid = await verifySessionToken(token, await getLockedPasscode());
   if (!valid) {
     redirect("/locked/login?redirect=/locked");
   }

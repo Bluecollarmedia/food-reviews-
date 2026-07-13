@@ -5,12 +5,15 @@ import { useState } from "react";
 export default function AdminSettingsForm({
   initialEmailNotifications,
   initialNotifyEmail,
+  initialLockedPasscode,
 }: {
   initialEmailNotifications: boolean;
   initialNotifyEmail: string;
+  initialLockedPasscode: string;
 }) {
   const [emailNotifications, setEmailNotifications] = useState(initialEmailNotifications);
   const [notifyEmail, setNotifyEmail] = useState(initialNotifyEmail);
+  const [lockedPasscode, setLockedPasscode] = useState(initialLockedPasscode);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -20,7 +23,7 @@ export default function AdminSettingsForm({
     await fetch("/api/admin/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ emailNotifications, notifyEmail }),
+      body: JSON.stringify({ emailNotifications, notifyEmail, lockedPasscode }),
     });
     setSaving(false);
     setSaved(true);
@@ -45,8 +48,8 @@ export default function AdminSettingsForm({
           }`}
         >
           <span
-            className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-transform ${
-              emailNotifications ? "translate-x-6" : "translate-x-1"
+            className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-transform ${
+              emailNotifications ? "translate-x-5" : "translate-x-0"
             }`}
           />
         </button>
@@ -66,6 +69,25 @@ export default function AdminSettingsForm({
           />
         </div>
       )}
+
+      <div className="rounded-2xl border border-border bg-surface p-4">
+        <p className="text-sm font-semibold text-foreground">Locked videos passcode</p>
+        <p className="mt-0.5 text-xs text-foreground/60">
+          Whoever has this code can view reviews in the Locked section. Change it any time —
+          anyone with the old code will need the new one.
+        </p>
+        <input
+          value={lockedPasscode}
+          onChange={(e) => setLockedPasscode(e.target.value)}
+          type="text"
+          placeholder="Passcode"
+          autoComplete="off"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          className="mt-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+        />
+      </div>
 
       <button
         type="button"

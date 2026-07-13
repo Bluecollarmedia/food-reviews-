@@ -5,11 +5,16 @@ export async function PUT(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const emailNotifications = typeof body?.emailNotifications === "boolean" ? body.emailNotifications : false;
   const notifyEmail = typeof body?.notifyEmail === "string" ? body.notifyEmail.trim() : "";
+  const lockedPasscode = typeof body?.lockedPasscode === "string" ? body.lockedPasscode.trim() : "";
 
   const supabase = createAdminClient();
   const { error } = await supabase
     .from("admin_settings")
-    .update({ email_notifications: emailNotifications, notify_email: notifyEmail || null })
+    .update({
+      email_notifications: emailNotifications,
+      notify_email: notifyEmail || null,
+      locked_passcode: lockedPasscode || null,
+    })
     .eq("id", 1);
 
   if (error) {

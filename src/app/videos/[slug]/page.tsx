@@ -11,6 +11,7 @@ import { getRelatedReviews } from "@/lib/data";
 import { getPublicFileUrl } from "@/lib/media-url";
 import { incrementViews } from "@/lib/views";
 import { LOCKED_SESSION_COOKIE, verifySessionToken } from "@/lib/session";
+import { getLockedPasscode } from "@/lib/locked-passcode";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
 import ScoreBadge from "@/components/ScoreBadge";
 import CommentSection from "@/components/CommentSection";
@@ -63,7 +64,7 @@ export default async function VideoPage({
   if (review.status === "locked") {
     const cookieStore = await cookies();
     const token = cookieStore.get(LOCKED_SESSION_COOKIE)?.value;
-    const valid = await verifySessionToken(token, process.env.LOCKED_PASSCODE ?? "");
+    const valid = await verifySessionToken(token, await getLockedPasscode());
     if (!valid) redirect(`/locked/login?redirect=/videos/${slug}`);
   }
 

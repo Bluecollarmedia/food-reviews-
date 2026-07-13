@@ -175,6 +175,10 @@ insert into public.admin_settings (id) values (1) on conflict (id) do nothing;
 
 alter table public.admin_settings enable row level security;
 
+-- Passcode for the /locked section, editable from the admin panel.
+-- Falls back to the LOCKED_PASSCODE env var (in code) if this is null.
+alter table public.admin_settings add column if not exists locked_passcode text;
+
 -- Whenever a comment or reply is posted: log it for the admin, and if it's a
 -- reply to someone's comment, notify that person (unless they replied to
 -- themselves, or the parent was posted by a guest with no account).
