@@ -6,39 +6,28 @@ import { useSupabaseUser } from "@/lib/use-supabase-user";
 import { useUnreadNotificationCount } from "@/lib/use-unread-notifications";
 import { createClient } from "@/lib/supabase/client";
 
-export default function AuthStatus({
+type Variant = "desktop" | "mobile";
+
+function linkClassFor(variant: Variant) {
+  return variant === "mobile"
+    ? "block px-5 py-4 text-base font-semibold text-foreground/80 transition-colors hover:bg-surface-muted hover:text-primary"
+    : "transition-colors hover:text-primary";
+}
+
+/** Notifications / Watch History / Settings — only rendered once logged in. */
+export function AuthLinks({
   variant = "desktop",
   onNavigate,
 }: {
-  variant?: "desktop" | "mobile";
+  variant?: Variant;
   onNavigate?: () => void;
 }) {
-  const { user, displayName, loading } = useSupabaseUser();
+  const { user, loading } = useSupabaseUser();
   const unreadCount = useUnreadNotificationCount(user);
-  const router = useRouter();
 
-  async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    onNavigate?.();
-    router.push("/");
-    router.refresh();
-  }
+  if (loading || !user) return null;
 
-  if (loading) return null;
-
-  const linkClass =
-    variant === "mobile"
-      ? "block px-5 py-4 text-base font-semibold text-foreground/80 transition-colors hover:bg-surface-muted hover:text-primary"
-      : "transition-colors hover:text-primary";
-
-  if (!user) {
-    return (
-      <Link href="/login" onClick={onNavigate} className={linkClass}>
-        Log In
-      </Link>
-    );
-  }
+  const linkClass = linkClassFor(variant);
 
   return (
     <>
@@ -51,13 +40,63 @@ export default function AuthStatus({
       <Link href="/settings" onClick={onNavigate} className={linkClass}>
         Settings
       </Link>
-      <button
-        type="button"
-        onClick={handleLogout}
-        className={`${linkClass} ${variant === "mobile" ? "w-full text-left" : "bg-transparent"}`}
-      >
-        Log Out{displayName ? ` (${displayName})` : ""}
-      </button>
+    </>
+  );
+}
+
+/** "Log In" link when logged out, or "Log Out (name)" button when logged in. */
+export function AuthSessionAction({
+  variant = "desktop",
+  onNavigate,
+}: {
+  variant?: Variant;
+  onNavigate?: () => void;
+}) {
+  const { user, displayName, loading } = useSupabaseUser();
+  const router = useRouter();
+
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    onNavigate?.();
+    router.push("/");
+    router.refresh();
+  }
+
+  if (loading) return null;
+
+  const linkClass = linkClassFor(variant);
+
+  if (!user) {
+    return (
+      <Link href="/login" onClick={onNavigate} className={linkClass}>
+        Log In
+      </Link>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleLogout}
+      className={`${linkClass} ${variant === "mobile" ? "w-full text-left" : "bg-transparent"}`}
+    >
+      Log Out{displayName ? ` (${displayName})` : ""}
+    </button>
+  );
+}
+
+export default function AuthStatus({
+  variant = "desktop",
+  onNavigate,
+}: {
+  variant?: Variant;
+  onNavigate?: () => void;
+}) {
+  return (
+    <>
+      <AuthLinks variant={variant} onNavigate={onNavigate} />
+      <AuthSessionAction variant={variant} onNavigate={onNavigate} />
     </>
   );
 }

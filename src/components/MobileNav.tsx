@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import AuthStatus from "./AuthStatus";
+import { AuthLinks, AuthSessionAction } from "./AuthStatus";
 
 export default function MobileNav() {
   const [open, setOpen] = useState(false);
@@ -63,21 +63,38 @@ export default function MobileNav() {
             />
 
             <div
-              className={`fixed inset-y-0 right-0 z-50 flex w-72 max-w-[80%] flex-col divide-y divide-border overflow-y-auto bg-surface shadow-xl transition-transform duration-300 ease-out ${
+              className={`fixed inset-y-0 right-0 z-50 flex w-64 max-w-[75%] flex-col overflow-y-auto bg-surface shadow-xl transition-transform duration-300 ease-out ${
                 open ? "translate-x-0" : "pointer-events-none translate-x-full"
               }`}
             >
-              <div className="h-16 shrink-0" />
-              <Link href="/reviews" onClick={() => setOpen(false)} className={linkClass}>
-                Reviews
-              </Link>
-              <Link href="/about" onClick={() => setOpen(false)} className={linkClass}>
-                About
-              </Link>
-              <Link href="/locked" onClick={() => setOpen(false)} className={linkClass}>
-                Locked
-              </Link>
-              <AuthStatus variant="mobile" onNavigate={() => setOpen(false)} />
+              <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
+                <span className="text-sm font-semibold uppercase tracking-wide text-foreground/50">
+                  Menu
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  aria-label="Close menu"
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-foreground/70 hover:bg-surface-muted hover:text-primary"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
+                    <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </div>
+              <div className="flex flex-col divide-y divide-border">
+                <Link href="/reviews" onClick={() => setOpen(false)} className={linkClass}>
+                  Reviews
+                </Link>
+                <Link href="/locked" onClick={() => setOpen(false)} className={linkClass}>
+                  Locked
+                </Link>
+                <AuthLinks variant="mobile" onNavigate={() => setOpen(false)} />
+                <Link href="/about" onClick={() => setOpen(false)} className={linkClass}>
+                  About
+                </Link>
+                <AuthSessionAction variant="mobile" onNavigate={() => setOpen(false)} />
+              </div>
             </div>
           </>,
           document.body
