@@ -12,6 +12,18 @@
   --border: #e7dcc9;
 }
 
+:root[data-theme="dark"] {
+  --background: #17130f;
+  --foreground: #f3ece0;
+  --surface: #221c17;
+  --surface-muted: #2b2420;
+  --primary: #ef4459;
+  --primary-dark: #c8102e;
+  --accent: #d99a4e;
+  --accent-light: #e8b56f;
+  --border: #3a322b;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

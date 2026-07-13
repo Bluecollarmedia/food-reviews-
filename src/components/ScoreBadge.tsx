@@ -1,9 +1,3 @@
-function scoreColor(score: number) {
-  if (score >= 8) return "bg-emerald-600";
-  if (score >= 6) return "bg-amber-500";
-  return "bg-primary";
-}
-
 export default function ScoreBadge({
   rating,
   size = "md",
@@ -22,7 +16,7 @@ export default function ScoreBadge({
 
   return (
     <div
-      className={`flex flex-col items-center justify-center rounded-full font-display leading-none text-white shadow-sm ${dims.badge} ${scoreColor(rating)}`}
+      className={`flex flex-col items-center justify-center rounded-full bg-amber-500 font-display leading-none text-white shadow-sm ${dims.badge}`}
     >
       <span>{display}</span>
       <span className={`${dims.sub} font-sans font-semibold opacity-80`}>/10</span>

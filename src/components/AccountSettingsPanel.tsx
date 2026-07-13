@@ -2,13 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useSupabaseUser } from "@/lib/use-supabase-user";
 import { uploadAvatar } from "@/lib/upload-avatar";
 import { getPublicFileUrl } from "@/lib/media-url";
 import ImageCropper from "./ImageCropper";
 
-export default function AccountSettingsPanel() {
+export default function AccountSettingsPanel({
+  redirectIfLoggedOut = true,
+}: {
+  redirectIfLoggedOut?: boolean;
+} = {}) {
   const router = useRouter();
   const { user, loading } = useSupabaseUser();
   const [emailNotifications, setEmailNotifications] = useState(false);
@@ -25,7 +30,9 @@ export default function AccountSettingsPanel() {
   useEffect(() => {
     if (loading) return;
     if (!user) {
-      router.push("/login?redirect=/account?tab=settings");
+      if (redirectIfLoggedOut) {
+        router.push("/login?redirect=/account?tab=settings");
+      }
       return;
     }
     const supabase = createClient();
@@ -45,7 +52,7 @@ export default function AccountSettingsPanel() {
           setReady(true);
         }
       );
-  }, [loading, user, router]);
+  }, [loading, user, router, redirectIfLoggedOut]);
 
   async function handleToggle() {
     if (!user) return;
@@ -101,7 +108,21 @@ export default function AccountSettingsPanel() {
     router.refresh();
   }
 
-  if (loading || !ready) return null;
+  if (loading) return null;
+
+  if (!user) {
+    if (redirectIfLoggedOut) return null;
+    return (
+      <div className="rounded-2xl border border-border bg-surface p-4 text-sm text-foreground/70">
+        <Link href="/login?redirect=/settings" className="font-semibold text-primary hover:underline">
+          Log in
+        </Link>{" "}
+        to manage your account, profile picture, and notifications.
+      </div>
+    );
+  }
+
+  if (!ready) return null;
 
   return (
     <div>
