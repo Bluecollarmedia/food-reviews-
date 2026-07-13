@@ -1,5 +1,7 @@
 import Link from "next/link";
 import VideoCard from "@/components/VideoCard";
+import ProtectedBanner from "@/components/ProtectedBanner";
+import AnimatedHero from "@/components/AnimatedHero";
 import { listPublishedReviews } from "@/lib/reviews-store";
 
 export const dynamic = "force-dynamic";
@@ -13,24 +15,10 @@ export default async function Home() {
   return (
     <div className="flex flex-1 flex-col">
       <div className="mx-auto w-full max-w-6xl px-5 pt-6">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/images/brand/banner-desktop.webp"
-          alt="D&S Food Reviews — David and Shmuel"
-          className="block h-auto w-full rounded-3xl"
-        />
+        <ProtectedBanner src="/images/brand/banner-desktop.webp" alt="D&S Food Reviews — David and Shmuel" />
       </div>
 
-      <section className="mt-8 px-5 py-10 text-center">
-        <h1 className="font-display text-3xl tracking-wide text-foreground sm:text-4xl">
-          Honest. Brutal. Non-Biased.
-        </h1>
-        <p className="mx-auto mt-3 max-w-xl text-foreground/70">
-          David &amp; Shmuel taste it, argue about it, and tell you exactly
-          what to skip and what's worth the drive &mdash; no sponsorships,
-          no sugarcoating.
-        </p>
-      </section>
+      <AnimatedHero />
 
       <section className="mx-auto w-full max-w-4xl flex-1 px-5 py-12">
         <h2 className="font-display text-3xl tracking-wide text-foreground">
