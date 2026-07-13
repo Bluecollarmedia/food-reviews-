@@ -1,5 +1,4 @@
 import Link from "next/link";
-import ScoreBadge from "./ScoreBadge";
 import { getPublicFileUrl } from "@/lib/media-url";
 import type { Review } from "@/lib/data";
 
@@ -16,9 +15,7 @@ function Thumbnail({
 }) {
   return (
     <div
-      className={`relative flex aspect-video items-center justify-center overflow-hidden bg-gradient-to-br from-primary to-accent bg-cover bg-center ${
-        compact ? "rounded-2xl" : ""
-      }`}
+      className="relative flex aspect-video items-center justify-center overflow-hidden bg-gradient-to-br from-primary to-accent bg-cover bg-center"
       style={thumbnailUrl ? { backgroundImage: `url(${thumbnailUrl})` } : undefined}
     >
       {!thumbnailUrl && (
@@ -70,54 +67,28 @@ export default function VideoCard({
 }) {
   const thumbnailUrl = getPublicFileUrl(review.thumbnailKey);
 
-  if (!compact) {
-    return (
-      <Link href={`/videos/${review.slug}`} className="group flex flex-col">
-        <Thumbnail review={review} thumbnailUrl={thumbnailUrl} progressPercent={progressPercent} compact={false} />
-        <div className="flex gap-3 py-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-light font-display text-sm text-white">
-            {review.reviewer.charAt(0).toUpperCase()}
-          </span>
-          <div className="min-w-0 flex-1">
-            <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
-              {review.title}
-            </h3>
-            <p className="mt-1 text-xs text-foreground/60">
-              {review.reviewer} &middot; {review.rating}/10 &middot; {review.city}
-            </p>
-          </div>
-        </div>
-      </Link>
-    );
-  }
-
   return (
-    <Link
-      href={`/videos/${review.slug}`}
-      className="group flex flex-col overflow-hidden rounded-3xl bg-surface shadow-sm transition-shadow hover:shadow-md"
-    >
-      <Thumbnail review={review} thumbnailUrl={thumbnailUrl} progressPercent={progressPercent} compact />
-      <div className="flex flex-1 flex-col gap-1.5 p-2.5">
-        <div className="flex flex-wrap gap-1.5">
-          {review.categories.map((c) => (
-            <span
-              key={c}
-              className="rounded-full bg-surface-muted px-2.5 py-0.5 text-xs font-semibold text-accent"
-            >
-              {c}
-            </span>
-          ))}
-        </div>
-        <h3 className="line-clamp-2 font-display text-base leading-tight tracking-wide text-foreground">
-          {review.title}
-        </h3>
-        <p className="truncate text-sm text-foreground/60">
-          {review.store} &middot; {review.city}
-          {review.price ? ` · ${review.price}` : ""}
-        </p>
-        <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-2">
-          <ScoreBadge rating={review.rating} size="sm" />
-          <span className="truncate text-xs font-medium text-foreground/50">by {review.reviewer}</span>
+    <Link href={`/videos/${review.slug}`} className="group flex flex-col">
+      <Thumbnail review={review} thumbnailUrl={thumbnailUrl} progressPercent={progressPercent} compact={compact} />
+      <div className={`flex ${compact ? "gap-2 py-2" : "gap-3 py-3"}`}>
+        <span
+          className={`flex shrink-0 items-center justify-center rounded-full bg-accent-light font-display text-white ${
+            compact ? "h-6 w-6 text-xs" : "h-9 w-9 text-sm"
+          }`}
+        >
+          {review.reviewer.charAt(0).toUpperCase()}
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3
+            className={`line-clamp-2 font-semibold leading-snug text-foreground ${
+              compact ? "text-xs" : "text-sm"
+            }`}
+          >
+            {review.title}
+          </h3>
+          <p className={`mt-1 truncate text-foreground/60 ${compact ? "text-[10px]" : "text-xs"}`}>
+            {review.reviewer} &middot; {review.rating}/10 &middot; {review.city}
+          </p>
         </div>
       </div>
     </Link>
