@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { getPublicFileUrl } from "@/lib/media-url";
 import { relativeTime } from "@/lib/time";
@@ -110,13 +109,7 @@ export default function AdminAllComments({ reviewTitles }: { reviewTitles: Recor
               )}
 
               <div className="mt-1.5 flex flex-wrap items-center gap-3">
-                <Link
-                  href={`/videos/${row.slug}/comments#comment-${row.id}`}
-                  target="_blank"
-                  className="rounded-full border border-border px-2.5 py-1 text-xs font-semibold text-foreground/60 hover:border-primary hover:text-primary"
-                >
-                  {videoTitle}
-                </Link>
+                <span className="text-xs font-semibold text-foreground/50">{videoTitle}</span>
                 <button
                   onClick={() => handleDelete(row)}
                   disabled={busyId === row.id}

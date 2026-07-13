@@ -18,25 +18,23 @@ export default function AdminCommentsPanel({ slug }: { slug: string }) {
     setBusyId(null);
   }
 
-  function renderComment(c: Comment, small = false) {
+  function renderComment(c: Comment, indent = false) {
     return (
-      <div
-        className={`flex items-start justify-between gap-3 rounded-2xl border border-border bg-surface ${small ? "p-3" : "p-4"}`}
-      >
-        <div>
-          <div className="flex items-center gap-2">
-            <span className={`font-semibold text-foreground ${small ? "text-xs" : "text-sm"}`}>
+      <div className={`flex items-start justify-between gap-3 py-3 ${indent ? "pl-6" : ""}`}>
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`font-semibold text-foreground ${indent ? "text-xs" : "text-sm"}`}>
               {c.authorName}
             </span>
-            <span className="text-xs text-foreground/50">{relativeTime(c.createdAt)}</span>
+            <span className="text-xs text-foreground/40">{relativeTime(c.createdAt)}</span>
             {c.isGuest && (
-              <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-[10px] font-semibold text-foreground/50">
+              <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-semibold text-foreground/50">
                 Guest
               </span>
             )}
           </div>
           {c.message && (
-            <p className={`mt-1 text-foreground/80 ${small ? "text-xs" : "text-sm"}`}>{c.message}</p>
+            <p className={`mt-0.5 text-foreground/80 ${indent ? "text-xs" : "text-sm"}`}>{c.message}</p>
           )}
           {c.imageUrl && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -46,7 +44,7 @@ export default function AdminCommentsPanel({ slug }: { slug: string }) {
         <button
           onClick={() => handleDelete(c.id)}
           disabled={busyId === c.id}
-          className="shrink-0 rounded-full border border-primary px-3 py-1 text-xs font-semibold text-primary hover:bg-primary hover:text-white disabled:opacity-50"
+          className="shrink-0 text-xs font-semibold text-primary hover:underline disabled:opacity-50"
         >
           Delete
         </button>
@@ -60,26 +58,24 @@ export default function AdminCommentsPanel({ slug }: { slug: string }) {
         Comments {comments ? `(${count})` : ""}
       </h2>
 
-      <ul className="mt-4 flex flex-col gap-3">
+      <div className="mt-2 flex flex-col divide-y divide-border">
         {comments === null && (
-          <li className="text-sm text-foreground/60">Loading comments...</li>
+          <p className="py-3 text-sm text-foreground/60">Loading comments...</p>
         )}
         {comments?.map((c) => (
-          <li key={c.id} className="flex flex-col gap-2">
+          <div key={c.id}>
             {renderComment(c)}
-            {c.replies.length > 0 && (
-              <ul className="ml-6 flex flex-col gap-2 border-l-2 border-border pl-3">
-                {c.replies.map((r) => (
-                  <li key={r.id}>{renderComment(r, true)}</li>
-                ))}
-              </ul>
-            )}
-          </li>
+            {c.replies.map((r) => (
+              <div key={r.id} className="border-t border-border/60">
+                {renderComment(r, true)}
+              </div>
+            ))}
+          </div>
         ))}
         {comments?.length === 0 && (
-          <li className="text-sm text-foreground/60">No comments on this review yet.</li>
+          <p className="py-3 text-sm text-foreground/60">No comments on this review yet.</p>
         )}
-      </ul>
+      </div>
     </div>
   );
 }

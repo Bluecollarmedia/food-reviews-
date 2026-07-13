@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { listAllReviews } from "@/lib/reviews-store";
 import { relativeTime } from "@/lib/time";
 
 export const dynamic = "force-dynamic";
@@ -7,11 +8,16 @@ export const dynamic = "force-dynamic";
 export default async function AdminNotificationsPage() {
   const supabase = createAdminClient();
 
-  const { data: notifications } = await supabase
-    .from("admin_notifications")
-    .select("id, type, slug, comment_id, message, read, created_at")
-    .order("created_at", { ascending: false })
-    .limit(100);
+  const [{ data: notifications }, reviews] = await Promise.all([
+    supabase
+      .from("admin_notifications")
+      .select("id, type, slug, comment_id, message, read, created_at")
+      .order("created_at", { ascending: false })
+      .limit(100),
+    listAllReviews(),
+  ]);
+
+  const reviewTitles = Object.fromEntries(reviews.map((r) => [r.slug, r.title]));
 
   const unreadIds = (notifications ?? []).filter((n) => !n.read).map((n) => n.id);
   if (unreadIds.length > 0) {
@@ -30,32 +36,22 @@ export default async function AdminNotificationsPage() {
       {!notifications || notifications.length === 0 ? (
         <p className="mt-12 text-center text-foreground/60">No comment activity yet.</p>
       ) : (
-        <ul className="mt-6 flex flex-col gap-3">
+        <div className="mt-4 flex flex-col divide-y divide-border">
           {notifications.map((n) => (
-            <li key={n.id}>
-              <Link
-                href={
-                  n.comment_id
-                    ? `/videos/${n.slug}/comments#comment-${n.comment_id}`
-                    : `/videos/${n.slug}`
-                }
-                target="_blank"
-                rel="noreferrer"
-                className={`block rounded-2xl border p-4 transition-colors hover:border-primary ${
-                  n.read ? "border-border bg-surface" : "border-primary bg-primary/5"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-semibold text-foreground">
-                    {n.type === "new_reply" ? "New reply" : "New comment"}
+            <div key={n.id} className={`py-3 ${n.read ? "" : "bg-primary/5"}`}>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-semibold text-foreground">
+                  {n.type === "new_reply" ? "New reply" : "New comment"}
+                  <span className="ml-2 font-normal text-foreground/50">
+                    on {reviewTitles[n.slug] ?? n.slug}
                   </span>
-                  <span className="text-xs text-foreground/40">{relativeTime(n.created_at)}</span>
-                </div>
-                <p className="mt-1 text-sm text-foreground/70">{n.message}</p>
-              </Link>
-            </li>
+                </span>
+                <span className="text-xs text-foreground/40">{relativeTime(n.created_at)}</span>
+              </div>
+              <p className="mt-0.5 text-sm text-foreground/70">{n.message}</p>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );
