@@ -540,24 +540,6 @@ export default function ReviewForm({ mode, initial }: Props) {
           </div>
         </div>
 
-        {hasSecondReviewer && (
-          <div>
-            <label className="mb-1 block text-sm font-semibold text-foreground">
-              {secondReviewer ? `${secondReviewer}'s rating (1-10)` : "Second reviewer's rating (1-10)"}
-            </label>
-            <input
-              type="number"
-              min={1}
-              max={10}
-              step={0.1}
-              value={secondReviewerRating}
-              onChange={(e) => setSecondReviewerRating(e.target.value)}
-              placeholder="Leave blank to reuse the first rating"
-              className={inputClass}
-            />
-          </div>
-        )}
-
         <div>
           <label className="mb-1 block text-sm font-semibold text-foreground">
             Reviewer
@@ -680,6 +662,21 @@ export default function ReviewForm({ mode, initial }: Props) {
                   className={`${inputClass} mt-2 max-w-xs`}
                 />
               )}
+              <div className="mt-3 max-w-xs">
+                <label className="mb-1 block text-sm font-semibold text-foreground">
+                  {secondReviewer ? `${secondReviewer}'s rating (1-10)` : "Second reviewer's rating (1-10)"}
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  step={0.1}
+                  value={secondReviewerRating}
+                  onChange={(e) => setSecondReviewerRating(e.target.value)}
+                  placeholder="Leave blank to reuse the first rating"
+                  className={inputClass}
+                />
+              </div>
             </>
           )}
         </div>
