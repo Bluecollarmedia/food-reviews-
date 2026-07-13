@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { categories, type Review, type Reviewer } from "@/lib/data";
+import { categories, reviewers, type Review, type Reviewer } from "@/lib/data";
 import VideoCard from "./VideoCard";
 
 const PAGE_SIZE = 6;
@@ -18,11 +18,6 @@ export default function ReviewsExplorer({
   const [query, setQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-
-  const reviewerOptions = useMemo(
-    () => [...new Set(reviews.map((r) => r.reviewer))].sort(),
-    [reviews]
-  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -106,7 +101,7 @@ export default function ReviewsExplorer({
           className="ml-4 shrink-0 bg-transparent pb-2.5 text-sm font-semibold text-foreground/60 outline-none"
         >
           <option value="All">All Reviewers</option>
-          {reviewerOptions.map((r) => (
+          {reviewers.map((r) => (
             <option key={r} value={r}>
               {r}
             </option>
