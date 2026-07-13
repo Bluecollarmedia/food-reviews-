@@ -20,8 +20,19 @@ export default function AdminNav({ unreadNotifications = 0 }: { unreadNotificati
   ];
 
   return (
-    <nav className="border-b border-border bg-surface">
-      <div className="mx-auto flex max-w-3xl gap-1 overflow-x-auto px-5">
+    <div className="border-b border-border bg-surface">
+      <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-3">
+        <span className="font-display text-lg tracking-wide text-foreground">
+          D&amp;S Admin
+        </span>
+        <Link
+          href="/"
+          className="text-sm font-semibold text-foreground/60 hover:text-primary"
+        >
+          &larr; Back to Main Site
+        </Link>
+      </div>
+      <nav className="mx-auto flex max-w-3xl gap-1 overflow-x-auto px-5">
         {links.map((link) => {
           const active = link.href === "/admin" ? pathname === "/admin" : pathname.startsWith(link.href);
           return (
@@ -38,7 +49,7 @@ export default function AdminNav({ unreadNotifications = 0 }: { unreadNotificati
             </Link>
           );
         })}
-      </div>
-    </nav>
+      </nav>
+    </div>
   );
 }
