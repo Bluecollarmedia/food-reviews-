@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateReview, deleteReview, getReview, type ReviewInput } from "@/lib/reviews-store";
 import { deleteFile } from "@/lib/r2";
+import { notifyNewUpload } from "@/lib/notify";
 
 export async function PUT(
   req: NextRequest,
@@ -26,10 +27,20 @@ export async function PUT(
     );
   }
 
+  const existing = await getReview(slug);
   const review = await updateReview(slug, body);
   if (!review) {
     return NextResponse.json({ error: "Review not found." }, { status: 404 });
   }
+
+  if (review.status === "published" && existing?.status !== "published") {
+    notifyNewUpload({
+      origin: req.nextUrl.origin,
+      slug: review.slug,
+      title: review.title,
+    }).catch(() => {});
+  }
+
   return NextResponse.json({ review });
 }
 

@@ -65,3 +65,37 @@ export async function notifyByEmail({
     html: `<p>${preview}</p><p><a href="${videoUrl}">View the reply</a></p>`,
   });
 }
+
+export async function notifyNewUpload({
+  origin,
+  slug,
+  title,
+}: {
+  origin: string;
+  slug: string;
+  title: string;
+}) {
+  const supabase = createAdminClient();
+  const videoUrl = `${origin}/videos/${slug}`;
+
+  const { data: subscribers } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("new_upload_notifications", true);
+
+  if (!subscribers || subscribers.length === 0) return;
+
+  await Promise.all(
+    subscribers.map(async ({ id }) => {
+      const { data: userResult } = await supabase.auth.admin.getUserById(id);
+      const email = userResult?.user?.email;
+      if (!email) return;
+
+      await sendEmail({
+        to: email,
+        subject: `New review: ${title}`,
+        html: `<p>A new review just went up: <strong>${escapeHtml(title)}</strong></p><p><a href="${videoUrl}">Watch it</a></p>`,
+      });
+    })
+  );
+}

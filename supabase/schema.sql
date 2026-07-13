@@ -114,6 +114,9 @@ create policy "Users can update their own watch history"
 alter table public.profiles add column if not exists email_notifications boolean not null default false;
 alter table public.profiles add column if not exists is_admin boolean not null default false;
 
+-- Whether this viewer wants an email whenever a new review is published.
+alter table public.profiles add column if not exists new_upload_notifications boolean not null default false;
+
 -- R2 object key for the user's profile picture (shown next to their comments).
 alter table public.profiles add column if not exists avatar_key text;
 

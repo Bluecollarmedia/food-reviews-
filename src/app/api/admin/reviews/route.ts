@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createReview, type ReviewInput } from "@/lib/reviews-store";
+import { notifyNewUpload } from "@/lib/notify";
 
 export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as ReviewInput | null;
@@ -22,5 +23,14 @@ export async function POST(req: NextRequest) {
   }
 
   const review = await createReview(body);
+
+  if (review.status === "published") {
+    notifyNewUpload({
+      origin: req.nextUrl.origin,
+      slug: review.slug,
+      title: review.title,
+    }).catch(() => {});
+  }
+
   return NextResponse.json({ review });
 }

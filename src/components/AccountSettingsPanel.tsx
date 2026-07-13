@@ -18,6 +18,7 @@ export default function AccountSettingsPanel({
   const router = useRouter();
   const { user, loading } = useSupabaseUser();
   const [emailNotifications, setEmailNotifications] = useState(false);
+  const [newUploadNotifications, setNewUploadNotifications] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [ready, setReady] = useState(false);
@@ -39,16 +40,21 @@ export default function AccountSettingsPanel({
     const supabase = createClient();
     supabase
       .from("profiles")
-      .select("email_notifications, avatar_key")
+      .select("email_notifications, new_upload_notifications, avatar_key")
       .eq("id", user.id)
       .single()
       .then(
         ({
           data,
         }: {
-          data: { email_notifications: boolean; avatar_key: string | null } | null;
+          data: {
+            email_notifications: boolean;
+            new_upload_notifications: boolean;
+            avatar_key: string | null;
+          } | null;
         }) => {
           setEmailNotifications(data?.email_notifications ?? false);
+          setNewUploadNotifications(data?.new_upload_notifications ?? false);
           setAvatarUrl(getPublicFileUrl(data?.avatar_key));
           setReady(true);
         }
@@ -64,6 +70,21 @@ export default function AccountSettingsPanel({
 
     const supabase = createClient();
     await supabase.from("profiles").update({ email_notifications: next }).eq("id", user.id);
+
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  async function handleNewUploadToggle() {
+    if (!user) return;
+    const next = !newUploadNotifications;
+    setNewUploadNotifications(next);
+    setSaving(true);
+    setSaved(false);
+
+    const supabase = createClient();
+    await supabase.from("profiles").update({ new_upload_notifications: next }).eq("id", user.id);
 
     setSaving(false);
     setSaved(true);
@@ -176,6 +197,30 @@ export default function AccountSettingsPanel({
           <span
             className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-transform ${
               emailNotifications ? "translate-x-5" : "translate-x-0"
+            }`}
+          />
+        </button>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between rounded-2xl border border-border bg-surface p-4">
+        <div>
+          <p className="text-sm font-semibold text-foreground">New video alerts</p>
+          <p className="mt-0.5 text-xs text-foreground/60">
+            Get an email whenever David or Shmuel publish a new review.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleNewUploadToggle}
+          disabled={saving}
+          aria-pressed={newUploadNotifications}
+          className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
+            newUploadNotifications ? "bg-primary" : "bg-foreground/20"
+          }`}
+        >
+          <span
+            className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-transform ${
+              newUploadNotifications ? "translate-x-5" : "translate-x-0"
             }`}
           />
         </button>
