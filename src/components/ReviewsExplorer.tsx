@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { categories, type Review, type Reviewer } from "@/lib/data";
-import VideoCardCompact from "./VideoCardCompact";
+import VideoCard from "./VideoCard";
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 6;
 
 export default function ReviewsExplorer({ reviews }: { reviews: Review[] }) {
   const [category, setCategory] = useState<string>("All");
@@ -108,9 +108,9 @@ export default function ReviewsExplorer({ reviews }: { reviews: Review[] }) {
         ))}
       </div>
 
-      <div className="mt-8 grid grid-cols-3 gap-3 sm:gap-5">
+      <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {visible.map((review) => (
-          <VideoCardCompact key={review.slug} review={review} />
+          <VideoCard key={review.slug} review={review} />
         ))}
       </div>
 

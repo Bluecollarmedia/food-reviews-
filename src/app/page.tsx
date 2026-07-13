@@ -1,10 +1,10 @@
 import Link from "next/link";
-import VideoCardCompact from "@/components/VideoCardCompact";
+import VideoCard from "@/components/VideoCard";
 import { listPublishedReviews } from "@/lib/reviews-store";
 
 export const dynamic = "force-dynamic";
 
-const TEASER_COUNT = 3;
+const TEASER_COUNT = 2;
 
 export default async function Home() {
   const reviews = await listPublishedReviews();
@@ -12,14 +12,16 @@ export default async function Home() {
 
   return (
     <div className="flex flex-1 flex-col">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/images/brand/banner-desktop.webp"
-        alt="D&S Food Reviews — David and Shmuel"
-        className="block h-auto w-full"
-      />
+      <div className="mx-auto w-full max-w-6xl px-5 pt-6">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/brand/banner-desktop.webp"
+          alt="D&S Food Reviews — David and Shmuel"
+          className="block h-auto w-full rounded-3xl"
+        />
+      </div>
 
-      <section className="border-b border-border bg-surface px-5 py-10 text-center">
+      <section className="mt-8 px-5 py-10 text-center">
         <h1 className="font-display text-3xl tracking-wide text-foreground sm:text-4xl">
           Honest. Brutal. Non-Biased.
         </h1>
@@ -39,9 +41,9 @@ export default async function Home() {
         </p>
 
         {teaser.length > 0 ? (
-          <div className="mt-6 grid grid-cols-3 gap-3 sm:gap-6">
+          <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
             {teaser.map((review) => (
-              <VideoCardCompact key={review.slug} review={review} />
+              <VideoCard key={review.slug} review={review} />
             ))}
           </div>
         ) : (
