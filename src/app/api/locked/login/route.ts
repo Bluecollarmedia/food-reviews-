@@ -10,16 +10,7 @@ export async function POST(req: NextRequest) {
   const passcode = typeof body?.passcode === "string" ? body.passcode.trim() : "";
 
   if (!passcode || passcode !== process.env.LOCKED_PASSCODE) {
-    return NextResponse.json(
-      {
-        error: "Incorrect passcode.",
-        debug: {
-          received: passcode,
-          expected: process.env.LOCKED_PASSCODE ?? "(unset)",
-        },
-      },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: "Incorrect passcode." }, { status: 401 });
   }
 
   const token = await createSessionToken(

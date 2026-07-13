@@ -8,14 +8,12 @@ function LockedLoginForm() {
   const searchParams = useSearchParams();
   const [passcode, setPasscode] = useState("");
   const [error, setError] = useState("");
-  const [debugInfo, setDebugInfo] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setError("");
-    setDebugInfo(null);
 
     const res = await fetch("/api/locked/login", {
       method: "POST",
@@ -26,7 +24,6 @@ function LockedLoginForm() {
     if (!res.ok) {
       const data = await res.json().catch(() => null);
       setError(data?.error ?? "Something went wrong.");
-      if (data?.debug) setDebugInfo(JSON.stringify(data.debug, null, 2));
       setSubmitting(false);
       return;
     }
@@ -57,11 +54,6 @@ function LockedLoginForm() {
           className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
         />
         {error && <p className="text-sm text-primary">{error}</p>}
-        {debugInfo && (
-          <pre className="overflow-x-auto whitespace-pre-wrap rounded-lg border border-primary bg-black p-3 text-xs text-emerald-400">
-            {debugInfo}
-          </pre>
-        )}
         <button
           type="submit"
           disabled={submitting}
