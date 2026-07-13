@@ -30,6 +30,12 @@ export default async function AdminPage() {
             Notifications{unreadCount ? ` (${unreadCount})` : ""}
           </Link>
           <Link
+            href="/admin/comments"
+            className="rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground/70 hover:border-primary hover:text-primary"
+          >
+            All Comments
+          </Link>
+          <Link
             href="/admin/settings"
             className="rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground/70 hover:border-primary hover:text-primary"
           >
