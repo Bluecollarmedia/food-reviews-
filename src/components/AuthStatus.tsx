@@ -14,7 +14,7 @@ function linkClassFor(variant: Variant) {
     : "transition-colors hover:text-primary";
 }
 
-/** Notifications / Watch History / Settings — only rendered once logged in. */
+/** Account (notifications + watch history + settings, all in one place) — only rendered once logged in. */
 export function AuthLinks({
   variant = "desktop",
   onNavigate,
@@ -30,17 +30,9 @@ export function AuthLinks({
   const linkClass = linkClassFor(variant);
 
   return (
-    <>
-      <Link href="/notifications" onClick={onNavigate} className={linkClass}>
-        Notifications{unreadCount > 0 ? ` (${unreadCount})` : ""}
-      </Link>
-      <Link href="/history" onClick={onNavigate} className={linkClass}>
-        Watch History
-      </Link>
-      <Link href="/settings" onClick={onNavigate} className={linkClass}>
-        Settings
-      </Link>
-    </>
+    <Link href="/account" onClick={onNavigate} className={linkClass}>
+      Account{unreadCount > 0 ? ` (${unreadCount})` : ""}
+    </Link>
   );
 }
 
