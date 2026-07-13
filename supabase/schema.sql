@@ -73,6 +73,12 @@ create policy "Users can delete their own comments"
   on public.comments for delete
   using (auth.uid() = user_id);
 
+drop policy if exists "Users can edit their own comments" on public.comments;
+create policy "Users can edit their own comments"
+  on public.comments for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
 -- Per-user watch history, one row per (user, video), updated on every rewatch.
 -- progress_seconds / duration_seconds power a YouTube-style "watched" progress bar.
 create table if not exists public.watch_history (
