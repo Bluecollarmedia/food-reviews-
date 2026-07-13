@@ -96,7 +96,7 @@ export default function MobileNav() {
               }`}
             >
               <div className="h-16 shrink-0" />
-              <div className="flex flex-1 flex-col justify-center gap-0.5 overflow-y-auto px-6 pb-16">
+              <div className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-6 pt-6 pb-16">
                 {user && (
                   <div
                     className={`mb-6 flex items-center gap-3 transition-all duration-300 ${
