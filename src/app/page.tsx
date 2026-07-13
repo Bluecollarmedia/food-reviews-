@@ -1,16 +1,13 @@
 import Link from "next/link";
-import VideoCard from "@/components/VideoCard";
 import ProtectedBanner from "@/components/ProtectedBanner";
 import AnimatedHero from "@/components/AnimatedHero";
+import HomeTeaser from "@/components/HomeTeaser";
 import { listPublishedReviews } from "@/lib/reviews-store";
 
 export const dynamic = "force-dynamic";
 
-const TEASER_COUNT = 2;
-
 export default async function Home() {
   const reviews = await listPublishedReviews();
-  const teaser = reviews.slice(0, TEASER_COUNT);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -28,12 +25,8 @@ export default async function Home() {
           Videos are on the way — here's a preview of what's coming.
         </p>
 
-        {teaser.length > 0 ? (
-          <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
-            {teaser.map((review) => (
-              <VideoCard key={review.slug} review={review} />
-            ))}
-          </div>
+        {reviews.length > 0 ? (
+          <HomeTeaser reviews={reviews} />
         ) : (
           <p className="mt-6 text-foreground/60">
             No reviews yet — check back soon.
