@@ -14,12 +14,11 @@ function rateLimitStore() {
 }
 
 export function getClientIp(req: NextRequest): string {
-  const nfIp = req.headers.get("x-nf-client-connection-ip");
-  const forwardedFor = req.headers.get("x-forwarded-for");
-  const ip = nfIp || forwardedFor?.split(",")[0]?.trim() || "unknown";
-  // TEMP DIAGNOSTIC: remove once we confirm the rate limiter keys correctly.
-  console.log("[rate-limit] getClientIp", { nfIp, forwardedFor, resolved: ip });
-  return ip;
+  return (
+    req.headers.get("x-nf-client-connection-ip") ||
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    "unknown"
+  );
 }
 
 export async function checkRateLimit(
@@ -29,9 +28,6 @@ export async function checkRateLimit(
     const store = rateLimitStore();
     const record = (await store.get(key, { type: "json" })) as Record | null;
     const now = Date.now();
-
-    // TEMP DIAGNOSTIC: remove once we confirm the rate limiter keys correctly.
-    console.log("[rate-limit] checkRateLimit", { key, record, now });
 
     if (record && now - record.firstAttemptAt < WINDOW_MS && record.count >= MAX_ATTEMPTS) {
       const retryAfterSeconds = Math.ceil((record.firstAttemptAt + WINDOW_MS - now) / 1000);
@@ -54,9 +50,6 @@ export async function recordFailedAttempt(key: string): Promise<void> {
       record && now - record.firstAttemptAt < WINDOW_MS
         ? { count: record.count + 1, firstAttemptAt: record.firstAttemptAt }
         : { count: 1, firstAttemptAt: now };
-
-    // TEMP DIAGNOSTIC: remove once we confirm the rate limiter keys correctly.
-    console.log("[rate-limit] recordFailedAttempt", { key, before: record, after: next });
 
     await store.setJSON(key, next);
   } catch (err) {
