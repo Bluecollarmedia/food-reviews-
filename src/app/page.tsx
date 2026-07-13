@@ -42,7 +42,7 @@ export default async function Home() {
 
         <div className="mt-8 text-center">
           <Link
-            href="/reviews"
+            href="/reviews?size=regular"
             className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
           >
             View All Reviews

@@ -6,7 +6,13 @@ import VideoCard from "./VideoCard";
 
 const PAGE_SIZE = 6;
 
-export default function ReviewsExplorer({ reviews }: { reviews: Review[] }) {
+export default function ReviewsExplorer({
+  reviews,
+  compact = true,
+}: {
+  reviews: Review[];
+  compact?: boolean;
+}) {
   const [category, setCategory] = useState<string>("All");
   const [reviewer, setReviewer] = useState<"All" | Reviewer>("All");
   const [query, setQuery] = useState("");
@@ -108,9 +114,15 @@ export default function ReviewsExplorer({ reviews }: { reviews: Review[] }) {
         ))}
       </div>
 
-      <div className="mt-8 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3">
+      <div
+        className={
+          compact
+            ? "mt-8 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3"
+            : "mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+        }
+      >
         {visible.map((review) => (
-          <VideoCard key={review.slug} review={review} />
+          <VideoCard key={review.slug} review={review} compact={compact} />
         ))}
       </div>
 

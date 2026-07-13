@@ -3,7 +3,12 @@ import { listPublishedReviews } from "@/lib/reviews-store";
 
 export const dynamic = "force-dynamic";
 
-export default async function ReviewsPage() {
+export default async function ReviewsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ size?: string }>;
+}) {
+  const { size } = await searchParams;
   const reviews = await listPublishedReviews();
 
   return (
@@ -15,7 +20,7 @@ export default async function ReviewsPage() {
         Search, filter by category, or browse by reviewer.
       </p>
       <div className="mt-6">
-        <ReviewsExplorer reviews={reviews} />
+        <ReviewsExplorer reviews={reviews} compact={size !== "regular"} />
       </div>
     </div>
   );
