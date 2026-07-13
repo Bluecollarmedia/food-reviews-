@@ -8,6 +8,7 @@ import { useSupabaseUser } from "@/lib/use-supabase-user";
 import { uploadAvatar } from "@/lib/upload-avatar";
 import { getPublicFileUrl } from "@/lib/media-url";
 import ImageCropper from "./ImageCropper";
+import ThemeToggle from "./ThemeToggle";
 
 export default function AccountSettingsPanel({
   redirectIfLoggedOut = true,
@@ -108,25 +109,32 @@ export default function AccountSettingsPanel({
     router.refresh();
   }
 
-  if (loading) return null;
+  if (!loading && user && !ready) {
+    return <ThemeToggle />;
+  }
+
+  if (loading || (!user && redirectIfLoggedOut)) {
+    return <ThemeToggle />;
+  }
 
   if (!user) {
-    if (redirectIfLoggedOut) return null;
     return (
-      <div className="rounded-2xl border border-border bg-surface p-4 text-sm text-foreground/70">
-        <Link href="/login?redirect=/settings" className="font-semibold text-primary hover:underline">
-          Log in
-        </Link>{" "}
-        to manage your account, profile picture, and notifications.
+      <div>
+        <ThemeToggle />
+        <div className="mt-6 rounded-2xl border border-border bg-surface p-4 text-sm text-foreground/70">
+          <Link href="/login?redirect=/settings" className="font-semibold text-primary hover:underline">
+            Log in
+          </Link>{" "}
+          to manage your account, profile picture, and notifications.
+        </div>
       </div>
     );
   }
 
-  if (!ready) return null;
-
   return (
     <div>
-      <div className="flex items-center gap-3">
+      <ThemeToggle />
+      <div className="mt-6 flex items-center gap-3">
         <label className="flex h-16 w-16 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-border bg-background text-foreground/40 hover:border-primary hover:text-primary">
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
