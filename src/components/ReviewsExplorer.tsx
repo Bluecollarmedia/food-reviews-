@@ -61,7 +61,7 @@ export default function ReviewsExplorer({
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [hasMore]);
+  }, [hasMore, visibleCount]);
 
   return (
     <div>
