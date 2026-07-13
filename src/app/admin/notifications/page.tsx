@@ -39,6 +39,8 @@ export default async function AdminNotificationsPage() {
                     ? `/videos/${n.slug}/comments#comment-${n.comment_id}`
                     : `/videos/${n.slug}`
                 }
+                target="_blank"
+                rel="noreferrer"
                 className={`block rounded-2xl border p-4 transition-colors hover:border-primary ${
                   n.read ? "border-border bg-surface" : "border-primary bg-primary/5"
                 }`}
