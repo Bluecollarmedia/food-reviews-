@@ -12,6 +12,7 @@ type Row = {
   message: string;
   parent_id: string | null;
   created_at: string;
+  image_key: string | null;
   profiles: { display_name: string; avatar_key: string | null } | null;
 };
 
@@ -20,8 +21,11 @@ function toComment(row: Row): Comment {
     id: row.id,
     message: row.message,
     createdAt: row.created_at,
-    authorName: row.profiles?.display_name ?? row.guest_name ?? "Guest",
+    authorName: row.user_id
+      ? row.profiles?.display_name ?? "Deleted user"
+      : row.guest_name ?? "Guest",
     avatarUrl: getPublicFileUrl(row.profiles?.avatar_key),
+    imageUrl: getPublicFileUrl(row.image_key),
     isGuest: row.user_id === null,
     userId: row.user_id,
     replies: [],
@@ -53,7 +57,7 @@ export function useComments(slug: string) {
     const { data } = await supabase
       .from("comments")
       .select(
-        "id, user_id, guest_name, message, parent_id, created_at, profiles(display_name, avatar_key)"
+        "id, user_id, guest_name, message, parent_id, created_at, image_key, profiles(display_name, avatar_key)"
       )
       .eq("slug", slug)
       .order("created_at", { ascending: true });

@@ -1,6 +1,6 @@
-export async function uploadAvatar(file: File | Blob): Promise<string> {
+export async function uploadCommentImage(file: File | Blob): Promise<string> {
   const contentType = file.type || "image/jpeg";
-  const res = await fetch("/api/avatar-upload-url", {
+  const res = await fetch("/api/comment-image-upload-url", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ contentType }),

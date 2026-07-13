@@ -66,7 +66,13 @@ function RepliesSection({ replies }: { replies: Comment[] }) {
               <span className="text-xs font-semibold text-foreground">{r.authorName}</span>
               <span className="text-[11px] text-foreground/40">{relativeTime(r.createdAt)}</span>
             </div>
-            <p className="mt-0.5 break-words text-xs text-foreground/80">{r.message}</p>
+            {r.message && <p className="mt-0.5 break-words text-xs text-foreground/80">{r.message}</p>}
+            {r.imageUrl && (
+              <a href={r.imageUrl} target="_blank" rel="noreferrer" className="mt-1.5 inline-block">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={r.imageUrl} alt="Attached photo" className="max-h-48 rounded-lg object-cover" />
+              </a>
+            )}
           </div>
         </div>
       ))}
@@ -128,9 +134,17 @@ export default function CommentList({
               <span className="text-sm font-semibold text-foreground">{c.authorName}</span>
               <span className="text-xs text-foreground/40">{relativeTime(c.createdAt)}</span>
             </div>
-            <p className="mt-0.5 break-words text-sm leading-snug text-foreground/80">
-              {c.message}
-            </p>
+            {c.message && (
+              <p className="mt-0.5 break-words text-sm leading-snug text-foreground/80">
+                {c.message}
+              </p>
+            )}
+            {c.imageUrl && (
+              <a href={c.imageUrl} target="_blank" rel="noreferrer" className="mt-1.5 inline-block">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={c.imageUrl} alt="Attached photo" className="max-h-64 rounded-lg object-cover" />
+              </a>
+            )}
 
             {user ? (
               <button

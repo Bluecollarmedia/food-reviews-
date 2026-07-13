@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useSupabaseUser } from "@/lib/use-supabase-user";
 import { uploadAvatar } from "@/lib/upload-avatar";
+import { resizeImageToSquare } from "@/lib/resize-image";
 import { getPublicFileUrl } from "@/lib/media-url";
 
 export default function SettingsPage() {
@@ -16,6 +17,9 @@ export default function SettingsPage() {
   const [ready, setReady] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
     if (loading) return;
@@ -63,7 +67,8 @@ export default function SettingsPage() {
     setAvatarUrl(URL.createObjectURL(file));
 
     try {
-      const avatarKey = await uploadAvatar(file);
+      const resized = await resizeImageToSquare(file);
+      const avatarKey = await uploadAvatar(resized);
       const supabase = createClient();
       await supabase.from("profiles").update({ avatar_key: avatarKey }).eq("id", user.id);
       setAvatarUrl(getPublicFileUrl(avatarKey));
@@ -71,6 +76,23 @@ export default function SettingsPage() {
       // keep the local preview even if the save failed silently
     }
     setUploadingAvatar(false);
+  }
+
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    setDeleteError("");
+
+    const res = await fetch("/api/account", { method: "DELETE" });
+    if (!res.ok) {
+      setDeleteError("Couldn't delete your account. Try again in a moment.");
+      setDeleting(false);
+      return;
+    }
+
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
   }
 
   if (loading || !ready) return null;
@@ -126,6 +148,49 @@ export default function SettingsPage() {
         </button>
       </div>
       {saved && <p className="mt-2 text-xs text-foreground/50">Saved.</p>}
+
+      <div className="mt-10 border-t border-border pt-6">
+        <p className="text-sm font-semibold text-foreground">Delete account</p>
+        <p className="mt-0.5 text-xs text-foreground/60">
+          This permanently deletes your login and profile. Your past comments stay up, shown as
+          &quot;Deleted user.&quot;
+        </p>
+
+        {!confirmingDelete ? (
+          <button
+            type="button"
+            onClick={() => setConfirmingDelete(true)}
+            className="mt-3 rounded-full border border-primary px-4 py-2 text-xs font-semibold text-primary hover:bg-primary hover:text-white"
+          >
+            Delete my account
+          </button>
+        ) : (
+          <div className="mt-3 flex flex-col gap-2">
+            <p className="text-xs font-semibold text-foreground">
+              Are you sure? This can&apos;t be undone.
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+                className="rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary-dark disabled:opacity-60"
+              >
+                {deleting ? "Deleting..." : "Yes, delete it"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(false)}
+                disabled={deleting}
+                className="rounded-full border border-border px-4 py-2 text-xs font-semibold text-foreground/70 hover:border-primary hover:text-primary"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+        {deleteError && <p className="mt-2 text-xs text-primary">{deleteError}</p>}
+      </div>
     </div>
   );
 }

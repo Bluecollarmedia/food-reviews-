@@ -9,9 +9,10 @@ export default function ScoreBadge({
   size = "md",
 }: {
   rating: number;
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
 }) {
   const dims = {
+    xs: { badge: "h-7 w-7 text-[10px]", sub: "text-[6px]" },
     sm: { badge: "h-10 w-10 text-sm", sub: "text-[9px]" },
     md: { badge: "h-12 w-12 text-base", sub: "text-[10px]" },
     lg: { badge: "h-16 w-16 text-xl", sub: "text-xs" },

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { uploadAvatar } from "@/lib/upload-avatar";
+import { resizeImageToSquare } from "@/lib/resize-image";
 
 function SignupForm() {
   const router = useRouter();
@@ -47,7 +48,8 @@ function SignupForm() {
     if (data.session && data.user) {
       if (avatarFile) {
         try {
-          const avatarKey = await uploadAvatar(avatarFile);
+          const resized = await resizeImageToSquare(avatarFile);
+          const avatarKey = await uploadAvatar(resized);
           await supabase.from("profiles").update({ avatar_key: avatarKey }).eq("id", data.user.id);
         } catch {
           // non-critical, they can add a picture later in Settings

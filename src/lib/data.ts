@@ -4,6 +4,7 @@ export type Comment = {
   createdAt: string;
   authorName: string;
   avatarUrl: string | null;
+  imageUrl: string | null;
   isGuest: boolean;
   userId: string | null;
   replies: Comment[];

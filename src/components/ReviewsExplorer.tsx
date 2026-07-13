@@ -1,13 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { categories, type Review, type Reviewer } from "@/lib/data";
-import VideoCard from "./VideoCard";
+import VideoCardCompact from "./VideoCardCompact";
+
+const PAGE_SIZE = 9;
 
 export default function ReviewsExplorer({ reviews }: { reviews: Review[] }) {
   const [category, setCategory] = useState<string>("All");
   const [reviewer, setReviewer] = useState<"All" | Reviewer>("All");
   const [query, setQuery] = useState("");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const reviewerOptions = useMemo(
     () => [...new Set(reviews.map((r) => r.reviewer))].sort(),
@@ -29,6 +33,29 @@ export default function ReviewsExplorer({ reviews }: { reviews: Review[] }) {
       );
     });
   }, [category, reviewer, query, reviews]);
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [category, reviewer, query]);
+
+  const visible = filtered.slice(0, visibleCount);
+  const hasMore = visibleCount < filtered.length;
+
+  useEffect(() => {
+    if (!hasMore) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((v) => v + PAGE_SIZE);
+        }
+      },
+      { rootMargin: "400px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore]);
 
   return (
     <div>
@@ -81,11 +108,13 @@ export default function ReviewsExplorer({ reviews }: { reviews: Review[] }) {
         ))}
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((review) => (
-          <VideoCard key={review.slug} review={review} />
+      <div className="mt-8 grid grid-cols-3 gap-3 sm:gap-5">
+        {visible.map((review) => (
+          <VideoCardCompact key={review.slug} review={review} />
         ))}
       </div>
+
+      {hasMore && <div ref={sentinelRef} className="h-1" />}
 
       {filtered.length === 0 && (
         <p className="mt-12 text-center text-foreground/60">

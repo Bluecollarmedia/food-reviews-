@@ -1,10 +1,10 @@
 import Link from "next/link";
-import VideoCard from "@/components/VideoCard";
+import VideoCardCompact from "@/components/VideoCardCompact";
 import { listPublishedReviews } from "@/lib/reviews-store";
 
 export const dynamic = "force-dynamic";
 
-const TEASER_COUNT = 2;
+const TEASER_COUNT = 3;
 
 export default async function Home() {
   const reviews = await listPublishedReviews();
@@ -39,9 +39,9 @@ export default async function Home() {
         </p>
 
         {teaser.length > 0 ? (
-          <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <div className="mt-6 grid grid-cols-3 gap-3 sm:gap-6">
             {teaser.map((review) => (
-              <VideoCard key={review.slug} review={review} />
+              <VideoCardCompact key={review.slug} review={review} />
             ))}
           </div>
         ) : (

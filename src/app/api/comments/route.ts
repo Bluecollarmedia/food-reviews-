@@ -9,8 +9,9 @@ export async function POST(req: NextRequest) {
   const parentId = typeof body?.parentId === "string" ? body.parentId : null;
   const guestName =
     typeof body?.guestName === "string" ? body.guestName.trim().slice(0, 60) : "";
+  const imageKey = typeof body?.imageKey === "string" ? body.imageKey : null;
 
-  if (!slug || !message) {
+  if (!slug || (!message && !imageKey)) {
     return NextResponse.json({ error: "A message is required." }, { status: 400 });
   }
 
@@ -34,6 +35,7 @@ export async function POST(req: NextRequest) {
       parent_id: parentId,
       user_id: user?.id ?? null,
       guest_name: user ? null : guestName,
+      image_key: imageKey,
     })
     .select("id")
     .single();

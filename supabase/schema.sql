@@ -207,3 +207,14 @@ drop trigger if exists on_comment_created on public.comments;
 create trigger on_comment_created
   after insert on public.comments
   for each row execute procedure public.handle_new_comment();
+
+-- Allow account deletion: when a profile is deleted, comments.user_id is set to
+-- null (see "on delete set null" above) but guest_name stays null too, since it
+-- was a real account's comment, not a guest's. These two insert-time checks
+-- would otherwise block that update, so they're dropped in favor of the
+-- equivalent checks already enforced by the "Insert comments" RLS policy above.
+alter table public.comments drop constraint if exists comments_author_check;
+alter table public.comments drop constraint if exists comments_reply_requires_login;
+
+-- R2 object key for a photo attached to a comment or reply.
+alter table public.comments add column if not exists image_key text;
