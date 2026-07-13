@@ -199,9 +199,6 @@ export default function ReviewForm({ mode, initial }: Props) {
     initial?.categories ?? []
   );
   const [rating, setRating] = useState(initial?.rating?.toString() ?? "8");
-  const [shmuelRating, setShmuelRating] = useState(
-    initial?.shmuelRating?.toString() ?? ""
-  );
   const [price, setPrice] = useState<string>(initial?.price ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [reviewer, setReviewer] = useState(initial?.reviewer ?? reviewers[0]);
@@ -226,21 +223,39 @@ export default function ReviewForm({ mode, initial }: Props) {
   const [thumbnailPreviewUrl, setThumbnailPreviewUrl] = useState<string | null>(null);
   const [thumbnailProgress, setThumbnailProgress] = useState<number | null>(null);
 
-  const [shmuelVideoKey, setShmuelVideoKey] = useState<string | undefined>(
-    initial?.shmuelVideoKey
+  const [hasSecondReviewer, setHasSecondReviewer] = useState(!!initial?.secondReviewer);
+  const [secondReviewer, setSecondReviewer] = useState(initial?.secondReviewer ?? "");
+  const [isSecondGuestReviewer, setIsSecondGuestReviewer] = useState(
+    initial?.secondReviewer ? !reviewers.includes(initial.secondReviewer) : false
   );
-  const [shmuelVideoFile, setShmuelVideoFile] = useState<File | null>(null);
-  const [shmuelVideoProgress, setShmuelVideoProgress] = useState<number | null>(null);
+  const [secondGuestName, setSecondGuestName] = useState(
+    initial?.secondReviewer && !reviewers.includes(initial.secondReviewer)
+      ? initial.secondReviewer
+      : ""
+  );
+  const [secondReviewerRating, setSecondReviewerRating] = useState(
+    initial?.secondReviewerRating?.toString() ?? ""
+  );
 
-  const [shmuelThumbnailKey, setShmuelThumbnailKey] = useState<string | undefined>(
-    initial?.shmuelThumbnailKey
+  const [secondReviewerVideoKey, setSecondReviewerVideoKey] = useState<string | undefined>(
+    initial?.secondReviewerVideoKey
   );
-  const [shmuelCropperFile, setShmuelCropperFile] = useState<File | null>(null);
-  const [shmuelThumbnailBlob, setShmuelThumbnailBlob] = useState<Blob | null>(null);
-  const [shmuelThumbnailPreviewUrl, setShmuelThumbnailPreviewUrl] = useState<
-    string | null
+  const [secondReviewerVideoFile, setSecondReviewerVideoFile] = useState<File | null>(null);
+  const [secondReviewerVideoProgress, setSecondReviewerVideoProgress] = useState<
+    number | null
   >(null);
-  const [shmuelThumbnailProgress, setShmuelThumbnailProgress] = useState<
+
+  const [secondReviewerThumbnailKey, setSecondReviewerThumbnailKey] = useState<
+    string | undefined
+  >(initial?.secondReviewerThumbnailKey);
+  const [secondReviewerCropperFile, setSecondReviewerCropperFile] = useState<File | null>(
+    null
+  );
+  const [secondReviewerThumbnailBlob, setSecondReviewerThumbnailBlob] =
+    useState<Blob | null>(null);
+  const [secondReviewerThumbnailPreviewUrl, setSecondReviewerThumbnailPreviewUrl] =
+    useState<string | null>(null);
+  const [secondReviewerThumbnailProgress, setSecondReviewerThumbnailProgress] = useState<
     number | null
   >(null);
 
@@ -264,15 +279,15 @@ export default function ReviewForm({ mode, initial }: Props) {
     setCropperFile(null);
   }
 
-  function handleShmuelThumbnailPicked(file: File | undefined) {
+  function handleSecondReviewerThumbnailPicked(file: File | undefined) {
     if (!file) return;
-    setShmuelCropperFile(file);
+    setSecondReviewerCropperFile(file);
   }
 
-  function handleShmuelCropConfirm(blob: Blob) {
-    setShmuelThumbnailBlob(blob);
-    setShmuelThumbnailPreviewUrl(URL.createObjectURL(blob));
-    setShmuelCropperFile(null);
+  function handleSecondReviewerCropConfirm(blob: Blob) {
+    setSecondReviewerThumbnailBlob(blob);
+    setSecondReviewerThumbnailPreviewUrl(URL.createObjectURL(blob));
+    setSecondReviewerCropperFile(null);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -283,6 +298,14 @@ export default function ReviewForm({ mode, initial }: Props) {
     }
     if (isGuestReviewer && !guestName.trim()) {
       setError("Enter the guest reviewer's name.");
+      return;
+    }
+    if (hasSecondReviewer && isSecondGuestReviewer && !secondGuestName.trim()) {
+      setError("Enter the second reviewer's name.");
+      return;
+    }
+    if (hasSecondReviewer && !secondReviewer.trim()) {
+      setError("Pick who the second reviewer is.");
       return;
     }
     setSubmitting(true);
@@ -313,28 +336,28 @@ export default function ReviewForm({ mode, initial }: Props) {
         setVideoProgress(null);
       }
 
-      let finalShmuelThumbnailKey = shmuelThumbnailKey;
-      if (shmuelThumbnailBlob) {
-        setShmuelThumbnailProgress(0);
-        finalShmuelThumbnailKey = await uploadFile(
-          shmuelThumbnailBlob,
+      let finalSecondReviewerThumbnailKey = secondReviewerThumbnailKey;
+      if (hasSecondReviewer && secondReviewerThumbnailBlob) {
+        setSecondReviewerThumbnailProgress(0);
+        finalSecondReviewerThumbnailKey = await uploadFile(
+          secondReviewerThumbnailBlob,
           "thumbnail.jpg",
           "thumbnails",
-          setShmuelThumbnailProgress
+          setSecondReviewerThumbnailProgress
         );
-        setShmuelThumbnailProgress(null);
+        setSecondReviewerThumbnailProgress(null);
       }
 
-      let finalShmuelVideoKey = shmuelVideoKey;
-      if (shmuelVideoFile) {
-        setShmuelVideoProgress(0);
-        finalShmuelVideoKey = await uploadFile(
-          shmuelVideoFile,
-          shmuelVideoFile.name,
+      let finalSecondReviewerVideoKey = secondReviewerVideoKey;
+      if (hasSecondReviewer && secondReviewerVideoFile) {
+        setSecondReviewerVideoProgress(0);
+        finalSecondReviewerVideoKey = await uploadFile(
+          secondReviewerVideoFile,
+          secondReviewerVideoFile.name,
           "videos",
-          setShmuelVideoProgress
+          setSecondReviewerVideoProgress
         );
-        setShmuelVideoProgress(null);
+        setSecondReviewerVideoProgress(null);
       }
 
       const payload = {
@@ -349,9 +372,15 @@ export default function ReviewForm({ mode, initial }: Props) {
         status,
         videoKey: finalVideoKey,
         thumbnailKey: finalThumbnailKey,
-        shmuelVideoKey: finalShmuelVideoKey,
-        shmuelThumbnailKey: finalShmuelThumbnailKey,
-        shmuelRating: shmuelRating ? parseFloat(shmuelRating) : undefined,
+        secondReviewer: hasSecondReviewer ? secondReviewer.trim() : undefined,
+        secondReviewerVideoKey: hasSecondReviewer ? finalSecondReviewerVideoKey : undefined,
+        secondReviewerThumbnailKey: hasSecondReviewer
+          ? finalSecondReviewerThumbnailKey
+          : undefined,
+        secondReviewerRating:
+          hasSecondReviewer && secondReviewerRating
+            ? parseFloat(secondReviewerRating)
+            : undefined,
       };
 
       const url =
@@ -393,11 +422,11 @@ export default function ReviewForm({ mode, initial }: Props) {
           onCancel={() => setCropperFile(null)}
         />
       )}
-      {shmuelCropperFile && (
+      {secondReviewerCropperFile && (
         <ImageCropper
-          file={shmuelCropperFile}
-          onConfirm={handleShmuelCropConfirm}
-          onCancel={() => setShmuelCropperFile(null)}
+          file={secondReviewerCropperFile}
+          onConfirm={handleSecondReviewerCropConfirm}
+          onCancel={() => setSecondReviewerCropperFile(null)}
         />
       )}
 
@@ -479,7 +508,7 @@ export default function ReviewForm({ mode, initial }: Props) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="mb-1 block text-sm font-semibold text-foreground">
-              {reviewer === "David & Shmuel" ? "David's rating (1-10)" : "Rating (1-10)"}
+              Rating (1-10)
             </label>
             <input
               type="number"
@@ -492,44 +521,6 @@ export default function ReviewForm({ mode, initial }: Props) {
               className={inputClass}
             />
           </div>
-          {reviewer === "David & Shmuel" ? (
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-foreground">
-                Shmuel&apos;s rating (1-10)
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={10}
-                step={0.1}
-                value={shmuelRating}
-                onChange={(e) => setShmuelRating(e.target.value)}
-                placeholder="Leave blank to reuse David's rating"
-                className={inputClass}
-              />
-            </div>
-          ) : (
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-foreground">
-                Price (optional)
-              </label>
-              <input
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                list="price-suggestions"
-                placeholder="e.g. $, $$, or $12.99"
-                className={inputClass}
-              />
-              <datalist id="price-suggestions">
-                {prices.map((p) => (
-                  <option key={p} value={p} />
-                ))}
-              </datalist>
-            </div>
-          )}
-        </div>
-
-        {reviewer === "David & Shmuel" && (
           <div>
             <label className="mb-1 block text-sm font-semibold text-foreground">
               Price (optional)
@@ -546,6 +537,24 @@ export default function ReviewForm({ mode, initial }: Props) {
                 <option key={p} value={p} />
               ))}
             </datalist>
+          </div>
+        </div>
+
+        {hasSecondReviewer && (
+          <div>
+            <label className="mb-1 block text-sm font-semibold text-foreground">
+              {secondReviewer ? `${secondReviewer}'s rating (1-10)` : "Second reviewer's rating (1-10)"}
+            </label>
+            <input
+              type="number"
+              min={1}
+              max={10}
+              step={0.1}
+              value={secondReviewerRating}
+              onChange={(e) => setSecondReviewerRating(e.target.value)}
+              placeholder="Leave blank to reuse the first rating"
+              className={inputClass}
+            />
           </div>
         )}
 
@@ -601,6 +610,81 @@ export default function ReviewForm({ mode, initial }: Props) {
         </div>
 
         <div>
+          <label className="mb-1 flex items-center gap-2 text-sm font-semibold text-foreground">
+            <input
+              type="checkbox"
+              checked={hasSecondReviewer}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setHasSecondReviewer(checked);
+                if (!checked) {
+                  setSecondReviewer("");
+                  setIsSecondGuestReviewer(false);
+                  setSecondGuestName("");
+                }
+              }}
+              className="h-4 w-4"
+            />
+            Add a second reviewer (two people reviewed this same video)
+          </label>
+          {hasSecondReviewer && (
+            <>
+              <p className="mb-2 text-xs text-foreground/50">
+                Pick who else reviewed this. Viewers will get a switch between the two
+                reviewers on the video page.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {reviewers
+                  .filter((r) => r !== reviewer)
+                  .map((r) => (
+                    <button
+                      type="button"
+                      key={r}
+                      onClick={() => {
+                        setIsSecondGuestReviewer(false);
+                        setSecondReviewer(r);
+                      }}
+                      className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                        !isSecondGuestReviewer && secondReviewer === r
+                          ? "border-accent bg-accent text-white"
+                          : "border-border bg-surface text-foreground/70 hover:border-accent hover:text-accent"
+                      }`}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSecondGuestReviewer(true);
+                    setSecondReviewer(secondGuestName);
+                  }}
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                    isSecondGuestReviewer
+                      ? "border-accent bg-accent text-white"
+                      : "border-border bg-surface text-foreground/70 hover:border-accent hover:text-accent"
+                  }`}
+                >
+                  Guest Reviewer
+                </button>
+              </div>
+              {isSecondGuestReviewer && (
+                <input
+                  value={secondGuestName}
+                  onChange={(e) => {
+                    setSecondGuestName(e.target.value);
+                    setSecondReviewer(e.target.value);
+                  }}
+                  placeholder="Guest's name"
+                  required
+                  className={`${inputClass} mt-2 max-w-xs`}
+                />
+              )}
+            </>
+          )}
+        </div>
+
+        <div>
           <label className="mb-1 block text-sm font-semibold text-foreground">
             Description
           </label>
@@ -615,7 +699,7 @@ export default function ReviewForm({ mode, initial }: Props) {
 
         <div>
           <MediaUploadFields
-            label={reviewer === "David & Shmuel" ? "David" : undefined}
+            label={hasSecondReviewer ? reviewer : undefined}
             thumbnailKey={thumbnailKey}
             thumbnailPreviewUrl={thumbnailPreviewUrl}
             thumbnailProgress={thumbnailProgress}
@@ -627,22 +711,23 @@ export default function ReviewForm({ mode, initial }: Props) {
           />
         </div>
 
-        {reviewer === "David & Shmuel" && (
+        {hasSecondReviewer && (
           <div>
             <p className="mb-2 text-xs text-foreground/50">
-              Optional — only add Shmuel&apos;s video/thumbnail below if David and Shmuel filmed separate reactions.
-              Viewers will get a David / Shmuel switch on the review page.
+              Optional — only add {secondReviewer || "the second reviewer"}&apos;s
+              video/thumbnail below if they filmed a separate reaction. Viewers will get a
+              switch between the two on the video page.
             </p>
             <MediaUploadFields
-              label="Shmuel"
-              thumbnailKey={shmuelThumbnailKey}
-              thumbnailPreviewUrl={shmuelThumbnailPreviewUrl}
-              thumbnailProgress={shmuelThumbnailProgress}
-              onThumbnailPicked={handleShmuelThumbnailPicked}
-              videoKey={shmuelVideoKey}
-              videoFile={shmuelVideoFile}
-              videoProgress={shmuelVideoProgress}
-              onVideoPicked={(file) => setShmuelVideoFile(file ?? null)}
+              label={secondReviewer || "Second reviewer"}
+              thumbnailKey={secondReviewerThumbnailKey}
+              thumbnailPreviewUrl={secondReviewerThumbnailPreviewUrl}
+              thumbnailProgress={secondReviewerThumbnailProgress}
+              onThumbnailPicked={handleSecondReviewerThumbnailPicked}
+              videoKey={secondReviewerVideoKey}
+              videoFile={secondReviewerVideoFile}
+              videoProgress={secondReviewerVideoProgress}
+              onVideoPicked={(file) => setSecondReviewerVideoFile(file ?? null)}
             />
           </div>
         )}

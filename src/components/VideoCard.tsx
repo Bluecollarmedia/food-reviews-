@@ -84,7 +84,8 @@ export default function VideoCard({
             {review.title}
           </h3>
           <p className={`mt-1 truncate text-foreground/60 ${compact ? "text-[10px]" : "text-xs"}`}>
-            {review.reviewer} &middot; {review.city}
+            {review.reviewer}
+            {review.secondReviewer ? ` & ${review.secondReviewer}` : ""} &middot; {review.city}
           </p>
         </div>
       </div>

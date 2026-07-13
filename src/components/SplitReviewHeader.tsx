@@ -11,12 +11,14 @@ export default function SplitReviewHeader({
   store,
   city,
   price,
-  davidVideoUrl,
-  davidThumbnailUrl,
-  davidRating,
-  shmuelVideoUrl,
-  shmuelThumbnailUrl,
-  shmuelRating,
+  firstReviewerName,
+  firstVideoUrl,
+  firstThumbnailUrl,
+  firstRating,
+  secondReviewerName,
+  secondVideoUrl,
+  secondThumbnailUrl,
+  secondRating,
 }: {
   slug: string;
   categories: string[];
@@ -24,30 +26,38 @@ export default function SplitReviewHeader({
   store: string;
   city: string;
   price?: string;
-  davidVideoUrl: string | null;
-  davidThumbnailUrl: string | null;
-  davidRating: number;
-  shmuelVideoUrl: string | null;
-  shmuelThumbnailUrl: string | null;
-  shmuelRating?: number;
+  firstReviewerName: string;
+  firstVideoUrl: string | null;
+  firstThumbnailUrl: string | null;
+  firstRating: number;
+  secondReviewerName: string;
+  secondVideoUrl: string | null;
+  secondThumbnailUrl: string | null;
+  secondRating?: number;
 }) {
-  const [selected, setSelected] = useState<"David" | "Shmuel">("David");
+  const [selected, setSelected] = useState<"first" | "second">("first");
 
-  const videoUrl = selected === "David" ? davidVideoUrl : shmuelVideoUrl;
-  const thumbnailUrl = selected === "David" ? davidThumbnailUrl : shmuelThumbnailUrl;
-  const rating = selected === "David" ? davidRating : shmuelRating ?? davidRating;
+  const videoUrl = selected === "first" ? firstVideoUrl : secondVideoUrl;
+  const thumbnailUrl = selected === "first" ? firstThumbnailUrl : secondThumbnailUrl;
+  const rating = selected === "first" ? firstRating : secondRating ?? firstRating;
+  const selectedName = selected === "first" ? firstReviewerName : secondReviewerName;
 
   return (
     <>
       <div className="mt-4">
         <div className="mb-3 flex gap-2">
-          {(["David", "Shmuel"] as const).map((name) => (
+          {(
+            [
+              { key: "first", name: firstReviewerName },
+              { key: "second", name: secondReviewerName },
+            ] as const
+          ).map(({ key, name }) => (
             <button
-              key={name}
+              key={key}
               type="button"
-              onClick={() => setSelected(name)}
+              onClick={() => setSelected(key)}
               className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
-                selected === name
+                selected === key
                   ? "border-primary bg-primary text-white"
                   : "border-border bg-surface text-foreground/70 hover:border-primary hover:text-primary"
               }`}
@@ -61,7 +71,7 @@ export default function SplitReviewHeader({
           <VideoPlayer key={videoUrl} src={videoUrl} poster={thumbnailUrl} slug={slug} />
         ) : (
           <div className="flex aspect-video items-center justify-center rounded-2xl bg-surface-muted text-sm text-foreground/60">
-            {selected}&apos;s video coming soon
+            {selectedName}&apos;s video coming soon
           </div>
         )}
       </div>
@@ -83,7 +93,7 @@ export default function SplitReviewHeader({
           </h1>
           <p className="mt-1 text-foreground/60">
             {store} &middot; {city}
-            {price ? ` · ${price}` : ""} &middot; Reviewed by {selected}
+            {price ? ` · ${price}` : ""} &middot; Reviewed by {selectedName}
           </p>
         </div>
         <ScoreBadge rating={rating} size="lg" />

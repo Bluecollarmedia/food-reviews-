@@ -13,6 +13,29 @@ function slugify(input: string) {
     .replace(/(^-|-$)+/g, "");
 }
 
+/**
+ * Older reviews with an actual split review store the second person's
+ * video/rating under legacy shmuel*-prefixed fields (back when the split
+ * feature only ever supported David + Shmuel). Map those onto the generic
+ * secondReviewer* fields on read so old data keeps working unchanged.
+ * A review whose reviewer is just labeled "David & Shmuel" with no actual
+ * second video (no split upload) is left alone — that's just a caption,
+ * not a split review.
+ */
+function normalizeReview(raw: Review & { shmuelVideoKey?: string; shmuelThumbnailKey?: string; shmuelRating?: number }): Review {
+  if (raw.shmuelVideoKey && !raw.secondReviewerVideoKey) {
+    return {
+      ...raw,
+      reviewer: raw.reviewer === "David & Shmuel" ? "David" : raw.reviewer,
+      secondReviewer: raw.reviewer === "David & Shmuel" ? "Shmuel" : raw.secondReviewer,
+      secondReviewerVideoKey: raw.shmuelVideoKey,
+      secondReviewerThumbnailKey: raw.shmuelThumbnailKey,
+      secondReviewerRating: raw.shmuelRating,
+    };
+  }
+  return raw;
+}
+
 const SEED_REVIEWS: Review[] = [
   {
     slug: "downtown-pepperoni-slice",
@@ -158,6 +181,7 @@ export async function listAllReviews(): Promise<Review[]> {
   );
   return reviews
     .filter(Boolean)
+    .map(normalizeReview)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
@@ -175,7 +199,7 @@ export async function getReview(slug: string): Promise<Review | null> {
   await ensureSeeded();
   const store = reviewsStore();
   const review = (await store.get(slug, { type: "json" })) as Review | null;
-  return review ?? null;
+  return review ? normalizeReview(review) : null;
 }
 
 export async function getPublishedReview(slug: string): Promise<Review | null> {
@@ -195,9 +219,10 @@ export type ReviewInput = {
   status: ReviewStatus;
   videoKey?: string;
   thumbnailKey?: string;
-  shmuelVideoKey?: string;
-  shmuelThumbnailKey?: string;
-  shmuelRating?: number;
+  secondReviewer?: string;
+  secondReviewerVideoKey?: string;
+  secondReviewerThumbnailKey?: string;
+  secondReviewerRating?: number;
 };
 
 export async function createReview(input: ReviewInput): Promise<Review> {

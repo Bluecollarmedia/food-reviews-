@@ -45,11 +45,11 @@ export async function DELETE(
   if (existing?.thumbnailKey) {
     await deleteFile(existing.thumbnailKey).catch(() => {});
   }
-  if (existing?.shmuelVideoKey) {
-    await deleteFile(existing.shmuelVideoKey).catch(() => {});
+  if (existing?.secondReviewerVideoKey) {
+    await deleteFile(existing.secondReviewerVideoKey).catch(() => {});
   }
-  if (existing?.shmuelThumbnailKey) {
-    await deleteFile(existing.shmuelThumbnailKey).catch(() => {});
+  if (existing?.secondReviewerThumbnailKey) {
+    await deleteFile(existing.secondReviewerThumbnailKey).catch(() => {});
   }
   await deleteReview(slug);
   return NextResponse.json({ ok: true });

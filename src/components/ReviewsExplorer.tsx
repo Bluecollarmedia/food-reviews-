@@ -23,7 +23,12 @@ export default function ReviewsExplorer({
     const q = query.trim().toLowerCase();
     return reviews.filter((r) => {
       if (category !== "All" && !r.categories.includes(category)) return false;
-      if (reviewer !== "All" && !r.reviewer.includes(reviewer)) return false;
+      if (
+        reviewer !== "All" &&
+        !r.reviewer.includes(reviewer) &&
+        !r.secondReviewer?.includes(reviewer)
+      )
+        return false;
       if (!q) return true;
       return (
         r.title.toLowerCase().includes(q) ||

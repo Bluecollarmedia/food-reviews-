@@ -91,9 +91,9 @@ export default async function VideoPage({
   const related = getRelatedReviews(review, allPublished);
   const videoUrl = getPublicFileUrl(review.videoKey);
   const thumbnailUrl = getPublicFileUrl(review.thumbnailKey);
-  const shmuelVideoUrl = getPublicFileUrl(review.shmuelVideoKey);
-  const shmuelThumbnailUrl = getPublicFileUrl(review.shmuelThumbnailKey);
-  const hasSplitReviews = review.reviewer === "David & Shmuel" && !!shmuelVideoUrl;
+  const secondReviewerVideoUrl = getPublicFileUrl(review.secondReviewerVideoKey);
+  const secondReviewerThumbnailUrl = getPublicFileUrl(review.secondReviewerThumbnailKey);
+  const hasSplitReviews = !!review.secondReviewer && !!secondReviewerVideoUrl;
 
   return (
     <div className="mx-auto w-full max-w-4xl px-5 py-10">
@@ -109,12 +109,14 @@ export default async function VideoPage({
           store={review.store}
           city={review.city}
           price={review.price}
-          davidVideoUrl={videoUrl}
-          davidThumbnailUrl={thumbnailUrl}
-          davidRating={review.rating}
-          shmuelVideoUrl={shmuelVideoUrl}
-          shmuelThumbnailUrl={shmuelThumbnailUrl}
-          shmuelRating={review.shmuelRating}
+          firstReviewerName={review.reviewer}
+          firstVideoUrl={videoUrl}
+          firstThumbnailUrl={thumbnailUrl}
+          firstRating={review.rating}
+          secondReviewerName={review.secondReviewer ?? ""}
+          secondVideoUrl={secondReviewerVideoUrl}
+          secondThumbnailUrl={secondReviewerThumbnailUrl}
+          secondRating={review.secondReviewerRating}
         />
       ) : (
         <>
@@ -162,6 +164,7 @@ export default async function VideoPage({
               <p className="mt-1 text-foreground/60">
                 {review.store} &middot; {review.city}
                 {review.price ? ` · ${review.price}` : ""} &middot; Reviewed by {review.reviewer}
+                {review.secondReviewer ? ` & ${review.secondReviewer}` : ""}
               </p>
             </div>
             <ScoreBadge rating={review.rating} size="lg" />

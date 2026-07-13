@@ -26,9 +26,11 @@ export type Review = {
   status: ReviewStatus;
   videoKey?: string;
   thumbnailKey?: string;
-  shmuelVideoKey?: string;
-  shmuelThumbnailKey?: string;
-  shmuelRating?: number;
+  /** If set, a second person also reviewed this same video (any name — David, Shmuel, or a guest). */
+  secondReviewer?: string;
+  secondReviewerVideoKey?: string;
+  secondReviewerThumbnailKey?: string;
+  secondReviewerRating?: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -43,7 +45,7 @@ export const categories = [
 
 export const cities = ["Lakewood", "Toms River", "Deal", "Brooklyn"] as const;
 
-export const reviewers: Reviewer[] = ["David", "Shmuel", "David & Shmuel"];
+export const reviewers: Reviewer[] = ["David", "Shmuel"];
 
 export const prices = ["$", "$$", "$$$"] as const;
 
