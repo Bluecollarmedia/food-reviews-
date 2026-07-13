@@ -65,29 +65,45 @@ export default function ReviewsExplorer({
 
   return (
     <div>
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <div className="relative flex-1">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-foreground/40"
-          >
-            <circle cx="11" cy="11" r="7" />
-            <path d="m20 20-3.5-3.5" strokeLinecap="round" />
-          </svg>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by dish, store, or location..."
-            className="w-full rounded-full border border-border bg-surface py-3 pl-11 pr-4 text-sm outline-none focus:border-primary"
-          />
+      <div className="relative">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-foreground/40"
+        >
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.5-3.5" strokeLinecap="round" />
+        </svg>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by dish, store, or location..."
+          className="w-full rounded-full border-none bg-surface-muted py-2 pl-11 pr-4 text-sm text-foreground outline-none placeholder:text-foreground/40"
+        />
+      </div>
+
+      <div className="mt-4 flex items-center justify-between border-b border-border">
+        <div className="flex gap-5 overflow-x-auto">
+          {["All", ...categories].map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setCategory(cat)}
+              className={`whitespace-nowrap border-b-2 pb-2.5 text-sm font-semibold transition-colors ${
+                category === cat
+                  ? "border-primary text-primary"
+                  : "border-transparent text-foreground/50 hover:text-foreground"
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
         </div>
         <select
           value={reviewer}
           onChange={(e) => setReviewer(e.target.value as "All" | Reviewer)}
-          className="rounded-full border border-border bg-surface px-4 py-3 text-sm font-semibold text-foreground/70 outline-none focus:border-accent sm:w-48"
+          className="ml-4 shrink-0 bg-transparent pb-2.5 text-sm font-semibold text-foreground/60 outline-none"
         >
           <option value="All">All Reviewers</option>
           {reviewerOptions.map((r) => (
@@ -96,22 +112,6 @@ export default function ReviewsExplorer({
             </option>
           ))}
         </select>
-      </div>
-
-      <div className="mt-5 flex flex-wrap gap-2">
-        {["All", ...categories].map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setCategory(cat)}
-            className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
-              category === cat
-                ? "border-primary bg-primary text-white"
-                : "border-border bg-surface text-foreground/70 hover:border-primary hover:text-primary"
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
       </div>
 
       <div
