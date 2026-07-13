@@ -36,6 +36,12 @@ export default async function AdminPage() {
             All Comments
           </Link>
           <Link
+            href="/admin/users"
+            className="rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground/70 hover:border-primary hover:text-primary"
+          >
+            All Accounts
+          </Link>
+          <Link
             href="/admin/settings"
             className="rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground/70 hover:border-primary hover:text-primary"
           >
