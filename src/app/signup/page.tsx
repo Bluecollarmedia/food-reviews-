@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { uploadAvatar } from "@/lib/upload-avatar";
-import { resizeImageToSquare } from "@/lib/resize-image";
+import ImageCropper from "@/components/ImageCropper";
 
 function SignupForm() {
   const router = useRouter();
@@ -13,8 +13,9 @@ function SignupForm() {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarBlob, setAvatarBlob] = useState<Blob | null>(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
+  const [croppingFile, setCroppingFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
@@ -23,8 +24,13 @@ function SignupForm() {
 
   function handleAvatarPicked(file: File | undefined) {
     if (!file) return;
-    setAvatarFile(file);
-    setAvatarPreviewUrl(URL.createObjectURL(file));
+    setCroppingFile(file);
+  }
+
+  function handleCropConfirm(blob: Blob) {
+    setCroppingFile(null);
+    setAvatarBlob(blob);
+    setAvatarPreviewUrl(URL.createObjectURL(blob));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -46,10 +52,9 @@ function SignupForm() {
     }
 
     if (data.session && data.user) {
-      if (avatarFile) {
+      if (avatarBlob) {
         try {
-          const resized = await resizeImageToSquare(avatarFile);
-          const avatarKey = await uploadAvatar(resized);
+          const avatarKey = await uploadAvatar(avatarBlob);
           await supabase.from("profiles").update({ avatar_key: avatarKey }).eq("id", data.user.id);
         } catch {
           // non-critical, they can add a picture later in Settings
@@ -74,7 +79,7 @@ function SignupForm() {
           We sent a confirmation link to <span className="font-semibold">{email}</span>. Tap it,
           then come back and log in.
         </p>
-        {avatarFile && (
+        {avatarBlob && (
           <p className="mt-2 text-xs text-foreground/50">
             You can add your profile picture once you&apos;re logged in, under Settings.
           </p>
@@ -166,6 +171,20 @@ function SignupForm() {
       >
         Continue as Guest
       </Link>
+
+      {croppingFile && (
+        <ImageCropper
+          file={croppingFile}
+          outputWidth={480}
+          outputHeight={480}
+          round
+          title="Position Your Photo"
+          subtitle="Drag to move, pinch (or scroll) to zoom. The circle is what others will see."
+          confirmLabel="Use This Photo"
+          onConfirm={handleCropConfirm}
+          onCancel={() => setCroppingFile(null)}
+        />
+      )}
     </div>
   );
 }

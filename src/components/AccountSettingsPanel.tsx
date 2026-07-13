@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useSupabaseUser } from "@/lib/use-supabase-user";
 import { uploadAvatar } from "@/lib/upload-avatar";
-import { resizeImageToSquare } from "@/lib/resize-image";
 import { getPublicFileUrl } from "@/lib/media-url";
+import ImageCropper from "./ImageCropper";
 
 export default function AccountSettingsPanel() {
   const router = useRouter();
@@ -20,6 +20,7 @@ export default function AccountSettingsPanel() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [croppingFile, setCroppingFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -61,14 +62,19 @@ export default function AccountSettingsPanel() {
     setTimeout(() => setSaved(false), 2000);
   }
 
-  async function handleAvatarPicked(file: File | undefined) {
-    if (!file || !user) return;
+  function handleAvatarPicked(file: File | undefined) {
+    if (!file) return;
+    setCroppingFile(file);
+  }
+
+  async function handleCropConfirm(blob: Blob) {
+    if (!user) return;
+    setCroppingFile(null);
     setUploadingAvatar(true);
-    setAvatarUrl(URL.createObjectURL(file));
+    setAvatarUrl(URL.createObjectURL(blob));
 
     try {
-      const resized = await resizeImageToSquare(file);
-      const avatarKey = await uploadAvatar(resized);
+      const avatarKey = await uploadAvatar(blob);
       const supabase = createClient();
       await supabase.from("profiles").update({ avatar_key: avatarKey }).eq("id", user.id);
       setAvatarUrl(getPublicFileUrl(avatarKey));
@@ -139,8 +145,8 @@ export default function AccountSettingsPanel() {
           }`}
         >
           <span
-            className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-transform ${
-              emailNotifications ? "translate-x-6" : "translate-x-1"
+            className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-transform ${
+              emailNotifications ? "translate-x-5" : "translate-x-0"
             }`}
           />
         </button>
@@ -189,6 +195,20 @@ export default function AccountSettingsPanel() {
         )}
         {deleteError && <p className="mt-2 text-xs text-primary">{deleteError}</p>}
       </div>
+
+      {croppingFile && (
+        <ImageCropper
+          file={croppingFile}
+          outputWidth={480}
+          outputHeight={480}
+          round
+          title="Position Your Photo"
+          subtitle="Drag to move, pinch (or scroll) to zoom. The circle is what others will see."
+          confirmLabel="Save Photo"
+          onConfirm={handleCropConfirm}
+          onCancel={() => setCroppingFile(null)}
+        />
+      )}
     </div>
   );
 }

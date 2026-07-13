@@ -21,25 +21,6 @@ function toBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
   });
 }
 
-/** Center-crops to a square and downsizes to `size`x`size`. Used for avatars. */
-export async function resizeImageToSquare(file: File | Blob, size = 256, quality = 0.85) {
-  const { img, url } = await loadImage(file);
-  try {
-    const side = Math.min(img.naturalWidth, img.naturalHeight);
-    const sx = (img.naturalWidth - side) / 2;
-    const sy = (img.naturalHeight - side) / 2;
-    const canvas = document.createElement("canvas");
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Canvas not supported");
-    ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
-    return await toBlob(canvas, quality);
-  } finally {
-    URL.revokeObjectURL(url);
-  }
-}
-
 /** Downsizes so neither dimension exceeds `maxDim`, keeping aspect ratio. Used for comment photos. */
 export async function resizeImageMaxDimension(file: File | Blob, maxDim = 1600, quality = 0.8) {
   const { img, url } = await loadImage(file);

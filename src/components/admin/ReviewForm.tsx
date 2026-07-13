@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { categories, cities, reviewers, prices, type Review } from "@/lib/data";
-import ImageCropper from "./ImageCropper";
+import ImageCropper from "../ImageCropper";
 
 type Props = {
   mode: "create" | "edit";

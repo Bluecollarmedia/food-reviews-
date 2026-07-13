@@ -2,26 +2,35 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const OUTPUT_WIDTH = 1280;
-const OUTPUT_HEIGHT = 720;
-const ASPECT = OUTPUT_WIDTH / OUTPUT_HEIGHT; // 16:9
-
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
 export default function ImageCropper({
   file,
+  outputWidth = 1280,
+  outputHeight = 720,
+  round = false,
+  title = "Position the Thumbnail",
+  subtitle = "Drag to move the photo. Pinch (or scroll) to zoom in and out.",
+  confirmLabel = "Use This Photo",
   onConfirm,
   onCancel,
 }: {
   file: File;
+  outputWidth?: number;
+  outputHeight?: number;
+  round?: boolean;
+  title?: string;
+  subtitle?: string;
+  confirmLabel?: string;
   onConfirm: (blob: Blob) => void;
   onCancel: () => void;
 }) {
+  const ASPECT = outputWidth / outputHeight;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
-  const [box, setBox] = useState({ w: 480, h: 270 });
+  const [box, setBox] = useState({ w: 480, h: 480 / ASPECT });
   const [imgSize, setImgSize] = useState<{ w: number; h: number } | null>(null);
   const [minScale, setMinScale] = useState(1);
   const [scale, setScale] = useState(1);
@@ -57,7 +66,8 @@ export default function ImageCropper({
     measure();
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ASPECT]);
 
   function clampPos(x: number, y: number, s: number, size: { w: number; h: number }, b = box) {
     return {
@@ -172,8 +182,8 @@ export default function ImageCropper({
     const img = imgRef.current;
     if (!img || !imgSize) return;
     const canvas = document.createElement("canvas");
-    canvas.width = OUTPUT_WIDTH;
-    canvas.height = OUTPUT_HEIGHT;
+    canvas.width = outputWidth;
+    canvas.height = outputHeight;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
@@ -182,7 +192,7 @@ export default function ImageCropper({
     const sourceW = box.w / scale;
     const sourceH = box.h / scale;
 
-    ctx.drawImage(img, sourceX, sourceY, sourceW, sourceH, 0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT);
+    ctx.drawImage(img, sourceX, sourceY, sourceW, sourceH, 0, 0, outputWidth, outputHeight);
     canvas.toBlob(
       (blob) => {
         if (blob) onConfirm(blob);
@@ -195,12 +205,8 @@ export default function ImageCropper({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
       <div className="w-full max-w-lg rounded-2xl bg-surface p-5 shadow-xl">
-        <h3 className="font-display text-xl tracking-wide text-foreground">
-          Position the Thumbnail
-        </h3>
-        <p className="mt-1 text-xs text-foreground/60">
-          Drag to move the photo. Pinch (or scroll) to zoom in and out.
-        </p>
+        <h3 className="font-display text-xl tracking-wide text-foreground">{title}</h3>
+        <p className="mt-1 text-xs text-foreground/60">{subtitle}</p>
 
         <div
           ref={containerRef}
@@ -231,6 +237,12 @@ export default function ImageCropper({
               }
             />
           )}
+          {round && (
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{ boxShadow: "0 0 0 1000px rgba(0,0,0,0.55)", borderRadius: "9999px" }}
+            />
+          )}
         </div>
 
         <div className="mt-5 flex justify-end gap-3">
@@ -246,7 +258,7 @@ export default function ImageCropper({
             onClick={handleConfirm}
             className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white hover:bg-primary-dark"
           >
-            Use This Photo
+            {confirmLabel}
           </button>
         </div>
       </div>
