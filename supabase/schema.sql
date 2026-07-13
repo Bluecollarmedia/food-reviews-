@@ -117,6 +117,25 @@ alter table public.profiles add column if not exists is_admin boolean not null d
 -- R2 object key for the user's profile picture (shown next to their comments).
 alter table public.profiles add column if not exists avatar_key text;
 
+-- The "update own profile" policy has no WITH CHECK, so RLS alone can't stop
+-- a user from setting is_admin=true on their own row via the browser client.
+-- Force it back to its previous value on every update from that path instead.
+create or replace function public.protect_is_admin()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  new.is_admin := old.is_admin;
+  return new;
+end;
+$$;
+
+drop trigger if exists protect_is_admin_trigger on public.profiles;
+create trigger protect_is_admin_trigger
+  before update on public.profiles
+  for each row execute procedure public.protect_is_admin();
+
 -- Notifications for logged-in viewers (currently: "someone replied to your comment").
 create table if not exists public.notifications (
   id uuid primary key default gen_random_uuid(),
