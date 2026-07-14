@@ -108,9 +108,14 @@ export default function ReviewsExplorer({ reviews }: { reviews: Review[] }) {
         </select>
       </div>
 
-      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 lg:grid-cols-4 lg:gap-8">
+      <div className="mt-8 flex flex-wrap gap-4 sm:gap-6 lg:gap-8">
         {visible.map((review) => (
-          <VideoCard key={review.slug} review={review} />
+          <div
+            key={review.slug}
+            className="w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-1rem)] lg:w-[calc(25%-1.5rem)]"
+          >
+            <VideoCard review={review} />
+          </div>
         ))}
       </div>
 

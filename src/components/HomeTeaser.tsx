@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import VideoCard from "./VideoCard";
 import type { Review } from "@/lib/data";
 
@@ -9,46 +9,40 @@ const BATCH_SIZE = 10;
 
 export default function HomeTeaser({ reviews }: { reviews: Review[] }) {
   const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
-  const [pressed, setPressed] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
   const visible = reviews.slice(0, visibleCount);
   const hasMore = visibleCount < reviews.length;
 
-  function handleClick() {
-    setPressed(true);
-    setVisibleCount((v) => v + BATCH_SIZE);
-    setTimeout(() => setPressed(false), 300);
-  }
+  useEffect(() => {
+    if (!hasMore) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((v) => v + BATCH_SIZE);
+        }
+      },
+      { rootMargin: "400px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, visibleCount]);
 
   return (
     <>
-      <div className="mt-6 grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="mt-6 flex flex-wrap gap-6">
         {visible.map((review) => (
-          <VideoCard key={review.slug} review={review} />
+          <div
+            key={review.slug}
+            className="w-[calc(50%-0.75rem)] sm:w-[calc(33.333%-1rem)] lg:w-[calc(25%-1.125rem)]"
+          >
+            <VideoCard review={review} />
+          </div>
         ))}
       </div>
 
-      {hasMore && (
-        <div className="mt-8 text-center">
-          <button
-            type="button"
-            onClick={handleClick}
-            className={`inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-primary-dark active:scale-95 ${
-              pressed ? "scale-95" : "scale-100"
-            }`}
-          >
-            View More
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              className={`h-4 w-4 animate-bounce ${pressed ? "animate-none" : ""}`}
-            >
-              <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        </div>
-      )}
+      {hasMore && <div ref={sentinelRef} className="h-1" />}
     </>
   );
 }
