@@ -35,7 +35,7 @@ export default function HomeTeaser({ reviews }: { reviews: Review[] }) {
         {visible.map((review) => (
           <div
             key={review.slug}
-            className="w-[calc(50%-0.75rem)] sm:w-[calc(33.333%-1rem)] lg:w-[calc(25%-1.125rem)]"
+            className="w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)] xl:w-[calc(25%-1.125rem)]"
           >
             <VideoCard review={review} />
           </div>
