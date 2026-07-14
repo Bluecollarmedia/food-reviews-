@@ -7,12 +7,10 @@ function Thumbnail({
   review,
   thumbnailUrl,
   progressPercent,
-  compact,
 }: {
   review: Review;
   thumbnailUrl: string | null;
   progressPercent?: number;
-  compact: boolean;
 }) {
   return (
     <div
@@ -25,20 +23,12 @@ function Thumbnail({
       {thumbnailUrl && <div className="absolute inset-0 bg-black/10 transition-colors group-hover:bg-black/25" />}
 
       {!review.videoKey ? (
-        <span
-          className={`absolute bottom-2 right-2 rounded-full bg-black/55 font-semibold uppercase tracking-wide text-white ${
-            compact ? "px-1.5 py-1 text-[9px]" : "px-3 py-1 text-xs"
-          }`}
-        >
+        <span className="absolute bottom-2 right-2 rounded-full bg-black/55 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
           Coming Soon
         </span>
       ) : (
-        <span
-          className={`absolute flex items-center gap-1 rounded-full bg-black/60 font-semibold text-white ${
-            compact ? "bottom-1.5 right-1.5 px-1.5 py-1 text-[9px]" : "bottom-2.5 right-2.5 px-2.5 py-1.5 text-xs"
-          }`}
-        >
-          <svg viewBox="0 0 24 24" fill="currentColor" className={compact ? "h-2.5 w-2.5" : "h-3.5 w-3.5"}>
+        <span className="absolute bottom-2.5 right-2.5 flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1.5 text-xs font-semibold text-white">
+          <svg viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5">
             <path d="M8 5v14l11-7z" />
           </svg>
           Play
@@ -60,30 +50,24 @@ function Thumbnail({
 export default function VideoCard({
   review,
   progressPercent,
-  compact = false,
 }: {
   review: Review;
   progressPercent?: number;
-  compact?: boolean;
 }) {
   const thumbnailUrl = getPublicFileUrl(review.thumbnailKey);
 
   return (
     <Link href={`/videos/${review.slug}`} className="group flex flex-col">
-      <Thumbnail review={review} thumbnailUrl={thumbnailUrl} progressPercent={progressPercent} compact={compact} />
-      <div className={`flex ${compact ? "gap-2 py-2" : "gap-3 py-3"}`}>
+      <Thumbnail review={review} thumbnailUrl={thumbnailUrl} progressPercent={progressPercent} />
+      <div className="flex gap-3 py-3">
         <div className="shrink-0">
-          <ScoreBadge rating={review.rating} size={compact ? "xs" : "sm"} />
+          <ScoreBadge rating={review.rating} size="sm" />
         </div>
         <div className="min-w-0 flex-1">
-          <h3
-            className={`line-clamp-2 font-semibold leading-snug text-foreground ${
-              compact ? "text-xs" : "text-sm"
-            }`}
-          >
+          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground lg:text-base">
             {review.title}
           </h3>
-          <p className={`mt-1 truncate text-foreground/60 ${compact ? "text-[10px]" : "text-xs"}`}>
+          <p className="mt-1 truncate text-xs text-foreground/60">
             {review.reviewer}
             {review.secondReviewer ? ` & ${review.secondReviewer}` : ""} &middot; {review.city}
           </p>

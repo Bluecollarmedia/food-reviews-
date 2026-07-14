@@ -21,7 +21,7 @@ export default function HomeTeaser({ reviews }: { reviews: Review[] }) {
 
   return (
     <>
-      <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
+      <div className="mt-6 grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
         {visible.map((review) => (
           <VideoCard key={review.slug} review={review} />
         ))}

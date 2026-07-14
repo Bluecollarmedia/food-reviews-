@@ -18,7 +18,7 @@ export default async function LockedReviewsPage() {
   const reviews = await listLockedReviews();
 
   return (
-    <div className="mx-auto w-full max-w-6xl flex-1 px-5 py-10">
+    <div className="mx-auto w-full max-w-7xl flex-1 px-5 py-10">
       <h1 className="font-display text-3xl tracking-wide text-foreground sm:text-4xl">
         Locked Videos
       </h1>

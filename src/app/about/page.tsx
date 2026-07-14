@@ -17,29 +17,29 @@ const reviewers = [
 
 export default function AboutPage() {
   return (
-    <div className="mx-auto w-full max-w-4xl px-5 py-14">
-      <h1 className="font-display text-4xl tracking-wide text-foreground">
+    <div className="mx-auto w-full max-w-5xl px-5 py-14">
+      <h1 className="font-display text-4xl tracking-wide text-foreground lg:text-5xl">
         About D&amp;S Food Reviews
       </h1>
-      <p className="mt-3 max-w-2xl text-foreground/80 leading-relaxed">
+      <p className="mt-3 max-w-2xl text-foreground/80 leading-relaxed lg:text-lg">
         We're two friends who eat our way through this city's food scene and
         tell you exactly what we think — no sponsorships dictating the score,
         no sugarcoating. Honest, brutal, non-biased reviews on food.
       </p>
 
-      <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2">
+      <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:gap-10">
         {reviewers.map((r) => (
           <div
             key={r.initial}
-            className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-surface p-8 text-center shadow-sm"
+            className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-surface p-8 text-center shadow-sm lg:gap-5 lg:p-12"
           >
-            <div className="relative h-24 w-24 overflow-hidden rounded-full border-4 border-accent-light shadow-md">
+            <div className="relative h-24 w-24 overflow-hidden rounded-full border-4 border-accent-light shadow-md lg:h-32 lg:w-32">
               <Image src={r.photo} alt={r.name} fill className="object-cover" />
             </div>
-            <h2 className="font-display text-2xl tracking-wide text-foreground">
+            <h2 className="font-display text-2xl tracking-wide text-foreground lg:text-3xl">
               {r.name}
             </h2>
-            <p className="text-sm text-foreground/70">{r.bio}</p>
+            <p className="text-sm text-foreground/70 lg:text-base">{r.bio}</p>
           </div>
         ))}
       </div>

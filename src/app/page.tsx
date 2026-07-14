@@ -10,13 +10,13 @@ export default async function Home() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="mx-auto w-full max-w-6xl px-5 pt-6">
+      <div className="mx-auto w-full max-w-7xl px-5 pt-6">
         <ProtectedBanner src="/images/brand/banner-desktop.webp" alt="D&S Food Reviews — David and Shmuel" />
       </div>
 
       <AnimatedHero />
 
-      <section className="mx-auto w-full max-w-4xl flex-1 px-5 py-12">
+      <section className="mx-auto w-full max-w-7xl flex-1 px-5 py-12">
         <h2 className="font-display text-3xl tracking-wide text-foreground">
           Latest Reviews
         </h2>

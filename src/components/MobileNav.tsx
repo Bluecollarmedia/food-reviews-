@@ -96,7 +96,7 @@ export default function MobileNav() {
               }`}
             >
               <div className="h-16 shrink-0" />
-              <div className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-6 pt-6 pb-16">
+              <div className="flex flex-1 flex-col items-end gap-0.5 overflow-y-auto px-6 pt-6 pb-16 text-right">
                 {user && (
                   <div
                     className={`mb-6 flex items-center gap-3 transition-all duration-300 ${
@@ -167,7 +167,7 @@ export default function MobileNav() {
               <Link
                 href="/admin"
                 onClick={() => setOpen(false)}
-                className={`absolute bottom-6 left-6 text-xs font-medium text-foreground/30 transition-all duration-500 hover:text-foreground/60 ${
+                className={`absolute bottom-6 right-6 text-xs font-medium text-foreground/30 transition-all duration-500 hover:text-foreground/60 ${
                   open ? "opacity-100" : "opacity-0"
                 }`}
               >
