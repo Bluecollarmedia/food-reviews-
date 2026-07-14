@@ -163,6 +163,16 @@ export default function MobileNav() {
                   <AuthSessionAction variant="fullscreen" onNavigate={() => setOpen(false)} />
                 </div>
               </div>
+
+              <Link
+                href="/admin"
+                onClick={() => setOpen(false)}
+                className={`absolute bottom-6 left-6 text-xs font-medium text-foreground/30 transition-all duration-500 hover:text-foreground/60 ${
+                  open ? "opacity-100" : "opacity-0"
+                }`}
+              >
+                Admin
+              </Link>
             </div>
           </>,
           document.body
