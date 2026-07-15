@@ -60,7 +60,7 @@ export default function MobileNav() {
               onClick={() => setOpen((v) => !v)}
               aria-label={open ? "Close menu" : "Open menu"}
               aria-expanded={open}
-              className="fixed right-5 top-4 z-[60] flex h-11 w-11 items-center justify-center rounded-full transition-transform active:scale-90"
+              className="fixed right-5 top-4 z-[60] flex h-11 w-11 items-center justify-center rounded-full transition-transform active:scale-90 md:hidden"
             >
               <span
                 className={`absolute inset-0 rounded-full bg-primary transition-all duration-300 ease-out ${
@@ -91,7 +91,7 @@ export default function MobileNav() {
             </button>
 
             <div
-              className={`fixed inset-0 z-50 flex flex-col bg-background transition-all duration-[250ms] ease-out ${
+              className={`fixed inset-0 z-50 flex flex-col bg-background transition-all duration-[250ms] ease-out md:hidden ${
                 open ? "scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0"
               }`}
             >
