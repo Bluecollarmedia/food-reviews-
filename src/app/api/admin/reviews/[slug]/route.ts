@@ -3,6 +3,12 @@ import { updateReview, deleteReview, getReview, type ReviewInput } from "@/lib/r
 import { deleteFile } from "@/lib/r2";
 import { notifyNewUpload } from "@/lib/notify";
 
+async function deleteIfReplaced(oldKey: string | undefined, newKey: string | undefined) {
+  if (oldKey && oldKey !== newKey) {
+    await deleteFile(oldKey).catch(() => {});
+  }
+}
+
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -32,6 +38,13 @@ export async function PUT(
   if (!review) {
     return NextResponse.json({ error: "Review not found." }, { status: 404 });
   }
+
+  await Promise.all([
+    deleteIfReplaced(existing?.videoKey, review.videoKey),
+    deleteIfReplaced(existing?.thumbnailKey, review.thumbnailKey),
+    deleteIfReplaced(existing?.secondReviewerVideoKey, review.secondReviewerVideoKey),
+    deleteIfReplaced(existing?.secondReviewerThumbnailKey, review.secondReviewerThumbnailKey),
+  ]);
 
   if (review.status === "published" && existing?.status !== "published") {
     notifyNewUpload({
