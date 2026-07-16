@@ -36,7 +36,7 @@ export default function AdminUsersList({ users }: { users: AdminUserRow[] }) {
         <div key={u.id} className="flex items-center gap-3 py-4">
           {u.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={u.avatarUrl} alt={u.displayName} className="h-10 w-10 shrink-0 rounded-full object-cover" />
+            <img src={u.avatarUrl} alt={u.displayName} loading="lazy" className="h-10 w-10 shrink-0 rounded-full object-cover" />
           ) : (
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-light font-display text-white">
               {u.displayName.charAt(0).toUpperCase()}

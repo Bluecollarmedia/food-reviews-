@@ -82,7 +82,7 @@ export default function AdminAllComments({ reviewTitles }: { reviewTitles: Recor
           <div key={row.id} className="flex items-start gap-3 py-4">
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarUrl} alt={authorName} className="h-9 w-9 shrink-0 rounded-full object-cover" />
+              <img src={avatarUrl} alt={authorName} loading="lazy" className="h-9 w-9 shrink-0 rounded-full object-cover" />
             ) : (
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-light font-display text-white">
                 {authorName.charAt(0).toUpperCase()}
@@ -105,7 +105,7 @@ export default function AdminAllComments({ reviewTitles }: { reviewTitles: Recor
               )}
               {imageUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={imageUrl} alt="Attached photo" className="mt-1.5 h-16 w-16 rounded-lg object-cover" />
+                <img src={imageUrl} alt="Attached photo" loading="lazy" className="mt-1.5 h-16 w-16 rounded-lg object-cover" />
               )}
 
               <div className="mt-1.5 flex flex-wrap items-center gap-3">

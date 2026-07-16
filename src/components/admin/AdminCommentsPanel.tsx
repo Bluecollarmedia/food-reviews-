@@ -38,7 +38,7 @@ export default function AdminCommentsPanel({ slug }: { slug: string }) {
           )}
           {c.imageUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={c.imageUrl} alt="Attached photo" className="mt-1.5 h-16 w-16 rounded-lg object-cover" />
+            <img src={c.imageUrl} alt="Attached photo" loading="lazy" className="mt-1.5 h-16 w-16 rounded-lg object-cover" />
           )}
         </div>
         <button

@@ -19,6 +19,7 @@ function Avatar({ url, name, size = "md" }: { url: string | null; name: string; 
       <img
         src={url}
         alt={name}
+        loading="lazy"
         onError={() => setFailed(true)}
         className={`${dims} shrink-0 rounded-full object-cover`}
       />
@@ -39,6 +40,7 @@ function AttachedImage({ url, className }: { url: string; className: string }) {
     <img
       src={url}
       alt="Attached photo"
+      loading="lazy"
       draggable={false}
       onContextMenu={(e) => e.preventDefault()}
       className={`${className} pointer-events-none block select-none`}

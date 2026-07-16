@@ -17,11 +17,16 @@ export default function HistoryVideoRow({
       href={`/videos/${review.slug}`}
       className="group flex gap-3 py-3 first:pt-0"
     >
-      <div
-        className="relative w-32 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-primary to-accent bg-cover bg-center aspect-video sm:w-40"
-        style={thumbnailUrl ? { backgroundImage: `url(${thumbnailUrl})` } : undefined}
-      >
-        {!thumbnailUrl && (
+      <div className="relative aspect-video w-32 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-primary to-accent sm:w-40">
+        {thumbnailUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={thumbnailUrl}
+            alt=""
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : (
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.25),transparent_60%)]" />
         )}
         {thumbnailUrl && (

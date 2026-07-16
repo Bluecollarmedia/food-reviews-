@@ -125,11 +125,15 @@ export default async function VideoPage({
               <VideoPlayer key={videoUrl} src={videoUrl} poster={thumbnailUrl} slug={review.slug} />
             </div>
           ) : (
-            <div
-              className="relative mt-4 flex aspect-video items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-accent shadow-lg bg-cover bg-center"
-              style={thumbnailUrl ? { backgroundImage: `url(${thumbnailUrl})` } : undefined}
-            >
-              {!thumbnailUrl && (
+            <div className="relative mt-4 flex aspect-video items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-accent shadow-lg">
+              {thumbnailUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={thumbnailUrl}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              ) : (
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_15%,rgba(255,255,255,0.2),transparent_60%)]" />
               )}
               {thumbnailUrl && <div className="absolute inset-0 bg-black/30" />}
