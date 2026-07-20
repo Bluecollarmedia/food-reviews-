@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import MobileNav from "./MobileNav";
 import AuthStatus from "./AuthStatus";
+import { NotificationBellDesktop, NotificationBellMobile } from "./NotificationBell";
 
 export default function Header() {
   const pathname = usePathname();
@@ -37,9 +38,11 @@ export default function Header() {
           <Link href="/locked" className="transition-colors hover:text-primary">
             Locked
           </Link>
+          <NotificationBellDesktop />
           <AuthStatus />
         </nav>
 
+        <NotificationBellMobile />
         <MobileNav />
       </div>
     </header>

@@ -1,6 +1,9 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { getPublishedReview } from "@/lib/reviews-store";
+import { cookies } from "next/headers";
+import { notFound, redirect } from "next/navigation";
+import { getReview } from "@/lib/reviews-store";
+import { LOCKED_SESSION_COOKIE, verifySessionToken } from "@/lib/session";
+import { getLockedPasscode } from "@/lib/locked-passcode";
 import AllCommentsClient from "@/components/AllCommentsClient";
 
 export const dynamic = "force-dynamic";
@@ -11,8 +14,15 @@ export default async function AllCommentsPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const review = await getPublishedReview(slug);
-  if (!review) notFound();
+  const review = await getReview(slug);
+  if (!review || review.status === "draft") notFound();
+
+  if (review.status === "locked") {
+    const cookieStore = await cookies();
+    const token = cookieStore.get(LOCKED_SESSION_COOKIE)?.value;
+    const valid = await verifySessionToken(token, await getLockedPasscode());
+    if (!valid) redirect(`/locked/login?redirect=/videos/${slug}/comments`);
+  }
 
   return (
     <div className="mx-auto w-full max-w-2xl px-5 py-10">
