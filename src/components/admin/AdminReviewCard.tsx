@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { getPublicFileUrl } from "@/lib/media-url";
 import type { Review } from "@/lib/data";
@@ -53,7 +52,15 @@ export default function AdminReviewCard({
     <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
       <div className="flex gap-3 p-4">
         <div className="relative h-16 w-28 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-primary to-accent">
-          {thumbnailUrl && <Image src={thumbnailUrl} alt="" fill sizes="112px" className="object-cover" />}
+          {thumbnailUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={thumbnailUrl}
+              alt=""
+              loading="lazy"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="truncate font-display text-lg tracking-wide text-foreground">
