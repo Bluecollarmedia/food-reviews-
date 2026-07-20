@@ -197,8 +197,8 @@ export default function ImageCropper({
       (blob) => {
         if (blob) onConfirm(blob);
       },
-      "image/jpeg",
-      0.9
+      "image/webp",
+      0.8
     );
   }
 

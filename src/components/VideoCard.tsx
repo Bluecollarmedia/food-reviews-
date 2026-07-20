@@ -1,7 +1,10 @@
 import Link from "next/link";
+import Image from "next/image";
 import ScoreBadge from "./ScoreBadge";
 import { getPublicFileUrl } from "@/lib/media-url";
 import type { Review } from "@/lib/data";
+
+const THUMBNAIL_SIZES = "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw";
 
 function Thumbnail({
   review,
@@ -15,13 +18,7 @@ function Thumbnail({
   return (
     <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-gradient-to-br from-primary to-accent">
       {thumbnailUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={thumbnailUrl}
-          alt=""
-          loading="lazy"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+        <Image src={thumbnailUrl} alt="" fill sizes={THUMBNAIL_SIZES} className="object-cover" />
       ) : (
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.25),transparent_60%)]" />
       )}

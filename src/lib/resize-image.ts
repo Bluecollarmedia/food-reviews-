@@ -15,7 +15,7 @@ function toBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => (blob ? resolve(blob) : reject(new Error("Could not process image"))),
-      "image/jpeg",
+      "image/webp",
       quality
     );
   });

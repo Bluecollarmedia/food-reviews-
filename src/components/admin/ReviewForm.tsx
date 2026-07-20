@@ -317,7 +317,7 @@ export default function ReviewForm({ mode, initial }: Props) {
         setThumbnailProgress(0);
         finalThumbnailKey = await uploadFile(
           thumbnailBlob,
-          "thumbnail.jpg",
+          "thumbnail.webp",
           "thumbnails",
           setThumbnailProgress
         );
@@ -341,7 +341,7 @@ export default function ReviewForm({ mode, initial }: Props) {
         setSecondReviewerThumbnailProgress(0);
         finalSecondReviewerThumbnailKey = await uploadFile(
           secondReviewerThumbnailBlob,
-          "thumbnail.jpg",
+          "thumbnail.webp",
           "thumbnails",
           setSecondReviewerThumbnailProgress
         );
