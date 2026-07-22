@@ -195,6 +195,11 @@ export async function listLockedReviews(): Promise<Review[]> {
   return all.filter((r) => r.status === "locked");
 }
 
+export async function listVaultReviews(): Promise<Review[]> {
+  const all = await listAllReviews();
+  return all.filter((r) => r.status === "vault");
+}
+
 export async function getReview(slug: string): Promise<Review | null> {
   await ensureSeeded();
   const store = reviewsStore();

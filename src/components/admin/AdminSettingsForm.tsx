@@ -6,14 +6,17 @@ export default function AdminSettingsForm({
   initialEmailNotifications,
   initialNotifyEmail,
   initialLockedPasscode,
+  initialVaultPasscode,
 }: {
   initialEmailNotifications: boolean;
   initialNotifyEmail: string;
   initialLockedPasscode: string;
+  initialVaultPasscode: string;
 }) {
   const [emailNotifications, setEmailNotifications] = useState(initialEmailNotifications);
   const [notifyEmail, setNotifyEmail] = useState(initialNotifyEmail);
   const [lockedPasscode, setLockedPasscode] = useState(initialLockedPasscode);
+  const [vaultPasscode, setVaultPasscode] = useState(initialVaultPasscode);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -23,7 +26,7 @@ export default function AdminSettingsForm({
     await fetch("/api/admin/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ emailNotifications, notifyEmail, lockedPasscode }),
+      body: JSON.stringify({ emailNotifications, notifyEmail, lockedPasscode, vaultPasscode }),
     });
     setSaving(false);
     setSaved(true);
@@ -79,6 +82,25 @@ export default function AdminSettingsForm({
         <input
           value={lockedPasscode}
           onChange={(e) => setLockedPasscode(e.target.value)}
+          type="text"
+          placeholder="Passcode"
+          autoComplete="off"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          className="mt-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+        />
+      </div>
+
+      <div className="rounded-2xl border border-border bg-surface p-4">
+        <p className="text-sm font-semibold text-foreground">Vault passcode</p>
+        <p className="mt-0.5 text-xs text-foreground/60">
+          A second passcode for the Vault — a folder nested inside Locked. Visitors need the
+          Locked passcode first, then this one, to see Vault reviews.
+        </p>
+        <input
+          value={vaultPasscode}
+          onChange={(e) => setVaultPasscode(e.target.value)}
           type="text"
           placeholder="Passcode"
           autoComplete="off"

@@ -8,7 +8,7 @@ export default async function AdminSettingsPage() {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("admin_settings")
-    .select("email_notifications, notify_email, locked_passcode")
+    .select("email_notifications, notify_email, locked_passcode, locked_passcode_2")
     .eq("id", 1)
     .single();
 
@@ -23,6 +23,7 @@ export default async function AdminSettingsPage() {
         initialEmailNotifications={data?.email_notifications ?? false}
         initialNotifyEmail={data?.notify_email ?? ""}
         initialLockedPasscode={data?.locked_passcode ?? process.env.LOCKED_PASSCODE ?? ""}
+        initialVaultPasscode={data?.locked_passcode_2 ?? process.env.VAULT_PASSCODE ?? ""}
       />
     </div>
   );
