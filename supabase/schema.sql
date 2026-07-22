@@ -205,6 +205,11 @@ alter table public.admin_settings add column if not exists locked_passcode text;
 -- Requires a valid /locked session first, then this passcode on top of it.
 alter table public.admin_settings add column if not exists locked_passcode_2 text;
 
+-- Second, separate passcode gating the Locked/Vault passcode fields inside
+-- Admin Settings itself, so any admin who's logged in can't view or change
+-- those two passcodes without also knowing this one.
+alter table public.admin_settings add column if not exists settings_passcode text;
+
 -- Whenever a comment or reply is posted: log it for the admin, and if it's a
 -- reply to someone's comment, notify that person (unless they replied to
 -- themselves, or the parent was posted by a guest with no account).
