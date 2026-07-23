@@ -3,10 +3,22 @@
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { toBlobURL, fetchFile } from "@ffmpeg/util";
 
+export type VideoQuality = "1080p" | "720p" | "480p" | "360p";
+
+const QUALITY_PRESETS: Record<VideoQuality, { longSide: number; crf: number }> = {
+  "1080p": { longSide: 1920, crf: 24 },
+  "720p": { longSide: 1280, crf: 25 },
+  "480p": { longSide: 854, crf: 26 },
+  "360p": { longSide: 640, crf: 27 },
+};
+
 export async function compressVideo(
   file: File,
-  onProgress: (pct: number) => void
+  onProgress: (pct: number) => void,
+  quality: VideoQuality
 ): Promise<Blob> {
+  const { longSide, crf } = QUALITY_PRESETS[quality];
+
   const ffmpeg = new FFmpeg();
   ffmpeg.on("progress", ({ progress }) => {
     onProgress(Math.min(99, Math.round(progress * 100)));
@@ -34,16 +46,17 @@ export async function compressVideo(
   await ffmpeg.exec([
     "-i",
     inputName,
-    // Cap resolution at 1080p — plenty for phone/laptop screens, and much
-    // smaller than the untouched, often much larger, source file.
+    // Cap whichever dimension is longer (works for landscape or portrait
+    // phone video) — e.g. "1080p" caps the long side at 1920, matching a
+    // standard 1920x1080 or 1080x1920 frame.
     "-vf",
-    "scale='min(1920,iw)':-2",
+    `scale='if(gt(iw,ih),min(${longSide},iw),-2)':'if(gt(iw,ih),-2,min(${longSide},ih))'`,
     "-c:v",
     "libx264",
     "-preset",
     "veryfast",
     "-crf",
-    "26",
+    String(crf),
     "-c:a",
     "aac",
     "-b:a",

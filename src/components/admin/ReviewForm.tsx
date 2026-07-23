@@ -4,7 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { categories, cities, reviewers, prices, type Review } from "@/lib/data";
 import ImageCropper from "../ImageCropper";
-import { compressVideo } from "@/lib/compress-video";
+import { compressVideo, type VideoQuality } from "@/lib/compress-video";
+
+const QUALITY_OPTIONS: { value: "full" | VideoQuality; label: string }[] = [
+  { value: "full", label: "Full quality" },
+  { value: "1080p", label: "1080p" },
+  { value: "720p", label: "720p" },
+  { value: "480p", label: "480p" },
+  { value: "360p", label: "360p" },
+];
 
 type Props = {
   mode: "create" | "edit";
@@ -62,6 +70,8 @@ function MediaUploadFields({
   videoProgress,
   videoPhase,
   onVideoPicked,
+  videoQuality,
+  onVideoQualityChange,
 }: {
   label?: string;
   thumbnailKey?: string;
@@ -73,6 +83,8 @@ function MediaUploadFields({
   videoProgress: number | null;
   videoPhase?: "compressing" | "uploading";
   onVideoPicked: (file: File | undefined) => void;
+  videoQuality: "full" | VideoQuality;
+  onVideoQualityChange: (quality: "full" | VideoQuality) => void;
 }) {
   return (
     <div className="flex flex-col gap-6">
@@ -97,10 +109,32 @@ function MediaUploadFields({
           }
           onPicked={onVideoPicked}
         />
-        <p className="mt-1.5 text-xs text-foreground/50">
-          Videos are automatically compressed before uploading (the first time, your browser
-          downloads a one-time ~30MB tool to do this).
-        </p>
+
+        <div className="mt-3">
+          <p className="mb-1 text-sm font-semibold text-foreground">Video quality</p>
+          <div className="flex flex-wrap gap-2">
+            {QUALITY_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => onVideoQualityChange(opt.value)}
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  videoQuality === opt.value
+                    ? "border-primary bg-primary text-white"
+                    : "border-border bg-surface text-foreground/70"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-1.5 text-xs text-foreground/50">
+            {videoQuality === "full"
+              ? "Uploads the file as-is, no compression."
+              : `Compresses down to ${videoQuality} before uploading, right in your browser (the first time, it downloads a one-time ~30MB tool to do this).`}
+          </p>
+        </div>
+
         {videoProgress !== null && (
           <div className="mt-3">
             <div className="mb-1 flex items-center justify-between text-sm font-semibold text-foreground">
@@ -222,6 +256,7 @@ export default function ReviewForm({ mode, initial }: Props) {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoProgress, setVideoProgress] = useState<number | null>(null);
   const [videoPhase, setVideoPhase] = useState<"compressing" | "uploading">("uploading");
+  const [videoQuality, setVideoQuality] = useState<"full" | VideoQuality>("full");
 
   const [thumbnailKey, setThumbnailKey] = useState<string | undefined>(
     initial?.thumbnailKey
@@ -255,6 +290,9 @@ export default function ReviewForm({ mode, initial }: Props) {
   const [secondReviewerVideoPhase, setSecondReviewerVideoPhase] = useState<
     "compressing" | "uploading"
   >("uploading");
+  const [secondReviewerVideoQuality, setSecondReviewerVideoQuality] = useState<
+    "full" | VideoQuality
+  >("full");
 
   const [secondReviewerThumbnailKey, setSecondReviewerThumbnailKey] = useState<
     string | undefined
@@ -339,13 +377,15 @@ export default function ReviewForm({ mode, initial }: Props) {
       if (videoFile) {
         let uploadBlob: File | Blob = videoFile;
         let uploadName = videoFile.name;
-        setVideoPhase("compressing");
-        setVideoProgress(0);
-        try {
-          uploadBlob = await compressVideo(videoFile, setVideoProgress);
-          uploadName = "video.mp4";
-        } catch (err) {
-          console.error("Video compression failed, uploading the original file instead", err);
+        if (videoQuality !== "full") {
+          setVideoPhase("compressing");
+          setVideoProgress(0);
+          try {
+            uploadBlob = await compressVideo(videoFile, setVideoProgress, videoQuality);
+            uploadName = "video.mp4";
+          } catch (err) {
+            console.error("Video compression failed, uploading the original file instead", err);
+          }
         }
         setVideoPhase("uploading");
         setVideoProgress(0);
@@ -369,13 +409,19 @@ export default function ReviewForm({ mode, initial }: Props) {
       if (hasSecondReviewer && secondReviewerVideoFile) {
         let uploadBlob: File | Blob = secondReviewerVideoFile;
         let uploadName = secondReviewerVideoFile.name;
-        setSecondReviewerVideoPhase("compressing");
-        setSecondReviewerVideoProgress(0);
-        try {
-          uploadBlob = await compressVideo(secondReviewerVideoFile, setSecondReviewerVideoProgress);
-          uploadName = "video.mp4";
-        } catch (err) {
-          console.error("Video compression failed, uploading the original file instead", err);
+        if (secondReviewerVideoQuality !== "full") {
+          setSecondReviewerVideoPhase("compressing");
+          setSecondReviewerVideoProgress(0);
+          try {
+            uploadBlob = await compressVideo(
+              secondReviewerVideoFile,
+              setSecondReviewerVideoProgress,
+              secondReviewerVideoQuality
+            );
+            uploadName = "video.mp4";
+          } catch (err) {
+            console.error("Video compression failed, uploading the original file instead", err);
+          }
         }
         setSecondReviewerVideoPhase("uploading");
         setSecondReviewerVideoProgress(0);
@@ -734,6 +780,8 @@ export default function ReviewForm({ mode, initial }: Props) {
             videoProgress={videoProgress}
             videoPhase={videoPhase}
             onVideoPicked={(file) => setVideoFile(file ?? null)}
+            videoQuality={videoQuality}
+            onVideoQualityChange={setVideoQuality}
           />
         </div>
 
@@ -755,6 +803,8 @@ export default function ReviewForm({ mode, initial }: Props) {
               videoProgress={secondReviewerVideoProgress}
               videoPhase={secondReviewerVideoPhase}
               onVideoPicked={(file) => setSecondReviewerVideoFile(file ?? null)}
+              videoQuality={secondReviewerVideoQuality}
+              onVideoQualityChange={setSecondReviewerVideoQuality}
             />
           </div>
         )}
