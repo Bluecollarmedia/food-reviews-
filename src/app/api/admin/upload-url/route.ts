@@ -16,7 +16,9 @@ export async function POST(req: NextRequest) {
 
   const safeName = filename.replace(/[^a-zA-Z0-9.\-_]/g, "-");
   const key = `${folder}/${crypto.randomUUID()}-${safeName}`;
-  const uploadUrl = await getUploadUrl(key, contentType);
+  // Every key is a fresh UUID and is never overwritten in place (edits upload a
+  // new key and delete the old one), so it's safe to cache indefinitely.
+  const uploadUrl = await getUploadUrl(key, contentType, "public, max-age=31536000, immutable");
 
   return NextResponse.json({ uploadUrl, key });
 }

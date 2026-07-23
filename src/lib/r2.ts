@@ -14,11 +14,12 @@ function client() {
 
 const BUCKET = process.env.R2_BUCKET_NAME!;
 
-export async function getUploadUrl(key: string, contentType: string) {
+export async function getUploadUrl(key: string, contentType: string, cacheControl?: string) {
   const command = new PutObjectCommand({
     Bucket: BUCKET,
     Key: key,
     ContentType: contentType,
+    ...(cacheControl ? { CacheControl: cacheControl } : {}),
   });
   return getSignedUrl(client(), command, { expiresIn: 60 * 10 });
 }

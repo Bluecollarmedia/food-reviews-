@@ -1,4 +1,5 @@
 import { getStore } from "@netlify/blobs";
+import { unstable_cache } from "next/cache";
 import type { Review, ReviewStatus, Reviewer } from "./data";
 
 function reviewsStore() {
@@ -185,10 +186,17 @@ export async function listAllReviews(): Promise<Review[]> {
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
-export async function listPublishedReviews(): Promise<Review[]> {
-  const all = await listAllReviews();
-  return all.filter((r) => r.status === "published");
-}
+// The homepage and /reviews are public, look the same for every visitor, and
+// don't need to reflect an edit within the same second — so cache the list
+// for a minute instead of hitting Netlify Blobs on every single page view.
+export const listPublishedReviews = unstable_cache(
+  async (): Promise<Review[]> => {
+    const all = await listAllReviews();
+    return all.filter((r) => r.status === "published");
+  },
+  ["published-reviews"],
+  { revalidate: 60 }
+);
 
 export async function listLockedReviews(): Promise<Review[]> {
   const all = await listAllReviews();
