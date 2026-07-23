@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { getPublicFileUrl } from "@/lib/media-url";
 import type { Review } from "@/lib/data";
+import AllCommentsClient from "./AllCommentsClient";
 
 type UserReaction = "like" | "dislike" | null;
 
@@ -47,6 +48,7 @@ export default function ShortsSlide({ review }: { review: Review }) {
   const [likes, setLikes] = useState<number | null>(null);
   const [dislikes, setDislikes] = useState<number | null>(null);
   const [userReaction, setUserReaction] = useState<UserReaction>(null);
+  const [showComments, setShowComments] = useState(false);
 
   const videoUrl = getPublicFileUrl(review.videoKey);
   const thumbnailUrl = getPublicFileUrl(review.thumbnailKey);
@@ -212,16 +214,15 @@ export default function ShortsSlide({ review }: { review: Review }) {
             </svg>
           }
         />
-        <Link href={`/videos/${review.slug}/comments`} className="contents">
-          <ActionButton
-            label="Comments"
-            icon={
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
-                <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            }
-          />
-        </Link>
+        <ActionButton
+          label="Comments"
+          onClick={() => setShowComments(true)}
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
+              <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          }
+        />
         <ActionButton
           label="Share"
           onClick={handleShare}
@@ -245,6 +246,33 @@ export default function ShortsSlide({ review }: { review: Review }) {
           {review.secondReviewer ? ` & ${review.secondReviewer}` : ""} &middot; {review.city}
         </p>
       </div>
+
+      {showComments && (
+        <>
+          <button
+            aria-label="Close comments"
+            onClick={() => setShowComments(false)}
+            className="absolute inset-x-0 top-0 z-20 h-1/2"
+          />
+          <div className="absolute inset-x-0 bottom-0 z-30 flex h-1/2 flex-col rounded-t-2xl bg-background shadow-2xl">
+            <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
+              <p className="font-display text-lg tracking-wide text-foreground">Comments</p>
+              <button
+                onClick={() => setShowComments(false)}
+                aria-label="Close comments"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-foreground/50 hover:text-foreground"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
+                  <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-3">
+              <AllCommentsClient slug={review.slug} />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
