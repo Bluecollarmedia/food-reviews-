@@ -7,10 +7,12 @@ function Thumbnail({
   review,
   thumbnailUrl,
   progressPercent,
+  priority,
 }: {
   review: Review;
   thumbnailUrl: string | null;
   progressPercent?: number;
+  priority?: boolean;
 }) {
   return (
     <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-gradient-to-br from-primary to-accent">
@@ -19,7 +21,8 @@ function Thumbnail({
         <img
           src={thumbnailUrl}
           alt=""
-          loading="lazy"
+          loading={priority ? "eager" : "lazy"}
+          fetchPriority={priority ? "high" : "auto"}
           className="absolute inset-0 h-full w-full object-cover"
         />
       ) : (
@@ -55,15 +58,22 @@ function Thumbnail({
 export default function VideoCard({
   review,
   progressPercent,
+  priority,
 }: {
   review: Review;
   progressPercent?: number;
+  priority?: boolean;
 }) {
   const thumbnailUrl = getPublicFileUrl(review.thumbnailKey);
 
   return (
     <Link href={`/videos/${review.slug}`} className="group flex flex-col">
-      <Thumbnail review={review} thumbnailUrl={thumbnailUrl} progressPercent={progressPercent} />
+      <Thumbnail
+        review={review}
+        thumbnailUrl={thumbnailUrl}
+        progressPercent={progressPercent}
+        priority={priority}
+      />
       <div className="flex gap-3 py-3">
         <div className="shrink-0">
           <ScoreBadge rating={review.rating} size="sm" />

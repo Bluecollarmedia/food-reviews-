@@ -109,12 +109,12 @@ export default function ReviewsExplorer({ reviews }: { reviews: Review[] }) {
       </div>
 
       <div className="mt-8 flex flex-wrap gap-4 sm:gap-6 lg:gap-8">
-        {visible.map((review) => (
+        {visible.map((review, index) => (
           <div
             key={review.slug}
             className="w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-1rem)] lg:w-[calc(25%-1.5rem)]"
           >
-            <VideoCard review={review} />
+            <VideoCard review={review} priority={index < 4} />
           </div>
         ))}
       </div>

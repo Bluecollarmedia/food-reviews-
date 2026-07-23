@@ -49,6 +49,12 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${bebasNeue.variable} h-full antialiased`}
     >
       <head>
+        {process.env.NEXT_PUBLIC_R2_PUBLIC_BASE_URL && (
+          <>
+            <link rel="preconnect" href={process.env.NEXT_PUBLIC_R2_PUBLIC_BASE_URL} crossOrigin="anonymous" />
+            <link rel="dns-prefetch" href={process.env.NEXT_PUBLIC_R2_PUBLIC_BASE_URL} />
+          </>
+        )}
         <script
           dangerouslySetInnerHTML={{
             __html:

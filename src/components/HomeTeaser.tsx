@@ -127,12 +127,12 @@ export default function HomeTeaser({ reviews }: { reviews: Review[] }) {
       </div>
 
       <div className="mt-8 flex flex-wrap gap-6">
-        {visible.map((review) => (
+        {visible.map((review, index) => (
           <div
             key={review.slug}
             className="w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)] xl:w-[calc(25%-1.125rem)]"
           >
-            <VideoCard review={review} />
+            <VideoCard review={review} priority={index < 4} />
           </div>
         ))}
       </div>
