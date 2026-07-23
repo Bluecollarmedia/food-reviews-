@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { listLockedReviews } from "@/lib/reviews-store";
 import { LOCKED_SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 import { getLockedPasscode } from "@/lib/locked-passcode";
@@ -34,14 +33,6 @@ export default async function LockedReviewsPage() {
           No locked reviews yet.
         </p>
       )}
-      <div className="mt-12 border-t border-border pt-6 text-center">
-        <Link
-          href="/locked/vault"
-          className="text-sm font-medium text-foreground/50 transition-colors hover:text-primary"
-        >
-          There&apos;s more here &rarr;
-        </Link>
-      </div>
     </div>
   );
 }

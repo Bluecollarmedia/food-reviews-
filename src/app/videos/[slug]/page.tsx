@@ -10,8 +10,8 @@ import {
 import { getRelatedReviews } from "@/lib/data";
 import { getPublicFileUrl } from "@/lib/media-url";
 import { incrementViews } from "@/lib/views";
-import { LOCKED_SESSION_COOKIE, VAULT_SESSION_COOKIE, verifySessionToken } from "@/lib/session";
-import { getLockedPasscode, getVaultPasscode } from "@/lib/locked-passcode";
+import { LOCKED_SESSION_COOKIE, verifySessionToken } from "@/lib/session";
+import { getLockedPasscode } from "@/lib/locked-passcode";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
 import ScoreBadge from "@/components/ScoreBadge";
 import CommentSection from "@/components/CommentSection";
@@ -66,17 +66,6 @@ export default async function VideoPage({
     const token = cookieStore.get(LOCKED_SESSION_COOKIE)?.value;
     const valid = await verifySessionToken(token, await getLockedPasscode());
     if (!valid) redirect(`/locked/login?redirect=/videos/${slug}`);
-  }
-
-  if (review.status === "vault") {
-    const cookieStore = await cookies();
-    const lockedToken = cookieStore.get(LOCKED_SESSION_COOKIE)?.value;
-    const hasLockedAccess = await verifySessionToken(lockedToken, await getLockedPasscode());
-    if (!hasLockedAccess) redirect(`/locked/login?redirect=/videos/${slug}`);
-
-    const vaultToken = cookieStore.get(VAULT_SESSION_COOKIE)?.value;
-    const hasVaultAccess = await verifySessionToken(vaultToken, await getVaultPasscode());
-    if (!hasVaultAccess) redirect(`/locked/vault/login?redirect=/videos/${slug}`);
   }
 
   await incrementViews(slug).catch(() => {});

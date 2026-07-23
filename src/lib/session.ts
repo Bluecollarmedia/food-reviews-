@@ -4,12 +4,6 @@ export const ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 90; // 90 days
 export const LOCKED_SESSION_COOKIE = "locked_session";
 export const LOCKED_SESSION_MAX_AGE_SECONDS = 60 * 60 * 12; // 12 hours
 
-export const VAULT_SESSION_COOKIE = "vault_session";
-export const VAULT_SESSION_MAX_AGE_SECONDS = 60 * 60 * 12; // 12 hours
-
-export const SETTINGS_SESSION_COOKIE = "settings_session";
-export const SETTINGS_SESSION_MAX_AGE_SECONDS = 60 * 30; // 30 minutes
-
 function base64url(bytes: ArrayBuffer | Uint8Array) {
   const arr = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
   let str = "";
