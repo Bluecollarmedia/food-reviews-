@@ -42,7 +42,7 @@ export default function ShortsSlide({ review }: { review: Review }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const pressStartRef = useRef<number | null>(null);
   const [inView, setInView] = useState(false);
-  const [muted, setMuted] = useState(true);
+  const [muted, setMuted] = useState(false);
   const [held, setHeld] = useState(false);
   const [likes, setLikes] = useState<number | null>(null);
   const [dislikes, setDislikes] = useState<number | null>(null);
@@ -67,7 +67,13 @@ export default function ShortsSlide({ review }: { review: Review }) {
     if (!v) return;
     if (inView) {
       v.currentTime = 0;
-      v.play().catch(() => {});
+      v.play().catch(() => {
+        // Autoplay with sound can be blocked without a prior user gesture —
+        // fall back to muted autoplay so playback still starts either way.
+        v.muted = true;
+        setMuted(true);
+        v.play().catch(() => {});
+      });
     } else {
       v.pause();
     }
@@ -134,7 +140,8 @@ export default function ShortsSlide({ review }: { review: Review }) {
   return (
     <div
       ref={containerRef}
-      className="relative h-full w-full snap-start snap-always overflow-hidden bg-black"
+      className="relative h-full w-full select-none snap-start snap-always overflow-hidden bg-black"
+      style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none", touchAction: "manipulation" }}
     >
       {videoUrl ? (
         <video
@@ -145,7 +152,9 @@ export default function ShortsSlide({ review }: { review: Review }) {
           loop
           playsInline
           preload={inView ? "auto" : "none"}
-          className="absolute inset-0 h-full w-full object-contain"
+          className="absolute inset-0 h-full w-full select-none object-contain"
+          style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none" }}
+          onContextMenu={(e) => e.preventDefault()}
           onPointerDown={() => {
             pressStartRef.current = Date.now();
             if (videoRef.current) videoRef.current.playbackRate = 2;
@@ -171,13 +180,13 @@ export default function ShortsSlide({ review }: { review: Review }) {
       )}
 
       {held && (
-        <div className="absolute left-1/2 top-6 -translate-x-1/2 rounded-full bg-black/70 px-4 py-1.5 text-sm font-bold text-white">
+        <div className="pointer-events-none absolute left-1/2 top-6 -translate-x-1/2 select-none rounded-full bg-black/70 px-4 py-1.5 text-sm font-bold text-white">
           2x speed
         </div>
       )}
 
       {muted && (
-        <div className="absolute left-1/2 top-6 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 text-xs font-semibold text-white">
+        <div className="pointer-events-none absolute left-1/2 top-6 -translate-x-1/2 select-none rounded-full bg-black/50 px-3 py-1 text-xs font-semibold text-white">
           Tap to unmute
         </div>
       )}
