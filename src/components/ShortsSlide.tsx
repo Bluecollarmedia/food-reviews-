@@ -36,12 +36,9 @@ function ActionButton({
   );
 }
 
-const TAP_VS_HOLD_THRESHOLD_MS = 250;
-
 export default function ShortsSlide({ review }: { review: Review }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const pressStartRef = useRef<number | null>(null);
   const [inView, setInView] = useState(false);
   const [muted, setMuted] = useState(false);
   const [held, setHeld] = useState(false);
@@ -158,23 +155,16 @@ export default function ShortsSlide({ review }: { review: Review }) {
           style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none" }}
           onContextMenu={(e) => e.preventDefault()}
           onPointerDown={() => {
-            pressStartRef.current = Date.now();
             if (videoRef.current) videoRef.current.playbackRate = 2;
             setHeld(true);
           }}
           onPointerUp={() => {
             if (videoRef.current) videoRef.current.playbackRate = 1;
             setHeld(false);
-            const elapsed = pressStartRef.current ? Date.now() - pressStartRef.current : Infinity;
-            pressStartRef.current = null;
-            // A quick tap toggles mute; a deliberate hold (already sped up
-            // playback) shouldn't also flip mute the moment it's released.
-            if (elapsed < TAP_VS_HOLD_THRESHOLD_MS) setMuted((m) => !m);
           }}
           onPointerLeave={() => {
             if (videoRef.current) videoRef.current.playbackRate = 1;
             setHeld(false);
-            pressStartRef.current = null;
           }}
         />
       ) : (
@@ -184,12 +174,6 @@ export default function ShortsSlide({ review }: { review: Review }) {
       {held && (
         <div className="pointer-events-none absolute left-1/2 top-6 -translate-x-1/2 select-none rounded-full bg-black/70 px-4 py-1.5 text-sm font-bold text-white">
           2x speed
-        </div>
-      )}
-
-      {muted && (
-        <div className="pointer-events-none absolute left-1/2 top-6 -translate-x-1/2 select-none rounded-full bg-black/50 px-3 py-1 text-xs font-semibold text-white">
-          Tap to unmute
         </div>
       )}
 
