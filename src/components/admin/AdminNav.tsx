@@ -16,6 +16,7 @@ export default function AdminNav({ unreadNotifications = 0 }: { unreadNotificati
       href: "/admin/notifications",
       label: `Notifications${unreadNotifications ? ` (${unreadNotifications})` : ""}`,
     },
+    { href: "/admin/storage", label: "Storage" },
     { href: "/admin/settings", label: "Settings" },
   ];
 

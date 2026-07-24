@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 function client() {
@@ -26,4 +26,32 @@ export async function getUploadUrl(key: string, contentType: string, cacheContro
 
 export async function deleteFile(key: string) {
   await client().send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
+}
+
+export type BucketFile = { key: string; size: number; lastModified: string };
+
+export async function listFiles(prefix: string): Promise<BucketFile[]> {
+  const files: BucketFile[] = [];
+  let continuationToken: string | undefined;
+
+  do {
+    const res = await client().send(
+      new ListObjectsV2Command({
+        Bucket: BUCKET,
+        Prefix: prefix,
+        ContinuationToken: continuationToken,
+      })
+    );
+    for (const obj of res.Contents ?? []) {
+      if (!obj.Key) continue;
+      files.push({
+        key: obj.Key,
+        size: obj.Size ?? 0,
+        lastModified: (obj.LastModified ?? new Date()).toISOString(),
+      });
+    }
+    continuationToken = res.IsTruncated ? res.NextContinuationToken : undefined;
+  } while (continuationToken);
+
+  return files;
 }
