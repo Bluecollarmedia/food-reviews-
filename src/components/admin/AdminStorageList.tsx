@@ -49,7 +49,10 @@ export default function AdminStorageList({ files }: { files: BucketFile[] }) {
   return (
     <div className="flex flex-col gap-2">
       {visible.map((file) => {
-        const isImage = file.key.startsWith("thumbnails/");
+        const isImage =
+          file.key.startsWith("thumbnails/") ||
+          file.key.startsWith("avatars/") ||
+          file.key.startsWith("comment-images/");
         const url = getPublicFileUrl(file.key);
         return (
           <div

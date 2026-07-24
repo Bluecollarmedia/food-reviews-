@@ -1,5 +1,6 @@
 import { listFiles } from "@/lib/r2";
 import { listAllReviews } from "@/lib/reviews-store";
+import { createAdminClient } from "@/lib/supabase/admin";
 import AdminStorageList from "@/components/admin/AdminStorageList";
 
 export const dynamic = "force-dynamic";
@@ -12,11 +13,18 @@ function formatBytes(bytes: number): string {
 }
 
 export default async function AdminStoragePage() {
-  const [videos, thumbnails, reviews] = await Promise.all([
-    listFiles("videos/"),
-    listFiles("thumbnails/"),
-    listAllReviews(),
-  ]);
+  const supabase = createAdminClient();
+
+  const [videos, thumbnails, avatars, commentImages, reviews, profilesRes, commentsRes] =
+    await Promise.all([
+      listFiles("videos/"),
+      listFiles("thumbnails/"),
+      listFiles("avatars/"),
+      listFiles("comment-images/"),
+      listAllReviews(),
+      supabase.from("profiles").select("avatar_key").not("avatar_key", "is", null),
+      supabase.from("comments").select("image_key").not("image_key", "is", null),
+    ]);
 
   const inUseKeys = new Set<string>();
   for (const review of reviews) {
@@ -25,8 +33,14 @@ export default async function AdminStoragePage() {
     if (review.secondReviewerVideoKey) inUseKeys.add(review.secondReviewerVideoKey);
     if (review.secondReviewerThumbnailKey) inUseKeys.add(review.secondReviewerThumbnailKey);
   }
+  for (const row of profilesRes.data ?? []) {
+    if (row.avatar_key) inUseKeys.add(row.avatar_key);
+  }
+  for (const row of commentsRes.data ?? []) {
+    if (row.image_key) inUseKeys.add(row.image_key);
+  }
 
-  const allFiles = [...videos, ...thumbnails];
+  const allFiles = [...videos, ...thumbnails, ...avatars, ...commentImages];
   const orphaned = allFiles
     .filter((f) => !inUseKeys.has(f.key))
     .sort((a, b) => b.lastModified.localeCompare(a.lastModified));
@@ -37,13 +51,13 @@ export default async function AdminStoragePage() {
     <div className="mx-auto w-full max-w-3xl px-5 py-10">
       <h1 className="font-display text-3xl tracking-wide text-foreground">Storage</h1>
       <p className="mt-1 text-foreground/60">
-        {allFiles.length} files in the bucket &middot; {orphaned.length} not linked to any
-        review, using {formatBytes(orphanedBytes)}.
+        {allFiles.length} files in the bucket (videos, thumbnails, avatars, comment photos)
+        &middot; {orphaned.length} not linked to anything, using {formatBytes(orphanedBytes)}.
       </p>
 
       {orphaned.length === 0 ? (
         <p className="mt-8 text-center text-foreground/60">
-          Nothing unused — every file in the bucket is linked to a review.
+          Nothing unused — every file in the bucket is linked to something.
         </p>
       ) : (
         <div className="mt-6">

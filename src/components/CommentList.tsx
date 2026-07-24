@@ -150,8 +150,7 @@ function RepliesSection({
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this reply?")) return;
-    const supabase = createClient();
-    await supabase.from("comments").delete().eq("id", id);
+    await fetch(`/api/comments/${id}`, { method: "DELETE" });
     onChanged();
   }
 
@@ -258,8 +257,7 @@ export default function CommentList({
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this comment? Any replies under it will be deleted too.")) return;
-    const supabase = createClient();
-    await supabase.from("comments").delete().eq("id", id);
+    await fetch(`/api/comments/${id}`, { method: "DELETE" });
     onChanged();
   }
 
