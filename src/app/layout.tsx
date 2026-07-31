@@ -3,6 +3,8 @@ import { Geist, Geist_Mono, Bebas_Neue } from "next/font/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import AnnouncementScreen from "@/components/AnnouncementScreen";
+import { getActiveBanner } from "@/lib/site-settings";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -38,11 +40,13 @@ export const viewport: Viewport = {
   themeColor: "#c8102e",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const banner = await getActiveBanner();
+
   return (
     <html
       lang="en"
@@ -64,6 +68,7 @@ export default function RootLayout({
       </head>
       <body className="flex min-h-full flex-col bg-background text-foreground">
         <ServiceWorkerRegister />
+        {banner && <AnnouncementScreen message={banner.message} version={banner.version} />}
         <Header />
         <main className="flex flex-1 flex-col">{children}</main>
         <Footer />

@@ -24,7 +24,7 @@ export default function Header() {
     return () => observer.disconnect();
   }, []);
 
-  if (pathname?.startsWith("/admin")) return null;
+  if (pathname?.startsWith("/admin") || pathname === "/site-locked") return null;
 
   return (
     <header ref={headerRef} className="sticky top-0 z-40 bg-surface/90 backdrop-blur">
