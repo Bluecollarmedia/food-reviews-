@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ScoreBadge from "./ScoreBadge";
+import ThumbnailImage from "./ThumbnailImage";
 import { getPublicFileUrl } from "@/lib/media-url";
 import type { Review } from "@/lib/data";
 
@@ -19,13 +20,7 @@ export default function HistoryVideoRow({
     >
       <div className="relative aspect-video w-32 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-primary to-accent sm:w-40">
         {thumbnailUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={thumbnailUrl}
-            alt=""
-            loading="lazy"
-            className="absolute inset-0 h-full w-full object-cover"
-          />
+          <ThumbnailImage src={thumbnailUrl} />
         ) : (
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.25),transparent_60%)]" />
         )}
