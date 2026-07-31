@@ -9,6 +9,7 @@ export default function AdminSettingsForm({
   initialEmailNotifications,
   initialNotifyEmail,
   initialLockedPasscode,
+  initialVaultPasscode,
   initialBannerMessage,
   initialBannerExpiresAt,
   initialSiteLockMode,
@@ -17,6 +18,7 @@ export default function AdminSettingsForm({
   initialEmailNotifications: boolean;
   initialNotifyEmail: string;
   initialLockedPasscode: string;
+  initialVaultPasscode: string;
   initialBannerMessage: string;
   initialBannerExpiresAt: string | null;
   initialSiteLockMode: SiteLockMode;
@@ -25,6 +27,7 @@ export default function AdminSettingsForm({
   const [emailNotifications, setEmailNotifications] = useState(initialEmailNotifications);
   const [notifyEmail, setNotifyEmail] = useState(initialNotifyEmail);
   const [lockedPasscode, setLockedPasscode] = useState(initialLockedPasscode);
+  const [vaultPasscode, setVaultPasscode] = useState(initialVaultPasscode);
 
   const [bannerMessage, setBannerMessage] = useState(initialBannerMessage);
   const [bannerDuration, setBannerDuration] = useState<BannerDuration>("none");
@@ -52,6 +55,7 @@ export default function AdminSettingsForm({
         emailNotifications,
         notifyEmail,
         lockedPasscode,
+        vaultPasscode,
         bannerMessage,
         bannerDuration,
         siteLockMode,
@@ -120,22 +124,45 @@ export default function AdminSettingsForm({
         </div>
       )}
 
+      {/* All the video passcodes in one place */}
       <div className="rounded-2xl border border-border bg-surface p-4">
-        <p className="text-sm font-semibold text-foreground">Locked videos passcode</p>
+        <p className="text-sm font-semibold text-foreground">Passcodes</p>
         <p className="mt-0.5 text-xs text-foreground/60">
-          Whoever has this code can view reviews in the Locked section. Change it any time —
-          anyone with the old code will need the new one.
+          The two codes that unlock your hidden videos. Change either any time — anyone with an old
+          code will need the new one.
+        </p>
+
+        <label className="mt-4 block text-xs font-semibold text-foreground">Locked passcode</label>
+        <p className="mt-0.5 text-xs text-foreground/50">
+          Opens the regular Locked section.
         </p>
         <input
           value={lockedPasscode}
           onChange={(e) => setLockedPasscode(e.target.value)}
           type="text"
-          placeholder="Passcode"
+          placeholder="Locked passcode"
           autoComplete="off"
           autoCapitalize="off"
           autoCorrect="off"
           spellCheck={false}
-          className="mt-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+          className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+        />
+
+        <label className="mt-4 block text-xs font-semibold text-foreground">Vault passcode</label>
+        <p className="mt-0.5 text-xs text-foreground/50">
+          The second, deeper code — for videos inside the Vault. Visitors need the Locked passcode
+          first, then this one.
+        </p>
+        <input
+          value={vaultPasscode}
+          onChange={(e) => setVaultPasscode(e.target.value)}
+          type="text"
+          placeholder="Vault passcode"
+          autoComplete="off"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
         />
       </div>
 

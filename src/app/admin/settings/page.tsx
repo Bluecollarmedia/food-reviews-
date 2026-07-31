@@ -9,7 +9,7 @@ export default async function AdminSettingsPage() {
   const { data } = await supabase
     .from("admin_settings")
     .select(
-      "email_notifications, notify_email, locked_passcode, banner_message, banner_expires_at, site_lock_mode, site_lock_passcode"
+      "email_notifications, notify_email, locked_passcode, locked_passcode_2, banner_message, banner_expires_at, site_lock_mode, site_lock_passcode"
     )
     .eq("id", 1)
     .single();
@@ -28,6 +28,7 @@ export default async function AdminSettingsPage() {
         initialEmailNotifications={data?.email_notifications ?? false}
         initialNotifyEmail={data?.notify_email ?? ""}
         initialLockedPasscode={data?.locked_passcode ?? process.env.LOCKED_PASSCODE ?? ""}
+        initialVaultPasscode={data?.locked_passcode_2 ?? process.env.VAULT_PASSCODE ?? ""}
         initialBannerMessage={data?.banner_message ?? ""}
         initialBannerExpiresAt={data?.banner_expires_at ?? null}
         initialSiteLockMode={siteLockMode}

@@ -15,6 +15,7 @@ export async function PUT(req: NextRequest) {
   const emailNotifications = typeof body?.emailNotifications === "boolean" ? body.emailNotifications : false;
   const notifyEmail = typeof body?.notifyEmail === "string" ? body.notifyEmail.trim() : "";
   const lockedPasscode = typeof body?.lockedPasscode === "string" ? body.lockedPasscode.trim() : "";
+  const vaultPasscode = typeof body?.vaultPasscode === "string" ? body.vaultPasscode.trim() : "";
 
   const bannerMessage = typeof body?.bannerMessage === "string" ? body.bannerMessage.trim() : "";
   const bannerDuration = body?.bannerDuration;
@@ -53,6 +54,7 @@ export async function PUT(req: NextRequest) {
       email_notifications: emailNotifications,
       notify_email: notifyEmail || null,
       locked_passcode: lockedPasscode || null,
+      locked_passcode_2: vaultPasscode || null,
       banner_message: bannerMessage || null,
       banner_expires_at: bannerMessage ? expiryFromDuration(bannerDuration) : null,
       banner_updated_at: bannerUpdatedAt,

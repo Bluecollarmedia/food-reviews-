@@ -79,6 +79,8 @@ export default function AdminReviewCard({
                   ? "bg-emerald-100 text-emerald-700"
                   : review.status === "locked"
                   ? "bg-amber-100 text-amber-700"
+                  : review.status === "vault"
+                  ? "bg-violet-100 text-violet-700"
                   : "bg-foreground/10 text-foreground/60"
               }`}
             >
@@ -86,6 +88,8 @@ export default function AdminReviewCard({
                 ? "Published"
                 : review.status === "locked"
                 ? "Locked"
+                : review.status === "vault"
+                ? "Vault"
                 : "Draft"}
             </span>
             <span

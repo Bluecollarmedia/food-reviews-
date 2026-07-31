@@ -217,7 +217,7 @@ export default function ReviewForm({ mode, initial }: Props) {
   const [guestName, setGuestName] = useState(
     initial && !reviewers.includes(initial.reviewer) ? initial.reviewer : ""
   );
-  const [status, setStatus] = useState<"published" | "draft" | "locked">(
+  const [status, setStatus] = useState<"published" | "draft" | "locked" | "vault">(
     initial?.status ?? "draft"
   );
   const [videoKey, setVideoKey] = useState<string | undefined>(initial?.videoKey);
@@ -815,10 +815,27 @@ export default function ReviewForm({ mode, initial }: Props) {
             >
               Locked (passcode)
             </button>
+            <button
+              type="button"
+              onClick={() => setStatus("vault")}
+              className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                status === "vault"
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-border bg-surface text-foreground/70"
+              }`}
+            >
+              Vault (2nd passcode)
+            </button>
           </div>
           {status === "locked" && (
             <p className="mt-2 text-xs text-foreground/50">
               Visible under the site&apos;s &quot;Locked&quot; menu, only to visitors who enter the passcode.
+            </p>
+          )}
+          {status === "vault" && (
+            <p className="mt-2 text-xs text-foreground/50">
+              Hidden inside the Vault — visitors need the Locked passcode first, then the Vault
+              passcode on top of it.
             </p>
           )}
         </div>
