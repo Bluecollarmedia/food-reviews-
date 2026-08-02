@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SITE_SETTINGS_TAG } from "@/lib/site-settings";
+import { SETTINGS_SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 
 function expiryFromDuration(duration: unknown): string | null {
   const now = Date.now();
@@ -16,6 +17,7 @@ export async function PUT(req: NextRequest) {
   const notifyEmail = typeof body?.notifyEmail === "string" ? body.notifyEmail.trim() : "";
   const lockedPasscode = typeof body?.lockedPasscode === "string" ? body.lockedPasscode.trim() : "";
   const vaultPasscode = typeof body?.vaultPasscode === "string" ? body.vaultPasscode.trim() : "";
+  const settingsPasscode = typeof body?.settingsPasscode === "string" ? body.settingsPasscode.trim() : "";
 
   const bannerMessage = typeof body?.bannerMessage === "string" ? body.bannerMessage.trim() : "";
   const bannerDuration = body?.bannerDuration;
@@ -37,9 +39,17 @@ export async function PUT(req: NextRequest) {
   // an unrelated settings save doesn't re-show a banner people already closed.
   const { data: existing } = await supabase
     .from("admin_settings")
-    .select("banner_message, banner_updated_at")
+    .select("banner_message, banner_updated_at, settings_passcode")
     .eq("id", 1)
     .single();
+
+  // The Locked/Vault/Security passcodes can only be changed by someone who's
+  // entered the separate security passcode (or when none is set up yet). Any
+  // other admin's save leaves those three fields untouched.
+  const currentSettingsPasscode = existing?.settings_passcode || process.env.SETTINGS_PASSCODE || "";
+  const settingsUnlocked =
+    !currentSettingsPasscode ||
+    (await verifySessionToken(req.cookies.get(SETTINGS_SESSION_COOKIE)?.value, currentSettingsPasscode));
 
   const messageChanged = (existing?.banner_message ?? "") !== bannerMessage;
   const bannerUpdatedAt = !bannerMessage
@@ -48,20 +58,23 @@ export async function PUT(req: NextRequest) {
     ? new Date().toISOString()
     : existing.banner_updated_at;
 
-  const { error } = await supabase
-    .from("admin_settings")
-    .update({
-      email_notifications: emailNotifications,
-      notify_email: notifyEmail || null,
-      locked_passcode: lockedPasscode || null,
-      locked_passcode_2: vaultPasscode || null,
-      banner_message: bannerMessage || null,
-      banner_expires_at: bannerMessage ? expiryFromDuration(bannerDuration) : null,
-      banner_updated_at: bannerUpdatedAt,
-      site_lock_mode: siteLockMode,
-      site_lock_passcode: siteLockMode === "code" ? siteLockPasscode || null : null,
-    })
-    .eq("id", 1);
+  const update: Record<string, unknown> = {
+    email_notifications: emailNotifications,
+    notify_email: notifyEmail || null,
+    banner_message: bannerMessage || null,
+    banner_expires_at: bannerMessage ? expiryFromDuration(bannerDuration) : null,
+    banner_updated_at: bannerUpdatedAt,
+    site_lock_mode: siteLockMode,
+    site_lock_passcode: siteLockMode === "code" ? siteLockPasscode || null : null,
+  };
+
+  if (settingsUnlocked) {
+    update.locked_passcode = lockedPasscode || null;
+    update.locked_passcode_2 = vaultPasscode || null;
+    update.settings_passcode = settingsPasscode || null;
+  }
+
+  const { error } = await supabase.from("admin_settings").update(update).eq("id", 1);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

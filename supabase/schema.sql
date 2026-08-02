@@ -205,6 +205,11 @@ alter table public.admin_settings add column if not exists locked_passcode text;
 -- Reviews with status 'vault' need the Locked passcode first, then this one.
 alter table public.admin_settings add column if not exists locked_passcode_2 text;
 
+-- Separate "security passcode" that guards the Locked/Vault passcode fields in
+-- the admin panel, so a co-admin who can log in and upload still can't see or
+-- change those two codes without also knowing this one.
+alter table public.admin_settings add column if not exists settings_passcode text;
+
 -- Site-wide announcement banner, editable from the admin panel. Shown across
 -- the public site until it expires or the admin clears it. banner_updated_at
 -- bumps only when the message text changes, so dismissing it stays dismissed

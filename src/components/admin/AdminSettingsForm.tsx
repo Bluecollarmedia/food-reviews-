@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 type BannerDuration = "none" | "24h" | "1w";
 type SiteLockMode = "off" | "full" | "code";
@@ -8,8 +9,10 @@ type SiteLockMode = "off" | "full" | "code";
 export default function AdminSettingsForm({
   initialEmailNotifications,
   initialNotifyEmail,
+  initialUnlocked,
   initialLockedPasscode,
   initialVaultPasscode,
+  initialSettingsPasscode,
   initialBannerMessage,
   initialBannerExpiresAt,
   initialSiteLockMode,
@@ -17,17 +20,26 @@ export default function AdminSettingsForm({
 }: {
   initialEmailNotifications: boolean;
   initialNotifyEmail: string;
+  initialUnlocked: boolean;
   initialLockedPasscode: string;
   initialVaultPasscode: string;
+  initialSettingsPasscode: string;
   initialBannerMessage: string;
   initialBannerExpiresAt: string | null;
   initialSiteLockMode: SiteLockMode;
   initialSiteLockPasscode: string;
 }) {
+  const router = useRouter();
   const [emailNotifications, setEmailNotifications] = useState(initialEmailNotifications);
   const [notifyEmail, setNotifyEmail] = useState(initialNotifyEmail);
   const [lockedPasscode, setLockedPasscode] = useState(initialLockedPasscode);
   const [vaultPasscode, setVaultPasscode] = useState(initialVaultPasscode);
+  const [settingsPasscode, setSettingsPasscode] = useState(initialSettingsPasscode);
+
+  const unlocked = initialUnlocked;
+  const [unlockInput, setUnlockInput] = useState("");
+  const [unlocking, setUnlocking] = useState(false);
+  const [unlockError, setUnlockError] = useState("");
 
   const [bannerMessage, setBannerMessage] = useState(initialBannerMessage);
   const [bannerDuration, setBannerDuration] = useState<BannerDuration>("none");
@@ -38,6 +50,23 @@ export default function AdminSettingsForm({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+
+  async function handleUnlock() {
+    setUnlocking(true);
+    setUnlockError("");
+    const res = await fetch("/api/admin/settings/unlock", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ passcode: unlockInput }),
+    });
+    setUnlocking(false);
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      setUnlockError(data?.error ?? "Incorrect passcode.");
+      return;
+    }
+    router.refresh();
+  }
 
   const existingExpiry =
     initialBannerExpiresAt && new Date(initialBannerExpiresAt).getTime() > Date.now()
@@ -56,6 +85,7 @@ export default function AdminSettingsForm({
         notifyEmail,
         lockedPasscode,
         vaultPasscode,
+        settingsPasscode,
         bannerMessage,
         bannerDuration,
         siteLockMode,
@@ -124,46 +154,96 @@ export default function AdminSettingsForm({
         </div>
       )}
 
-      {/* All the video passcodes in one place */}
+      {/* Video passcodes — guarded by the separate security passcode */}
       <div className="rounded-2xl border border-border bg-surface p-4">
         <p className="text-sm font-semibold text-foreground">Passcodes</p>
-        <p className="mt-0.5 text-xs text-foreground/60">
-          The two codes that unlock your hidden videos. Change either any time — anyone with an old
-          code will need the new one.
-        </p>
 
-        <label className="mt-4 block text-xs font-semibold text-foreground">Locked passcode</label>
-        <p className="mt-0.5 text-xs text-foreground/50">
-          Opens the regular Locked section.
-        </p>
-        <input
-          value={lockedPasscode}
-          onChange={(e) => setLockedPasscode(e.target.value)}
-          type="text"
-          placeholder="Locked passcode"
-          autoComplete="off"
-          autoCapitalize="off"
-          autoCorrect="off"
-          spellCheck={false}
-          className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-        />
+        {unlocked ? (
+          <>
+            <p className="mt-0.5 text-xs text-foreground/60">
+              The codes that unlock your hidden videos. Change any of these any time — anyone with
+              an old code will need the new one.
+            </p>
 
-        <label className="mt-4 block text-xs font-semibold text-foreground">Vault passcode</label>
-        <p className="mt-0.5 text-xs text-foreground/50">
-          The second, deeper code — for videos inside the Vault. Visitors need the Locked passcode
-          first, then this one.
-        </p>
-        <input
-          value={vaultPasscode}
-          onChange={(e) => setVaultPasscode(e.target.value)}
-          type="text"
-          placeholder="Vault passcode"
-          autoComplete="off"
-          autoCapitalize="off"
-          autoCorrect="off"
-          spellCheck={false}
-          className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-        />
+            <label className="mt-4 block text-xs font-semibold text-foreground">Locked passcode</label>
+            <p className="mt-0.5 text-xs text-foreground/50">Opens the regular Locked section.</p>
+            <input
+              value={lockedPasscode}
+              onChange={(e) => setLockedPasscode(e.target.value)}
+              type="text"
+              placeholder="Locked passcode"
+              autoComplete="off"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+
+            <label className="mt-4 block text-xs font-semibold text-foreground">Vault passcode</label>
+            <p className="mt-0.5 text-xs text-foreground/50">
+              The second, deeper code — for videos inside the Vault.
+            </p>
+            <input
+              value={vaultPasscode}
+              onChange={(e) => setVaultPasscode(e.target.value)}
+              type="text"
+              placeholder="Vault passcode"
+              autoComplete="off"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+
+            <label className="mt-5 block text-xs font-semibold text-foreground">Security passcode</label>
+            <p className="mt-0.5 text-xs text-foreground/50">
+              Guards this whole section. Anyone with admin access can upload videos, but only
+              someone who knows this can see or change the Locked and Vault passcodes. Leave empty
+              to remove the guard.
+            </p>
+            <input
+              value={settingsPasscode}
+              onChange={(e) => setSettingsPasscode(e.target.value)}
+              type="text"
+              placeholder="Security passcode"
+              autoComplete="off"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+          </>
+        ) : (
+          <>
+            <p className="mt-0.5 text-xs text-foreground/60">
+              Protected. Enter the security passcode to view or change the Locked and Vault
+              passcodes.
+            </p>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+              <input
+                value={unlockInput}
+                onChange={(e) => setUnlockInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
+                type="password"
+                placeholder="Security passcode"
+                autoComplete="off"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+              <button
+                type="button"
+                onClick={handleUnlock}
+                disabled={unlocking}
+                className="shrink-0 rounded-full bg-foreground px-5 py-2 text-sm font-semibold text-background transition-colors disabled:opacity-60"
+              >
+                {unlocking ? "Checking..." : "Unlock"}
+              </button>
+            </div>
+            {unlockError && <p className="mt-2 text-xs text-primary">{unlockError}</p>}
+          </>
+        )}
       </div>
 
       {/* Announcement screen */}
