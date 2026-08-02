@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * A thumbnail image that shows a YouTube-style shimmer placeholder while it
@@ -18,12 +18,25 @@ export default function ThumbnailImage({
   className?: string;
 }) {
   const [loaded, setLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    // A fast/cached image can finish loading before React attaches the onLoad
+    // handler (e.g. between server render and hydration) — in which case onLoad
+    // never fires and the image would stay hidden forever. Catch that by
+    // checking whether it's already complete on mount.
+    const img = imgRef.current;
+    if (img && img.complete && img.naturalWidth > 0) {
+      setLoaded(true);
+    }
+  }, []);
 
   return (
     <>
       {!loaded && <div className="thumb-shimmer absolute inset-0 overflow-hidden bg-neutral-900" />}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
+        ref={imgRef}
         src={src}
         alt={alt}
         loading={priority ? "eager" : "lazy"}
