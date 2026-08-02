@@ -18,6 +18,7 @@ const QUALITY_OPTIONS: { value: "full" | VideoQuality; label: string }[] = [
 type Props = {
   mode: "create" | "edit";
   initial?: Review;
+  unlocked?: boolean;
 };
 
 function UploadDropzone({
@@ -198,8 +199,14 @@ function MediaUploadFields({
   );
 }
 
-export default function ReviewForm({ mode, initial }: Props) {
+export default function ReviewForm({ mode, initial, unlocked = true }: Props) {
   const router = useRouter();
+
+  // A Locked/Vault video's visibility is frozen unless the security passcode has
+  // been entered this session. This stops a co-admin with just the shared admin
+  // login from moving protected content out to Published and watching it.
+  const isProtected = initial?.status === "locked" || initial?.status === "vault";
+  const visibilityLocked = mode === "edit" && isProtected && !unlocked;
 
   const [title, setTitle] = useState(initial?.title ?? "");
   const [store, setStore] = useState(initial?.store ?? "");
@@ -781,62 +788,86 @@ export default function ReviewForm({ mode, initial }: Props) {
           <label className="mb-1 block text-sm font-semibold text-foreground">
             Visibility
           </label>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setStatus("published")}
-              className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
-                status === "published"
-                  ? "border-emerald-600 bg-emerald-600 text-white"
-                  : "border-border bg-surface text-foreground/70"
-              }`}
-            >
-              Published (public)
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatus("draft")}
-              className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
-                status === "draft"
-                  ? "border-foreground/40 bg-foreground/10 text-foreground"
-                  : "border-border bg-surface text-foreground/70"
-              }`}
-            >
-              Private / Draft
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatus("locked")}
-              className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
-                status === "locked"
-                  ? "border-accent bg-accent text-white"
-                  : "border-border bg-surface text-foreground/70"
-              }`}
-            >
-              Locked (passcode)
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatus("vault")}
-              className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
-                status === "vault"
-                  ? "border-foreground bg-foreground text-background"
-                  : "border-border bg-surface text-foreground/70"
-              }`}
-            >
-              Vault (2nd passcode)
-            </button>
-          </div>
-          {status === "locked" && (
-            <p className="mt-2 text-xs text-foreground/50">
-              Visible under the site&apos;s &quot;Locked&quot; menu, only to visitors who enter the passcode.
-            </p>
-          )}
-          {status === "vault" && (
-            <p className="mt-2 text-xs text-foreground/50">
-              Hidden inside the Vault — visitors need the Locked passcode first, then the Vault
-              passcode on top of it.
-            </p>
+          {visibilityLocked ? (
+            <div className="rounded-xl border border-border bg-surface-muted p-4">
+              <div className="flex items-center gap-2">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5 text-foreground/60">
+                  <rect x="5" y="11" width="14" height="9" rx="2" />
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                </svg>
+                <span className="text-sm font-semibold text-foreground">
+                  {initial?.status === "vault"
+                    ? "This video is in the Vault"
+                    : "This video is Locked"}
+                </span>
+              </div>
+              <p className="mt-2 text-xs text-foreground/60">
+                Its visibility is frozen. You can still edit the details above, but to move
+                it out of the {initial?.status === "vault" ? "Vault" : "Locked"} area (or make
+                it public), enter the security passcode in{" "}
+                <span className="font-semibold">Settings</span> first.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setStatus("published")}
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                    status === "published"
+                      ? "border-emerald-600 bg-emerald-600 text-white"
+                      : "border-border bg-surface text-foreground/70"
+                  }`}
+                >
+                  Published (public)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatus("draft")}
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                    status === "draft"
+                      ? "border-foreground/40 bg-foreground/10 text-foreground"
+                      : "border-border bg-surface text-foreground/70"
+                  }`}
+                >
+                  Private / Draft
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatus("locked")}
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                    status === "locked"
+                      ? "border-accent bg-accent text-white"
+                      : "border-border bg-surface text-foreground/70"
+                  }`}
+                >
+                  Locked (passcode)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatus("vault")}
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                    status === "vault"
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border bg-surface text-foreground/70"
+                  }`}
+                >
+                  Vault (2nd passcode)
+                </button>
+              </div>
+              {status === "locked" && (
+                <p className="mt-2 text-xs text-foreground/50">
+                  Visible under the site&apos;s &quot;Locked&quot; menu, only to visitors who enter the passcode.
+                </p>
+              )}
+              {status === "vault" && (
+                <p className="mt-2 text-xs text-foreground/50">
+                  Hidden inside the Vault — visitors need the Locked passcode first, then the Vault
+                  passcode on top of it.
+                </p>
+              )}
+            </>
           )}
         </div>
 

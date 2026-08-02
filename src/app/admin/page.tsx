@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { listAllReviews } from "@/lib/reviews-store";
 import { getAllViews } from "@/lib/views";
+import { isSettingsUnlocked } from "@/lib/settings-guard";
 import AdminReviewCard from "@/components/admin/AdminReviewCard";
 
 export const dynamic = "force-dynamic";
@@ -8,6 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminPage() {
   const reviews = await listAllReviews();
   const views = await getAllViews(reviews.map((r) => r.slug));
+  const unlocked = await isSettingsUnlocked();
 
   return (
     <div className="mx-auto w-full max-w-3xl px-5 py-10">
@@ -25,7 +27,7 @@ export default async function AdminPage() {
 
       <div className="mt-8 flex flex-col gap-4">
         {reviews.map((r) => (
-          <AdminReviewCard key={r.slug} review={r} views={views[r.slug] ?? 0} />
+          <AdminReviewCard key={r.slug} review={r} views={views[r.slug] ?? 0} unlocked={unlocked} />
         ))}
 
         {reviews.length === 0 && (

@@ -9,13 +9,21 @@ import type { Review } from "@/lib/data";
 export default function AdminReviewCard({
   review,
   views,
+  unlocked = true,
 }: {
   review: Review;
   views: number;
+  unlocked?: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const thumbnailUrl = getPublicFileUrl(review.thumbnailKey);
+
+  // Locked/Vault videos are protected: their visibility can't be flipped and
+  // they can't be deleted without the security passcode (server enforces this
+  // too — this just hides the buttons so it's clear).
+  const isProtected = review.status === "locked" || review.status === "vault";
+  const canManage = !isProtected || unlocked;
 
   async function togglePublish() {
     setBusy(true);
@@ -43,8 +51,13 @@ export default function AdminReviewCard({
   async function handleDelete() {
     if (!confirm(`Delete "${review.title}"? This can't be undone.`)) return;
     setBusy(true);
-    await fetch(`/api/admin/reviews/${review.slug}`, { method: "DELETE" });
+    const res = await fetch(`/api/admin/reviews/${review.slug}`, { method: "DELETE" });
     setBusy(false);
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      alert(data?.error ?? "Couldn't delete.");
+      return;
+    }
     router.refresh();
   }
 
@@ -105,28 +118,55 @@ export default function AdminReviewCard({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 border-t border-border p-3">
-        <Link
-          href={`/admin/${review.slug}/edit`}
-          className="rounded-full border border-border py-2 text-center text-xs font-semibold text-foreground/70 hover:border-primary hover:text-primary"
-        >
-          Edit
-        </Link>
-        <button
-          onClick={togglePublish}
-          disabled={busy}
-          className="rounded-full border border-border py-2 text-xs font-semibold text-foreground/70 hover:border-accent hover:text-accent disabled:opacity-50"
-        >
-          {review.status === "published" ? "Make Private" : "Publish"}
-        </button>
-        <button
-          onClick={handleDelete}
-          disabled={busy}
-          className="rounded-full border border-primary py-2 text-xs font-semibold text-primary hover:bg-primary hover:text-white disabled:opacity-50"
-        >
-          Delete
-        </button>
-      </div>
+      {canManage ? (
+        <div className="grid grid-cols-3 gap-2 border-t border-border p-3">
+          <Link
+            href={`/admin/${review.slug}/edit`}
+            className="rounded-full border border-border py-2 text-center text-xs font-semibold text-foreground/70 hover:border-primary hover:text-primary"
+          >
+            Edit
+          </Link>
+          {isProtected ? (
+            <Link
+              href={`/admin/${review.slug}/edit`}
+              className="rounded-full border border-border py-2 text-center text-xs font-semibold text-foreground/70 hover:border-accent hover:text-accent"
+            >
+              Change
+            </Link>
+          ) : (
+            <button
+              onClick={togglePublish}
+              disabled={busy}
+              className="rounded-full border border-border py-2 text-xs font-semibold text-foreground/70 hover:border-accent hover:text-accent disabled:opacity-50"
+            >
+              {review.status === "published" ? "Make Private" : "Publish"}
+            </button>
+          )}
+          <button
+            onClick={handleDelete}
+            disabled={busy}
+            className="rounded-full border border-primary py-2 text-xs font-semibold text-primary hover:bg-primary hover:text-white disabled:opacity-50"
+          >
+            Delete
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between gap-2 border-t border-border p-3">
+          <Link
+            href={`/admin/${review.slug}/edit`}
+            className="rounded-full border border-border px-4 py-2 text-center text-xs font-semibold text-foreground/70 hover:border-primary hover:text-primary"
+          >
+            Edit details
+          </Link>
+          <span className="flex items-center gap-1.5 text-xs font-medium text-foreground/50">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+              <rect x="5" y="11" width="14" height="9" rx="2" />
+              <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+            </svg>
+            Protected — unlock in Settings
+          </span>
+        </div>
+      )}
     </div>
   );
 }

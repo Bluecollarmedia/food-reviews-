@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getReview } from "@/lib/reviews-store";
+import { isSettingsUnlocked } from "@/lib/settings-guard";
 import ReviewForm from "@/components/admin/ReviewForm";
 import AdminCommentsPanel from "@/components/admin/AdminCommentsPanel";
 
@@ -15,6 +16,8 @@ export default async function EditReviewPage({
   const review = await getReview(slug);
   if (!review) notFound();
 
+  const unlocked = await isSettingsUnlocked();
+
   return (
     <div className="mx-auto w-full max-w-2xl px-5 py-10">
       <Link href="/admin" className="text-sm font-medium text-primary hover:underline">
@@ -24,7 +27,7 @@ export default async function EditReviewPage({
         Edit Review
       </h1>
       <div className="mt-6">
-        <ReviewForm mode="edit" initial={review} />
+        <ReviewForm mode="edit" initial={review} unlocked={unlocked} />
       </div>
       <AdminCommentsPanel slug={review.slug} />
     </div>
