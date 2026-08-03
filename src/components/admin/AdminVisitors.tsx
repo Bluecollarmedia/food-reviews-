@@ -52,12 +52,14 @@ function VisitorRow({
   visitor,
   isMe,
   hidden,
+  banned,
   onAction,
   busy,
 }: {
   visitor: VisitorRecord;
   isMe: boolean;
   hidden: boolean;
+  banned: boolean;
   onAction: (action: string, ip: string, label?: string) => void;
   busy: boolean;
 }) {
@@ -85,6 +87,11 @@ function VisitorRow({
             {visitor.label && !editingLabel && (
               <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
                 {visitor.label}
+              </span>
+            )}
+            {banned && (
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                Banned
               </span>
             )}
           </div>
@@ -118,13 +125,33 @@ function VisitorRow({
               Hide
             </button>
           )}
+          {banned ? (
+            <button
+              onClick={() => onAction("unban", visitor.ip)}
+              disabled={busy}
+              className="text-foreground/60 hover:text-emerald-600 disabled:opacity-50"
+            >
+              Unban
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                if (confirm(`Ban ${visitor.ip} from the site? They'll see your ban message.`))
+                  onAction("ban", visitor.ip);
+              }}
+              disabled={busy}
+              className="text-primary hover:underline disabled:opacity-50"
+            >
+              Ban
+            </button>
+          )}
           <button
             onClick={() => {
               if (confirm(`Delete all visit history for ${visitor.ip}?`))
                 onAction("clear", visitor.ip);
             }}
             disabled={busy}
-            className="text-primary hover:underline disabled:opacity-50"
+            className="text-foreground/60 hover:text-primary disabled:opacity-50"
           >
             Delete
           </button>
@@ -188,15 +215,20 @@ function VisitorRow({
 export default function AdminVisitors({
   visitors,
   hidden,
+  bannedIps,
+  banMessage,
   myIp,
 }: {
   visitors: VisitorRecord[];
   hidden: string[];
+  bannedIps: string[];
+  banMessage: string;
   myIp: string;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
+  const [messageInput, setMessageInput] = useState(banMessage);
 
   async function onAction(action: string, ip: string, label?: string) {
     setBusy(true);
@@ -209,12 +241,48 @@ export default function AdminVisitors({
     router.refresh();
   }
 
+  async function saveBanMessage() {
+    setBusy(true);
+    await fetch("/api/admin/visitors", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "ban-message", message: messageInput }),
+    }).catch(() => {});
+    setBusy(false);
+    router.refresh();
+  }
+
   const hiddenSet = new Set(hidden);
+  const bannedSet = new Set(bannedIps);
   const visible = visitors.filter((v) => !hiddenSet.has(v.ip));
   const hiddenVisitors = visitors.filter((v) => hiddenSet.has(v.ip));
 
   return (
     <div className="mt-8 flex flex-col gap-4">
+      {/* The message a banned visitor sees. */}
+      <div className="rounded-2xl border border-border bg-surface p-4">
+        <label className="text-sm font-semibold text-foreground">
+          Message shown to banned visitors
+        </label>
+        <p className="mt-0.5 text-xs text-foreground/50">
+          Anyone you ban is blocked from the whole site and sees this on a branded page.
+        </p>
+        <textarea
+          value={messageInput}
+          onChange={(e) => setMessageInput(e.target.value)}
+          rows={3}
+          placeholder="e.g. You've been blocked from D&S Food Reviews."
+          className="mt-2 w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+        />
+        <button
+          onClick={saveBanMessage}
+          disabled={busy || messageInput === banMessage}
+          className="mt-2 rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-white hover:bg-primary-dark disabled:opacity-50"
+        >
+          Save message
+        </button>
+      </div>
+
       {visible.length === 0 && (
         <p className="text-center text-foreground/60">
           No visitors logged yet. As people browse the site, their IPs will show up here.
@@ -227,6 +295,7 @@ export default function AdminVisitors({
           visitor={v}
           isMe={!!myIp && v.ip === myIp}
           hidden={false}
+          banned={bannedSet.has(v.ip)}
           onAction={onAction}
           busy={busy}
         />
@@ -248,6 +317,7 @@ export default function AdminVisitors({
                   visitor={v}
                   isMe={!!myIp && v.ip === myIp}
                   hidden={true}
+                  banned={bannedSet.has(v.ip)}
                   onAction={onAction}
                   busy={busy}
                 />

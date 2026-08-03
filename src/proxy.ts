@@ -42,6 +42,44 @@ async function getSiteLock(): Promise<Lock> {
   }
 }
 
+// Banned IPs, cached and fetched independently of the site lock so a missing
+// column (e.g. before the ban SQL is run) can never disturb the lock.
+let banCache: { value: string[]; at: number } | null = null;
+
+async function getBannedIps(): Promise<string[]> {
+  if (banCache && Date.now() - banCache.at < LOCK_TTL_MS) return banCache.value;
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/admin_settings?id=eq.1&select=banned_ips`,
+      {
+        headers: {
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""}`,
+        },
+      }
+    );
+    if (!res.ok) return [];
+    const rows = await res.json();
+    const row = Array.isArray(rows) ? rows[0] : null;
+    const ips = Array.isArray(row?.banned_ips)
+      ? (row.banned_ips as unknown[]).filter((x): x is string => typeof x === "string")
+      : [];
+    banCache = { value: ips, at: Date.now() };
+    return ips;
+  } catch {
+    // Fail OPEN: never accidentally block everyone on a database hiccup.
+    return [];
+  }
+}
+
+function clientIp(req: NextRequest): string {
+  return (
+    req.headers.get("x-nf-client-connection-ip") ||
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    ""
+  );
+}
+
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
@@ -70,9 +108,26 @@ export async function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // The lock screen and its login endpoint must always be reachable.
-  if (pathname === "/site-locked" || pathname.startsWith("/api/site-lock")) {
+  // The lock/ban screens and the lock login endpoint must always be reachable.
+  if (
+    pathname === "/site-locked" ||
+    pathname === "/banned" ||
+    pathname.startsWith("/api/site-lock")
+  ) {
     return NextResponse.next();
+  }
+
+  // Blocked IPs get the ban screen (with the owner's custom message), before
+  // anything else on the public site.
+  const ip = clientIp(req);
+  if (ip) {
+    const banned = await getBannedIps();
+    if (banned.includes(ip)) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/banned";
+      url.search = "";
+      return NextResponse.rewrite(url);
+    }
   }
 
   const lock = await getSiteLock();

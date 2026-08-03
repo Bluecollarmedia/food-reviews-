@@ -224,6 +224,12 @@ alter table public.admin_settings add column if not exists banner_updated_at tim
 alter table public.admin_settings add column if not exists site_lock_mode text not null default 'off';
 alter table public.admin_settings add column if not exists site_lock_passcode text;
 
+-- Per-IP bans. banned_ips is a JSON array of IP strings blocked from the public
+-- site; ban_message is the note shown to a blocked visitor. The admin panel is
+-- never affected, so the owner can't ban themselves out.
+alter table public.admin_settings add column if not exists banned_ips jsonb not null default '[]'::jsonb;
+alter table public.admin_settings add column if not exists ban_message text;
+
 -- Whenever a comment or reply is posted: log it for the admin, and if it's a
 -- reply to someone's comment, notify that person (unless they replied to
 -- themselves, or the parent was posted by a guest with no account).

@@ -1,13 +1,15 @@
 import { headers } from "next/headers";
 import { listVisitors, getHiddenIps } from "@/lib/visitors";
+import { getBans } from "@/lib/bans";
 import AdminVisitors from "@/components/admin/AdminVisitors";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminVisitorsPage() {
-  const [visitors, hidden, headerList] = await Promise.all([
+  const [visitors, hidden, bans, headerList] = await Promise.all([
     listVisitors(),
     getHiddenIps(),
+    getBans(),
     headers(),
   ]);
 
@@ -28,7 +30,13 @@ export default async function AdminVisitorsPage() {
         cluttering the list.
       </p>
 
-      <AdminVisitors visitors={visitors} hidden={hidden} myIp={myIp} />
+      <AdminVisitors
+        visitors={visitors}
+        hidden={hidden}
+        bannedIps={bans.ips}
+        banMessage={bans.message}
+        myIp={myIp}
+      />
     </div>
   );
 }
