@@ -15,9 +15,17 @@ export async function PUT(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const emailNotifications = typeof body?.emailNotifications === "boolean" ? body.emailNotifications : false;
   const notifyEmail = typeof body?.notifyEmail === "string" ? body.notifyEmail.trim() : "";
-  const lockedPasscode = typeof body?.lockedPasscode === "string" ? body.lockedPasscode.trim() : "";
-  const vaultPasscode = typeof body?.vaultPasscode === "string" ? body.vaultPasscode.trim() : "";
-  const settingsPasscode = typeof body?.settingsPasscode === "string" ? body.settingsPasscode.trim() : "";
+
+  // Passcodes are only touched when the key is present in the request — an
+  // absent key means "leave it exactly as it is". A present empty string means
+  // "remove it". This lets the form change one code without wiping the others,
+  // and without ever having to send the current values back to the browser.
+  const lockedProvided = typeof body?.lockedPasscode === "string";
+  const vaultProvided = typeof body?.vaultPasscode === "string";
+  const settingsProvided = typeof body?.settingsPasscode === "string";
+  const lockedPasscode = lockedProvided ? body.lockedPasscode.trim() : "";
+  const vaultPasscode = vaultProvided ? body.vaultPasscode.trim() : "";
+  const settingsPasscode = settingsProvided ? body.settingsPasscode.trim() : "";
 
   const bannerMessage = typeof body?.bannerMessage === "string" ? body.bannerMessage.trim() : "";
   const bannerDuration = body?.bannerDuration;
@@ -69,9 +77,9 @@ export async function PUT(req: NextRequest) {
   };
 
   if (settingsUnlocked) {
-    update.locked_passcode = lockedPasscode || null;
-    update.locked_passcode_2 = vaultPasscode || null;
-    update.settings_passcode = settingsPasscode || null;
+    if (lockedProvided) update.locked_passcode = lockedPasscode || null;
+    if (vaultProvided) update.locked_passcode_2 = vaultPasscode || null;
+    if (settingsProvided) update.settings_passcode = settingsPasscode || null;
   }
 
   const { error } = await supabase.from("admin_settings").update(update).eq("id", 1);

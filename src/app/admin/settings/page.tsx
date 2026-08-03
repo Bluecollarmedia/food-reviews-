@@ -29,6 +29,12 @@ export default async function AdminSettingsPage() {
     unlocked = await verifySessionToken(token, settingsPasscode);
   }
 
+  // We only tell the browser WHETHER each passcode is set, never the value
+  // itself — the codes never leave the server.
+  const lockedSet = !!(data?.locked_passcode || process.env.LOCKED_PASSCODE);
+  const vaultSet = !!(data?.locked_passcode_2 || process.env.VAULT_PASSCODE);
+  const settingsSet = !!settingsPasscode;
+
   return (
     <div className="mx-auto w-full max-w-2xl px-5 py-10">
       <Link href="/admin" className="text-sm font-medium text-primary hover:underline">
@@ -40,9 +46,9 @@ export default async function AdminSettingsPage() {
         initialEmailNotifications={data?.email_notifications ?? false}
         initialNotifyEmail={data?.notify_email ?? ""}
         initialUnlocked={unlocked}
-        initialLockedPasscode={unlocked ? data?.locked_passcode ?? process.env.LOCKED_PASSCODE ?? "" : ""}
-        initialVaultPasscode={unlocked ? data?.locked_passcode_2 ?? process.env.VAULT_PASSCODE ?? "" : ""}
-        initialSettingsPasscode={unlocked ? settingsPasscode : ""}
+        lockedPasscodeSet={lockedSet}
+        vaultPasscodeSet={vaultSet}
+        settingsPasscodeSet={settingsSet}
         initialBannerMessage={data?.banner_message ?? ""}
         initialBannerExpiresAt={data?.banner_expires_at ?? null}
         initialSiteLockMode={siteLockMode}

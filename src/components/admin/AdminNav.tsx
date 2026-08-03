@@ -8,17 +8,19 @@ export default function AdminNav({ unreadNotifications = 0 }: { unreadNotificati
 
   if (pathname === "/admin/login") return null;
 
+  // Grouped by how often you touch them: everyday content first, then your
+  // audience, then the occasional maintenance/config. Compress lives inside
+  // Storage now — it's a file-maintenance tool, not an everyday tab.
   const links = [
     { href: "/admin", label: "Reviews" },
-    { href: "/admin/visitors", label: "Visitors" },
     { href: "/admin/comments", label: "Comments" },
+    { href: "/admin/visitors", label: "Visitors" },
     { href: "/admin/users", label: "Accounts" },
     {
       href: "/admin/notifications",
       label: `Notifications${unreadNotifications ? ` (${unreadNotifications})` : ""}`,
     },
     { href: "/admin/storage", label: "Storage" },
-    { href: "/admin/compress", label: "Compress Videos" },
     { href: "/admin/settings", label: "Settings" },
   ];
 
