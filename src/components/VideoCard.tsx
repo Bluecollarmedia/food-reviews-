@@ -2,6 +2,7 @@ import Link from "next/link";
 import ScoreBadge from "./ScoreBadge";
 import ThumbnailImage from "./ThumbnailImage";
 import { getPublicFileUrl } from "@/lib/media-url";
+import { formatViewsShort } from "@/lib/view-counts";
 import type { Review } from "@/lib/data";
 
 function Thumbnail({
@@ -80,6 +81,11 @@ export default function VideoCard({
             {review.reviewer}
             {review.secondReviewer ? ` & ${review.secondReviewer}` : ""} &middot; {review.city}
           </p>
+          {typeof review.displayViews === "number" && (
+            <p className="mt-0.5 truncate text-xs text-foreground/50">
+              {formatViewsShort(review.displayViews)} views
+            </p>
+          )}
         </div>
       </div>
     </Link>

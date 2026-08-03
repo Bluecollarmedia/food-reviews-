@@ -10,6 +10,7 @@ import {
 import { getRelatedReviews } from "@/lib/data";
 import { getPublicFileUrl } from "@/lib/media-url";
 import { incrementViews } from "@/lib/views";
+import { formatViewsFull } from "@/lib/view-counts";
 import { LOCKED_SESSION_COOKIE, VAULT_SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 import { getLockedPasscode, getVaultPasscode } from "@/lib/locked-passcode";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
@@ -182,6 +183,11 @@ export default async function VideoPage({
                 {review.price ? ` · ${review.price}` : ""} &middot; Reviewed by {review.reviewer}
                 {review.secondReviewer ? ` & ${review.secondReviewer}` : ""}
               </p>
+              {typeof review.displayViews === "number" && (
+                <p className="mt-1 text-sm font-medium text-foreground/50">
+                  {formatViewsFull(review.displayViews)} views
+                </p>
+              )}
             </div>
             <ScoreBadge rating={review.rating} size="lg" />
           </div>

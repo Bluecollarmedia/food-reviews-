@@ -4,20 +4,44 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getPublicFileUrl } from "@/lib/media-url";
+import { formatViewsFull } from "@/lib/view-counts";
 import type { Review } from "@/lib/data";
 
 export default function AdminReviewCard({
   review,
   views,
+  publicViews,
+  hasCustomViews = false,
   unlocked = true,
 }: {
   review: Review;
   views: number;
+  publicViews: number;
+  hasCustomViews?: boolean;
   unlocked?: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [editingViews, setEditingViews] = useState(false);
+  const [viewsInput, setViewsInput] = useState(String(publicViews));
   const thumbnailUrl = getPublicFileUrl(review.thumbnailKey);
+
+  async function saveViews(value: number | null) {
+    setBusy(true);
+    const res = await fetch("/api/admin/views", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug: review.slug, value }),
+    });
+    setBusy(false);
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      alert(data?.error ?? "Couldn't update the view count.");
+      return;
+    }
+    setEditingViews(false);
+    router.refresh();
+  }
 
   // Locked/Vault videos are protected: their visibility can't be flipped and
   // they can't be deleted without the security passcode (server enforces this
@@ -80,7 +104,7 @@ export default function AdminReviewCard({
             {review.title}
           </h3>
           <p className="truncate text-xs text-foreground/60">
-            {review.store} &middot; {review.city} &middot; {review.rating}/10 &middot; {views} {views === 1 ? "view" : "views"}
+            {review.store} &middot; {review.city} &middot; {review.rating}/10
           </p>
           <p className="mt-1 truncate text-xs text-foreground/50">
             {review.categories.join(", ")}
@@ -116,6 +140,78 @@ export default function AdminReviewCard({
             </span>
           </div>
         </div>
+      </div>
+
+      {/* View counts — real (actual visitors) vs. the padded number the public sees. */}
+      <div className="border-t border-border px-4 py-3">
+        {editingViews ? (
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-semibold text-foreground/70">
+              Public view count (what visitors see)
+            </label>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="number"
+                min={0}
+                value={viewsInput}
+                onChange={(e) => setViewsInput(e.target.value)}
+                className="w-36 rounded-lg border border-border bg-background px-3 py-1.5 text-sm outline-none focus:border-primary"
+              />
+              <button
+                onClick={() => saveViews(Number(viewsInput) || 0)}
+                disabled={busy}
+                className="rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-white hover:bg-primary-dark disabled:opacity-50"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => saveViews(null)}
+                disabled={busy}
+                className="rounded-full border border-border px-4 py-1.5 text-xs font-semibold text-foreground/70 hover:border-accent hover:text-accent disabled:opacity-50"
+                title="Go back to the automatic count (starting number + real views)"
+              >
+                Auto
+              </button>
+              <button
+                onClick={() => {
+                  setViewsInput(String(publicViews));
+                  setEditingViews(false);
+                }}
+                disabled={busy}
+                className="text-xs font-semibold text-foreground/50 hover:text-foreground"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+              <span className="text-foreground/70">
+                <span className="font-semibold text-foreground">{formatViewsFull(views)}</span>{" "}
+                real {views === 1 ? "view" : "views"}
+              </span>
+              <span className="text-foreground/70">
+                <span className="font-semibold text-foreground">{formatViewsFull(publicViews)}</span>{" "}
+                shown publicly
+                {hasCustomViews && (
+                  <span className="ml-1 rounded-full bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-accent">
+                    custom
+                  </span>
+                )}
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                setViewsInput(String(publicViews));
+                setEditingViews(true);
+              }}
+              className="shrink-0 text-xs font-semibold text-primary hover:underline"
+            >
+              Edit views
+            </button>
+          </div>
+        )}
       </div>
 
       {canManage ? (

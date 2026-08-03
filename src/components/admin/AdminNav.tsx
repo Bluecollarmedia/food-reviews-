@@ -10,6 +10,7 @@ export default function AdminNav({ unreadNotifications = 0 }: { unreadNotificati
 
   const links = [
     { href: "/admin", label: "Reviews" },
+    { href: "/admin/visitors", label: "Visitors" },
     { href: "/admin/comments", label: "Comments" },
     { href: "/admin/users", label: "Accounts" },
     {

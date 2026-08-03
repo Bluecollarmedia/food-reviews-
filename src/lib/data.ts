@@ -33,6 +33,8 @@ export type Review = {
   secondReviewerRating?: number;
   createdAt: string;
   updatedAt: string;
+  /** Public-facing padded view count, attached when the review is read. */
+  displayViews?: number;
 };
 
 export const categories = [

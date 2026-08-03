@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Bebas_Neue } from "next/font/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import VisitorTracker from "@/components/VisitorTracker";
 import AnnouncementScreen from "@/components/AnnouncementScreen";
 import { getActiveBanner } from "@/lib/site-settings";
 import "./globals.css";
@@ -68,6 +69,7 @@ export default async function RootLayout({
       </head>
       <body className="flex min-h-full flex-col bg-background text-foreground">
         <ServiceWorkerRegister />
+        <VisitorTracker />
         {banner && <AnnouncementScreen message={banner.message} version={banner.version} />}
         <Header />
         <main className="flex flex-1 flex-col">{children}</main>

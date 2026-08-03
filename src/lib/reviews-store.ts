@@ -1,9 +1,28 @@
 import { getStore } from "@netlify/blobs";
 import { unstable_cache } from "next/cache";
 import type { Review, ReviewStatus, Reviewer } from "./data";
+import { getAllViews } from "./views";
+import { getAllViewOverrides, publicViews } from "./view-counts";
 
 function reviewsStore() {
   return getStore("reviews");
+}
+
+/**
+ * Attach the public-facing padded view count to each review so cards and the
+ * video page can show it without every caller having to fetch views itself.
+ */
+async function withDisplayViews(reviews: Review[]): Promise<Review[]> {
+  if (reviews.length === 0) return reviews;
+  const slugs = reviews.map((r) => r.slug);
+  const [views, overrides] = await Promise.all([
+    getAllViews(slugs),
+    getAllViewOverrides(slugs),
+  ]);
+  return reviews.map((r) => ({
+    ...r,
+    displayViews: publicViews(r.slug, views[r.slug] ?? 0, overrides[r.slug]),
+  }));
 }
 
 function slugify(input: string) {
@@ -180,10 +199,11 @@ export async function listAllReviews(): Promise<Review[]> {
   const reviews = await Promise.all(
     blobs.map((b) => store.get(b.key, { type: "json" }) as Promise<Review>)
   );
-  return reviews
+  const normalized = reviews
     .filter(Boolean)
     .map(normalizeReview)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return withDisplayViews(normalized);
 }
 
 // The homepage and /reviews are public, look the same for every visitor, and
@@ -212,7 +232,9 @@ export async function getReview(slug: string): Promise<Review | null> {
   await ensureSeeded();
   const store = reviewsStore();
   const review = (await store.get(slug, { type: "json" })) as Review | null;
-  return review ? normalizeReview(review) : null;
+  if (!review) return null;
+  const [enriched] = await withDisplayViews([normalizeReview(review)]);
+  return enriched;
 }
 
 export async function getPublishedReview(slug: string): Promise<Review | null> {
