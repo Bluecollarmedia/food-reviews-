@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { relativeTime } from "@/lib/time";
-import type { VisitorRecord } from "@/lib/visitors";
+import type { VisitorRecord, VisitorGeo } from "@/lib/visitors";
 
 function fullTime(iso: string) {
   return new Date(iso).toLocaleString("en-US", {
@@ -12,6 +12,40 @@ function fullTime(iso: string) {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+function GeoInfo({ geo }: { geo: VisitorGeo }) {
+  const place = [geo.city, geo.region, geo.country].filter(Boolean).join(", ");
+  const provider = geo.isp || geo.org;
+  const hasCoords = typeof geo.lat === "number" && typeof geo.lon === "number";
+
+  return (
+    <div className="mt-1.5 flex flex-col gap-0.5 text-xs">
+      {place && (
+        <p className="font-medium text-foreground/80">
+          {geo.flag ? `${geo.flag} ` : "📍 "}
+          {place}
+        </p>
+      )}
+      <p className="flex flex-wrap items-center gap-x-2 text-foreground/50">
+        {provider && <span>{provider}</span>}
+        {geo.timezone && <span>&middot; {geo.timezone}</span>}
+        {hasCoords && (
+          <>
+            <span>&middot;</span>
+            <a
+              href={`https://www.google.com/maps?q=${geo.lat},${geo.lon}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-primary hover:underline"
+            >
+              View on map
+            </a>
+          </>
+        )}
+      </p>
+    </div>
+  );
 }
 
 function VisitorRow({
@@ -58,6 +92,7 @@ function VisitorRow({
             {visitor.count} {visitor.count === 1 ? "visit" : "visits"} &middot; last{" "}
             {relativeTime(visitor.lastSeen)} ago &middot; first seen {fullTime(visitor.firstSeen)}
           </p>
+          {visitor.geo && <GeoInfo geo={visitor.geo} />}
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2 text-xs font-semibold">
           <button

@@ -7,7 +7,24 @@ import { getStore } from "@netlify/blobs";
 
 const MAX_HITS = 150; // keep the last N visits per IP; plenty for a small site
 
+// Reloading the same page within this window doesn't count as a new visit, so
+// hammering refresh doesn't pad the number.
+const DEDUPE_MS = 45_000;
+
 export type VisitorHit = { t: string; p: string };
+
+export type VisitorGeo = {
+  city?: string;
+  region?: string;
+  country?: string;
+  countryCode?: string;
+  isp?: string;
+  org?: string;
+  lat?: number;
+  lon?: number;
+  timezone?: string;
+  flag?: string;
+};
 
 export type VisitorRecord = {
   ip: string;
@@ -16,7 +33,62 @@ export type VisitorRecord = {
   firstSeen: string;
   lastSeen: string;
   hits: VisitorHit[]; // most recent first, capped at MAX_HITS
+  geo?: VisitorGeo;
 };
+
+function isPrivateIp(ip: string): boolean {
+  return (
+    !ip ||
+    ip === "unknown" ||
+    ip === "::1" ||
+    ip.startsWith("127.") ||
+    ip.startsWith("10.") ||
+    ip.startsWith("192.168.") ||
+    ip.startsWith("169.254.") ||
+    ip.startsWith("fc") ||
+    ip.startsWith("fd") ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(ip)
+  );
+}
+
+// One-time geolocation lookup for an IP (city / region / country / ISP / coords)
+// via the free, no-key ipwho.is HTTPS API. Best-effort — never throws.
+async function lookupGeo(ip: string): Promise<VisitorGeo | null> {
+  if (isPrivateIp(ip)) return null;
+  try {
+    const res = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}`, {
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!res.ok) return null;
+    const d = (await res.json()) as {
+      success?: boolean;
+      city?: string;
+      region?: string;
+      country?: string;
+      country_code?: string;
+      latitude?: number;
+      longitude?: number;
+      connection?: { isp?: string; org?: string };
+      timezone?: { id?: string };
+      flag?: { emoji?: string };
+    };
+    if (!d || d.success === false) return null;
+    return {
+      city: d.city,
+      region: d.region,
+      country: d.country,
+      countryCode: d.country_code,
+      isp: d.connection?.isp,
+      org: d.connection?.org,
+      lat: d.latitude,
+      lon: d.longitude,
+      timezone: d.timezone?.id,
+      flag: d.flag?.emoji,
+    };
+  } catch {
+    return null;
+  }
+}
 
 type VisitorConfig = { hidden: string[] };
 
@@ -36,25 +108,43 @@ export async function recordVisit(ip: string, path: string): Promise<void> {
   if (!ip) return;
   const s = store();
   const key = keyFor(ip);
-  const now = new Date().toISOString();
-  const hit: VisitorHit = { t: now, p: path || "/" };
+  const nowMs = Date.now();
+  const now = new Date(nowMs).toISOString();
+  const cleanPath = path || "/";
+  const hit: VisitorHit = { t: now, p: cleanPath };
 
   const existing = (await s.get(key, { type: "json" })) as VisitorRecord | null;
+
   if (existing) {
-    existing.count += 1;
+    // Refresh de-dupe: same page reloaded within the window isn't a new visit.
+    const last = existing.hits[0];
+    const isRefresh =
+      last && last.p === cleanPath && nowMs - new Date(last.t).getTime() < DEDUPE_MS;
+
+    if (!isRefresh) {
+      existing.count += 1;
+      existing.hits = [hit, ...existing.hits].slice(0, MAX_HITS);
+    }
     existing.lastSeen = now;
-    existing.hits = [hit, ...existing.hits].slice(0, MAX_HITS);
+    // Fill in geolocation once, if we don't already have it.
+    if (!existing.geo) {
+      const geo = await lookupGeo(ip);
+      if (geo) existing.geo = geo;
+    }
     await s.setJSON(key, existing);
-  } else {
-    const record: VisitorRecord = {
-      ip,
-      count: 1,
-      firstSeen: now,
-      lastSeen: now,
-      hits: [hit],
-    };
-    await s.setJSON(key, record);
+    return;
   }
+
+  const geo = await lookupGeo(ip);
+  const record: VisitorRecord = {
+    ip,
+    count: 1,
+    firstSeen: now,
+    lastSeen: now,
+    hits: [hit],
+    ...(geo ? { geo } : {}),
+  };
+  await s.setJSON(key, record);
 }
 
 export async function listVisitors(): Promise<VisitorRecord[]> {

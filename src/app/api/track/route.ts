@@ -1,20 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { recordVisit } from "@/lib/visitors";
+import { getClientIp, checkRateLimit, recordFailedAttempt } from "@/lib/rate-limit";
 
-// Best-effort client IP. On Netlify the real visitor IP is in
-// x-nf-client-connection-ip; fall back to the standard proxy headers.
-function clientIp(req: NextRequest): string {
-  const h = req.headers;
-  return (
-    h.get("x-nf-client-connection-ip") ||
-    h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    h.get("x-real-ip") ||
-    ""
-  );
-}
+// Cap how many pings a single IP can log in a short window. This kills both
+// endpoint spam and rapid refresh flooding while leaving normal browsing (a
+// handful of page views a minute) completely untouched.
+const TRACK_LIMIT = { maxAttempts: 30, windowMs: 60_000 };
 
 export async function POST(req: NextRequest) {
-  const ip = clientIp(req);
+  const ip = getClientIp(req);
 
   let path = "/";
   try {
@@ -28,6 +22,14 @@ export async function POST(req: NextRequest) {
   if (path.startsWith("/admin")) {
     return NextResponse.json({ ok: true });
   }
+
+  // Too many pings from this IP this minute — drop it silently.
+  const key = `track:${ip}`;
+  const { allowed } = await checkRateLimit(key, TRACK_LIMIT);
+  if (!allowed) {
+    return NextResponse.json({ ok: true });
+  }
+  await recordFailedAttempt(key, TRACK_LIMIT);
 
   await recordVisit(ip, path).catch(() => {});
   return NextResponse.json({ ok: true });
