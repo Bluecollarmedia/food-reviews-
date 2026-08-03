@@ -4,10 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getPublicFileUrl } from "@/lib/media-url";
-import { formatViewsFull, type ViewSetting } from "@/lib/view-format";
+import {
+  formatViewsFull,
+  suggestedClimbTarget,
+  randomClimbTarget,
+  type ViewSetting,
+} from "@/lib/view-format";
 import type { Review } from "@/lib/data";
-
-const CLIMB_PRESETS = [50000, 60000, 130000];
 
 export default function AdminReviewCard({
   review,
@@ -27,7 +30,11 @@ export default function AdminReviewCard({
   const [editingViews, setEditingViews] = useState(false);
   const [viewsInput, setViewsInput] = useState(String(publicViews));
   const [climbTarget, setClimbTarget] = useState(
-    String(viewSetting?.mode === "auto" ? viewSetting.target : 130000)
+    String(
+      viewSetting?.mode === "auto"
+        ? viewSetting.target
+        : suggestedClimbTarget(review.slug)
+    )
   );
   const thumbnailUrl = getPublicFileUrl(review.thumbnailKey);
 
@@ -181,22 +188,11 @@ export default function AdminReviewCard({
               </label>
               <p className="text-[11px] text-foreground/50">
                 Climbs fast at first, then slows down, maxing out at the target. It keeps
-                going on its own — no need to touch it again.
+                going on its own — no need to touch it again. Each video starts with its
+                own target so they don&apos;t all land on the same number.
               </p>
               <div className="flex flex-wrap items-center gap-2">
-                {CLIMB_PRESETS.map((preset) => (
-                  <button
-                    key={preset}
-                    onClick={() => setClimbTarget(String(preset))}
-                    className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
-                      Number(climbTarget) === preset
-                        ? "border-accent bg-accent text-white"
-                        : "border-border bg-surface text-foreground/70 hover:border-accent"
-                    }`}
-                  >
-                    {formatViewsFull(preset)}
-                  </button>
-                ))}
+                <span className="text-xs font-semibold text-foreground/60">Max out at</span>
                 <input
                   type="number"
                   min={0}
@@ -204,6 +200,14 @@ export default function AdminReviewCard({
                   onChange={(e) => setClimbTarget(e.target.value)}
                   className="w-28 rounded-lg border border-border bg-background px-3 py-1.5 text-sm outline-none focus:border-accent"
                 />
+                <button
+                  type="button"
+                  onClick={() => setClimbTarget(String(randomClimbTarget()))}
+                  className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-foreground/70 hover:border-accent hover:text-accent"
+                  title="Pick a different random target"
+                >
+                  🎲 Random
+                </button>
                 <button
                   onClick={() =>
                     postViews({ action: "climb", from: publicViews, target: Number(climbTarget) || 0 })
