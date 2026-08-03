@@ -11,7 +11,7 @@ export const SITE_LOCK_SESSION_COOKIE = "site_lock_session";
 export const SITE_LOCK_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24; // 24 hours
 
 export const SETTINGS_SESSION_COOKIE = "settings_session";
-export const SETTINGS_SESSION_MAX_AGE_SECONDS = 60 * 30; // 30 minutes
+export const SETTINGS_SESSION_MAX_AGE_SECONDS = 60 * 60 * 12; // 12 hours
 
 function base64url(bytes: ArrayBuffer | Uint8Array) {
   const arr = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);

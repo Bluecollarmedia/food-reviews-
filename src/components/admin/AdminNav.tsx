@@ -3,16 +3,21 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export default function AdminNav({ unreadNotifications = 0 }: { unreadNotifications?: number }) {
+export default function AdminNav({
+  unreadNotifications = 0,
+  unlocked = true,
+}: {
+  unreadNotifications?: number;
+  unlocked?: boolean;
+}) {
   const pathname = usePathname();
 
-  if (pathname === "/admin/login") return null;
+  if (pathname === "/admin/login" || pathname === "/admin/unlock") return null;
 
-  // Grouped by how often you touch them: everyday content first, then your
-  // audience, then the occasional maintenance/config. Compress lives inside
-  // Storage now — it's a file-maintenance tool, not an everyday tab.
-  const links = [
-    { href: "/admin", label: "Reviews" },
+  // Reviews (and uploading) is reachable with just the shared admin code. Every
+  // other tab needs the separate security passcode, so hide them until it's
+  // entered.
+  const restrictedLinks = [
     { href: "/admin/comments", label: "Comments" },
     { href: "/admin/visitors", label: "Visitors" },
     { href: "/admin/users", label: "Accounts" },
@@ -22,6 +27,11 @@ export default function AdminNav({ unreadNotifications = 0 }: { unreadNotificati
     },
     { href: "/admin/storage", label: "Storage" },
     { href: "/admin/settings", label: "Settings" },
+  ];
+
+  const links = [
+    { href: "/admin", label: "Reviews" },
+    ...(unlocked ? restrictedLinks : []),
   ];
 
   return (
@@ -37,7 +47,7 @@ export default function AdminNav({ unreadNotifications = 0 }: { unreadNotificati
           &larr; Back to Main Site
         </Link>
       </div>
-      <nav className="mx-auto flex max-w-3xl gap-1 overflow-x-auto px-5">
+      <nav className="mx-auto flex max-w-3xl items-center gap-1 overflow-x-auto px-5">
         {links.map((link) => {
           const active = link.href === "/admin" ? pathname === "/admin" : pathname.startsWith(link.href);
           return (
@@ -54,6 +64,18 @@ export default function AdminNav({ unreadNotifications = 0 }: { unreadNotificati
             </Link>
           );
         })}
+        {!unlocked && (
+          <Link
+            href="/admin/unlock"
+            className="ml-auto flex shrink-0 items-center gap-1 whitespace-nowrap py-3 text-sm font-semibold text-foreground/50 hover:text-primary"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+              <rect x="5" y="11" width="14" height="9" rx="2" />
+              <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+            </svg>
+            Unlock more
+          </Link>
+        )}
       </nav>
     </div>
   );
