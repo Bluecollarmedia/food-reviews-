@@ -1,27 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
-import { setViewOverride, clearViewOverride } from "@/lib/view-counts";
+import {
+  setFixedViews,
+  setClimbingViews,
+  clearViewSetting,
+} from "@/lib/view-counts";
 
-// Set or clear the public-facing (padded) view count for a review. The real
-// view count is never touched — this only changes what visitors see.
+// Change the public-facing (padded) view count for a review. The real view
+// count is never touched — this only changes what visitors see.
+//   { slug, action: "reset" }                 -> automatic (start # + real views)
+//   { slug, action: "fixed", value }          -> exact number
+//   { slug, action: "climb", from, target }   -> YouTube-style auto-climb to target
 export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as
-    | { slug?: string; value?: number | null }
+    | { slug?: string; action?: string; value?: number; from?: number; target?: number }
     | null;
 
   if (!body || !body.slug) {
     return NextResponse.json({ error: "Missing slug." }, { status: 400 });
   }
 
-  if (body.value === null || body.value === undefined) {
-    await clearViewOverride(body.slug);
-    return NextResponse.json({ ok: true, override: null });
-  }
+  switch (body.action) {
+    case "reset":
+      await clearViewSetting(body.slug);
+      return NextResponse.json({ ok: true });
 
-  const value = Number(body.value);
-  if (!Number.isFinite(value) || value < 0) {
-    return NextResponse.json({ error: "Enter a valid number." }, { status: 400 });
-  }
+    case "fixed": {
+      const value = Number(body.value);
+      if (!Number.isFinite(value) || value < 0) {
+        return NextResponse.json({ error: "Enter a valid number." }, { status: 400 });
+      }
+      await setFixedViews(body.slug, value);
+      return NextResponse.json({ ok: true });
+    }
 
-  await setViewOverride(body.slug, value);
-  return NextResponse.json({ ok: true, override: Math.round(value) });
+    case "climb": {
+      const target = Number(body.target);
+      const from = Number(body.from);
+      if (!Number.isFinite(target) || target < 0) {
+        return NextResponse.json({ error: "Enter a valid target." }, { status: 400 });
+      }
+      await setClimbingViews(body.slug, Number.isFinite(from) ? from : 0, target);
+      return NextResponse.json({ ok: true });
+    }
+
+    default:
+      return NextResponse.json({ error: "Unknown action." }, { status: 400 });
+  }
 }

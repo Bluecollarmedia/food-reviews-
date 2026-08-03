@@ -1,18 +1,24 @@
 import { getStore } from "@netlify/blobs";
+import type { ViewSetting } from "./view-format";
 
-// The public-facing view count is deliberately padded so a brand-new upload
-// looks established the moment it's posted. It's made of two parts:
-//   1. A stable "starting" number derived from the slug (5,000–15,000, and
-//      occasionally up to ~30,000), so every video begins with a believable
-//      base and that base never jumps around between page loads.
-//   2. The real view count on top, so the number still ticks up as actual
-//      people watch.
-// An admin can also pin an exact number (an override), which wins over both.
-// The REAL count is always available separately in the admin panel.
+// The public-facing view count for a video is one of three things:
+//   1. Automatic (default): a stable slug-derived starting number
+//      (5,000–15,000, sometimes up to ~30,000) plus its real views on top.
+//   2. Fixed: an exact number the admin typed in.
+//   3. Auto-climb: the number grows on its own over time on a YouTube-style
+//      curve — fast at first, then a long slow crawl toward a target cap.
+// The REAL view count is always available separately in the admin panel.
 
-function overrideStore() {
+function settingsStore() {
+  // Same store name as before, so any previously-saved plain-number overrides
+  // keep working (they're read back as { mode: "fixed" }).
   return getStore("view-overrides");
 }
+
+const DAY_MS = 86_400_000;
+// Roughly half the remaining gap to the target closes every 7 days: big jumps
+// the first couple of weeks, then a long, slow crawl — like a real video.
+const HALF_LIFE_DAYS = 7;
 
 /**
  * A stable, slug-derived starting view count. The same slug always yields the
@@ -36,54 +42,86 @@ export function baseViews(slug: string): number {
   return base;
 }
 
-export async function getViewOverride(slug: string): Promise<number | null> {
-  const v = (await overrideStore().get(slug, { type: "json" })) as number | null;
-  return typeof v === "number" ? v : null;
+function parseSetting(raw: unknown): ViewSetting | null {
+  if (raw == null) return null;
+  if (typeof raw === "number") return { mode: "fixed", value: raw }; // legacy override
+  if (typeof raw === "object") {
+    const o = raw as Record<string, unknown>;
+    if (o.mode === "fixed" && typeof o.value === "number") {
+      return { mode: "fixed", value: o.value };
+    }
+    if (
+      o.mode === "auto" &&
+      typeof o.start === "string" &&
+      typeof o.startViews === "number" &&
+      typeof o.target === "number"
+    ) {
+      return { mode: "auto", start: o.start, startViews: o.startViews, target: o.target };
+    }
+  }
+  return null;
 }
 
-export async function getAllViewOverrides(
+export async function getViewSetting(slug: string): Promise<ViewSetting | null> {
+  return parseSetting(await settingsStore().get(slug, { type: "json" }));
+}
+
+export async function getAllViewSettings(
   slugs: string[]
-): Promise<Record<string, number | null>> {
-  const store = overrideStore();
+): Promise<Record<string, ViewSetting | null>> {
+  const store = settingsStore();
   const entries = await Promise.all(
     slugs.map(
-      async (s) =>
-        [s, ((await store.get(s, { type: "json" })) as number | null) ?? null] as const
+      async (s) => [s, parseSetting(await store.get(s, { type: "json" }))] as const
     )
   );
   return Object.fromEntries(entries);
 }
 
-export async function setViewOverride(slug: string, value: number): Promise<void> {
-  await overrideStore().setJSON(slug, Math.max(0, Math.round(value)));
+export async function setFixedViews(slug: string, value: number): Promise<void> {
+  const setting: ViewSetting = { mode: "fixed", value: Math.max(0, Math.round(value)) };
+  await settingsStore().setJSON(slug, setting);
 }
 
-export async function clearViewOverride(slug: string): Promise<void> {
-  await overrideStore().delete(slug);
+export async function setClimbingViews(
+  slug: string,
+  from: number,
+  target: number
+): Promise<void> {
+  const setting: ViewSetting = {
+    mode: "auto",
+    start: new Date().toISOString(),
+    startViews: Math.max(0, Math.round(from)),
+    target: Math.max(0, Math.round(target)),
+  };
+  await settingsStore().setJSON(slug, setting);
+}
+
+export async function clearViewSetting(slug: string): Promise<void> {
+  await settingsStore().delete(slug);
+}
+
+/** The current climbing value for an auto-climb setting. */
+export function climbingViews(
+  setting: Extract<ViewSetting, { mode: "auto" }>,
+  now: number = Date.now()
+): number {
+  const { startViews, target } = setting;
+  if (target <= startViews) return target;
+  const start = new Date(setting.start).getTime();
+  const days = Math.max(0, (now - start) / DAY_MS);
+  const k = Math.LN2 / HALF_LIFE_DAYS;
+  const fraction = 1 - Math.exp(-k * days); // 0 -> approaches 1
+  return Math.round(startViews + (target - startViews) * fraction);
 }
 
 /** The number the public should see for a video. */
 export function publicViews(
   slug: string,
   realViews: number,
-  override: number | null | undefined
+  setting: ViewSetting | null
 ): number {
-  if (override !== null && override !== undefined) return override;
+  if (setting?.mode === "fixed") return setting.value;
+  if (setting?.mode === "auto") return climbingViews(setting);
   return baseViews(slug) + realViews;
-}
-
-/** "12,432" — the full number, for detail pages and the admin panel. */
-export function formatViewsFull(n: number): string {
-  return n.toLocaleString("en-US");
-}
-
-/** "12K" / "12.4K" / "1.2M" — compact, YouTube-style, for cards. */
-export function formatViewsShort(n: number): string {
-  if (n < 1000) return String(n);
-  if (n < 1_000_000) {
-    const k = n / 1000;
-    return (k >= 100 || Number.isInteger(k) ? Math.round(k) : k.toFixed(1)) + "K";
-  }
-  const m = n / 1_000_000;
-  return (m >= 100 || Number.isInteger(m) ? Math.round(m) : m.toFixed(1)) + "M";
 }

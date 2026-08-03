@@ -4,34 +4,39 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getPublicFileUrl } from "@/lib/media-url";
-import { formatViewsFull } from "@/lib/view-counts";
+import { formatViewsFull, type ViewSetting } from "@/lib/view-format";
 import type { Review } from "@/lib/data";
+
+const CLIMB_PRESETS = [50000, 60000, 130000];
 
 export default function AdminReviewCard({
   review,
   views,
   publicViews,
-  hasCustomViews = false,
+  viewSetting = null,
   unlocked = true,
 }: {
   review: Review;
   views: number;
   publicViews: number;
-  hasCustomViews?: boolean;
+  viewSetting?: ViewSetting | null;
   unlocked?: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [editingViews, setEditingViews] = useState(false);
   const [viewsInput, setViewsInput] = useState(String(publicViews));
+  const [climbTarget, setClimbTarget] = useState(
+    String(viewSetting?.mode === "auto" ? viewSetting.target : 130000)
+  );
   const thumbnailUrl = getPublicFileUrl(review.thumbnailKey);
 
-  async function saveViews(value: number | null) {
+  async function postViews(payload: Record<string, unknown>) {
     setBusy(true);
     const res = await fetch("/api/admin/views", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ slug: review.slug, value }),
+      body: JSON.stringify({ slug: review.slug, ...payload }),
     });
     setBusy(false);
     if (!res.ok) {
@@ -145,32 +150,81 @@ export default function AdminReviewCard({
       {/* View counts — real (actual visitors) vs. the padded number the public sees. */}
       <div className="border-t border-border px-4 py-3">
         {editingViews ? (
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold text-foreground/70">
-              Public view count (what visitors see)
-            </label>
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                type="number"
-                min={0}
-                value={viewsInput}
-                onChange={(e) => setViewsInput(e.target.value)}
-                className="w-36 rounded-lg border border-border bg-background px-3 py-1.5 text-sm outline-none focus:border-primary"
-              />
+          <div className="flex flex-col gap-4">
+            {/* Exact number */}
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-semibold text-foreground/70">
+                Set an exact number
+              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  value={viewsInput}
+                  onChange={(e) => setViewsInput(e.target.value)}
+                  className="w-36 rounded-lg border border-border bg-background px-3 py-1.5 text-sm outline-none focus:border-primary"
+                />
+                <button
+                  onClick={() => postViews({ action: "fixed", value: Number(viewsInput) || 0 })}
+                  disabled={busy}
+                  className="rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-white hover:bg-primary-dark disabled:opacity-50"
+                >
+                  Save number
+                </button>
+              </div>
+            </div>
+
+            {/* Auto-climb */}
+            <div className="flex flex-col gap-2 border-t border-border pt-3">
+              <label className="text-xs font-semibold text-foreground/70">
+                Auto-climb to a target (like YouTube)
+              </label>
+              <p className="text-[11px] text-foreground/50">
+                Climbs fast at first, then slows down, maxing out at the target. It keeps
+                going on its own — no need to touch it again.
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                {CLIMB_PRESETS.map((preset) => (
+                  <button
+                    key={preset}
+                    onClick={() => setClimbTarget(String(preset))}
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+                      Number(climbTarget) === preset
+                        ? "border-accent bg-accent text-white"
+                        : "border-border bg-surface text-foreground/70 hover:border-accent"
+                    }`}
+                  >
+                    {formatViewsFull(preset)}
+                  </button>
+                ))}
+                <input
+                  type="number"
+                  min={0}
+                  value={climbTarget}
+                  onChange={(e) => setClimbTarget(e.target.value)}
+                  className="w-28 rounded-lg border border-border bg-background px-3 py-1.5 text-sm outline-none focus:border-accent"
+                />
+                <button
+                  onClick={() =>
+                    postViews({ action: "climb", from: publicViews, target: Number(climbTarget) || 0 })
+                  }
+                  disabled={busy}
+                  className="rounded-full bg-accent px-4 py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                >
+                  {viewSetting?.mode === "auto" ? "Restart climb" : "Start climbing"}
+                </button>
+              </div>
+            </div>
+
+            {/* Reset + cancel */}
+            <div className="flex flex-wrap items-center gap-3 border-t border-border pt-3">
               <button
-                onClick={() => saveViews(Number(viewsInput) || 0)}
+                onClick={() => postViews({ action: "reset" })}
                 disabled={busy}
-                className="rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-white hover:bg-primary-dark disabled:opacity-50"
+                className="rounded-full border border-border px-4 py-1.5 text-xs font-semibold text-foreground/70 hover:border-foreground/40 hover:text-foreground disabled:opacity-50"
+                title="Go back to the automatic count: starting number + real views"
               >
-                Save
-              </button>
-              <button
-                onClick={() => saveViews(null)}
-                disabled={busy}
-                className="rounded-full border border-border px-4 py-1.5 text-xs font-semibold text-foreground/70 hover:border-accent hover:text-accent disabled:opacity-50"
-                title="Go back to the automatic count (starting number + real views)"
-              >
-                Auto
+                Reset to automatic
               </button>
               <button
                 onClick={() => {
@@ -194,9 +248,14 @@ export default function AdminReviewCard({
               <span className="text-foreground/70">
                 <span className="font-semibold text-foreground">{formatViewsFull(publicViews)}</span>{" "}
                 shown publicly
-                {hasCustomViews && (
+                {viewSetting?.mode === "fixed" && (
                   <span className="ml-1 rounded-full bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-accent">
                     custom
+                  </span>
+                )}
+                {viewSetting?.mode === "auto" && (
+                  <span className="ml-1 rounded-full bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-accent">
+                    climbing → {formatViewsFull(viewSetting.target)}
                   </span>
                 )}
               </span>

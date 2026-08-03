@@ -10,7 +10,7 @@ import {
 import { getRelatedReviews } from "@/lib/data";
 import { getPublicFileUrl } from "@/lib/media-url";
 import { incrementViews } from "@/lib/views";
-import { formatViewsFull } from "@/lib/view-counts";
+import { formatViewsFull } from "@/lib/view-format";
 import { LOCKED_SESSION_COOKIE, VAULT_SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 import { getLockedPasscode, getVaultPasscode } from "@/lib/locked-passcode";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";

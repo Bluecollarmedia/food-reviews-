@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { listAllReviews } from "@/lib/reviews-store";
 import { getAllViews } from "@/lib/views";
-import { getAllViewOverrides } from "@/lib/view-counts";
+import { getAllViewSettings } from "@/lib/view-counts";
 import { isSettingsUnlocked } from "@/lib/settings-guard";
 import AdminReviewCard from "@/components/admin/AdminReviewCard";
 
@@ -11,7 +11,7 @@ export default async function AdminPage() {
   const reviews = await listAllReviews();
   const slugs = reviews.map((r) => r.slug);
   const views = await getAllViews(slugs);
-  const overrides = await getAllViewOverrides(slugs);
+  const settings = await getAllViewSettings(slugs);
   const unlocked = await isSettingsUnlocked();
 
   return (
@@ -35,7 +35,7 @@ export default async function AdminPage() {
             review={r}
             views={views[r.slug] ?? 0}
             publicViews={r.displayViews ?? 0}
-            hasCustomViews={overrides[r.slug] != null}
+            viewSetting={settings[r.slug] ?? null}
             unlocked={unlocked}
           />
         ))}

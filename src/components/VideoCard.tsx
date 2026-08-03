@@ -2,7 +2,7 @@ import Link from "next/link";
 import ScoreBadge from "./ScoreBadge";
 import ThumbnailImage from "./ThumbnailImage";
 import { getPublicFileUrl } from "@/lib/media-url";
-import { formatViewsShort } from "@/lib/view-counts";
+import { formatViewsShort } from "@/lib/view-format";
 import type { Review } from "@/lib/data";
 
 function Thumbnail({

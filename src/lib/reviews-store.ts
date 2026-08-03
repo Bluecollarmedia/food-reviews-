@@ -2,7 +2,7 @@ import { getStore } from "@netlify/blobs";
 import { unstable_cache } from "next/cache";
 import type { Review, ReviewStatus, Reviewer } from "./data";
 import { getAllViews } from "./views";
-import { getAllViewOverrides, publicViews } from "./view-counts";
+import { getAllViewSettings, publicViews } from "./view-counts";
 
 function reviewsStore() {
   return getStore("reviews");
@@ -15,13 +15,13 @@ function reviewsStore() {
 async function withDisplayViews(reviews: Review[]): Promise<Review[]> {
   if (reviews.length === 0) return reviews;
   const slugs = reviews.map((r) => r.slug);
-  const [views, overrides] = await Promise.all([
+  const [views, settings] = await Promise.all([
     getAllViews(slugs),
-    getAllViewOverrides(slugs),
+    getAllViewSettings(slugs),
   ]);
   return reviews.map((r) => ({
     ...r,
-    displayViews: publicViews(r.slug, views[r.slug] ?? 0, overrides[r.slug]),
+    displayViews: publicViews(r.slug, views[r.slug] ?? 0, settings[r.slug]),
   }));
 }
 
