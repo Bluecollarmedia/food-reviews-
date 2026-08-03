@@ -3,16 +3,31 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
 import MobileNav from "./MobileNav";
 import AuthStatus from "./AuthStatus";
 import { NotificationBellDesktop, NotificationBellMobile } from "./NotificationBell";
 
 export default function Header() {
   const pathname = usePathname();
-  if (pathname?.startsWith("/admin")) return null;
+  const headerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const setHeight = () => {
+      document.documentElement.style.setProperty("--header-h", `${el.offsetHeight}px`);
+    };
+    setHeight();
+    const observer = new ResizeObserver(setHeight);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  if (pathname?.startsWith("/admin") || pathname === "/site-locked") return null;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-surface/90 backdrop-blur">
+    <header ref={headerRef} className="sticky top-0 z-40 bg-surface/90 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
         <Link href="/" className="flex items-center gap-2.5">
           <Image
@@ -37,6 +52,12 @@ export default function Header() {
           </Link>
           <Link href="/locked" className="transition-colors hover:text-primary">
             Locked
+          </Link>
+          <Link href="/shorts" className="flex items-center gap-1.5 transition-colors hover:text-primary">
+            <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+              <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z" />
+            </svg>
+            Shorts
           </Link>
           <NotificationBellDesktop />
           <AuthStatus />

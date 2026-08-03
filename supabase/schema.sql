@@ -201,6 +201,35 @@ alter table public.admin_settings enable row level security;
 -- Falls back to the LOCKED_PASSCODE env var (in code) if this is null.
 alter table public.admin_settings add column if not exists locked_passcode text;
 
+-- Second, deeper passcode for the Vault — a locked area nested inside Locked.
+-- Reviews with status 'vault' need the Locked passcode first, then this one.
+alter table public.admin_settings add column if not exists locked_passcode_2 text;
+
+-- Separate "security passcode" that guards the Locked/Vault passcode fields in
+-- the admin panel, so a co-admin who can log in and upload still can't see or
+-- change those two codes without also knowing this one.
+alter table public.admin_settings add column if not exists settings_passcode text;
+
+-- Site-wide announcement banner, editable from the admin panel. Shown across
+-- the public site until it expires or the admin clears it. banner_updated_at
+-- bumps only when the message text changes, so dismissing it stays dismissed
+-- until the next real change.
+alter table public.admin_settings add column if not exists banner_message text;
+alter table public.admin_settings add column if not exists banner_expires_at timestamptz;
+alter table public.admin_settings add column if not exists banner_updated_at timestamptz;
+
+-- Site-wide lockdown switch. mode: 'off' (normal), 'full' (whole public site
+-- closed), or 'code' (public site behind a single passcode). The admin panel
+-- is never affected, so the owner can always turn it back off.
+alter table public.admin_settings add column if not exists site_lock_mode text not null default 'off';
+alter table public.admin_settings add column if not exists site_lock_passcode text;
+
+-- Per-IP bans. banned_ips is a JSON array of IP strings blocked from the public
+-- site; ban_message is the note shown to a blocked visitor. The admin panel is
+-- never affected, so the owner can't ban themselves out.
+alter table public.admin_settings add column if not exists banned_ips jsonb not null default '[]'::jsonb;
+alter table public.admin_settings add column if not exists ban_message text;
+
 -- Whenever a comment or reply is posted: log it for the admin, and if it's a
 -- reply to someone's comment, notify that person (unless they replied to
 -- themselves, or the parent was posted by a guest with no account).

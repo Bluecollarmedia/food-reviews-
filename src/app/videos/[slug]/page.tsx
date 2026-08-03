@@ -10,8 +10,9 @@ import {
 import { getRelatedReviews } from "@/lib/data";
 import { getPublicFileUrl } from "@/lib/media-url";
 import { incrementViews } from "@/lib/views";
-import { LOCKED_SESSION_COOKIE, verifySessionToken } from "@/lib/session";
-import { getLockedPasscode } from "@/lib/locked-passcode";
+import { formatViewsFull } from "@/lib/view-format";
+import { LOCKED_SESSION_COOKIE, VAULT_SESSION_COOKIE, verifySessionToken } from "@/lib/session";
+import { getLockedPasscode, getVaultPasscode } from "@/lib/locked-passcode";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
 import ScoreBadge from "@/components/ScoreBadge";
 import CommentSection from "@/components/CommentSection";
@@ -66,6 +67,18 @@ export default async function VideoPage({
     const token = cookieStore.get(LOCKED_SESSION_COOKIE)?.value;
     const valid = await verifySessionToken(token, await getLockedPasscode());
     if (!valid) redirect(`/locked/login?redirect=/videos/${slug}`);
+  }
+
+  if (review.status === "vault") {
+    const cookieStore = await cookies();
+    const lockedToken = cookieStore.get(LOCKED_SESSION_COOKIE)?.value;
+    if (!(await verifySessionToken(lockedToken, await getLockedPasscode()))) {
+      redirect(`/locked/login?redirect=/videos/${slug}`);
+    }
+    const vaultToken = cookieStore.get(VAULT_SESSION_COOKIE)?.value;
+    if (!(await verifySessionToken(vaultToken, await getVaultPasscode()))) {
+      redirect(`/locked/vault/login?redirect=/videos/${slug}`);
+    }
   }
 
   await incrementViews(slug).catch(() => {});
@@ -170,6 +183,11 @@ export default async function VideoPage({
                 {review.price ? ` · ${review.price}` : ""} &middot; Reviewed by {review.reviewer}
                 {review.secondReviewer ? ` & ${review.secondReviewer}` : ""}
               </p>
+              {typeof review.displayViews === "number" && (
+                <p className="mt-1 text-sm font-medium text-foreground/50">
+                  {formatViewsFull(review.displayViews)} views
+                </p>
+              )}
             </div>
             <ScoreBadge rating={review.rating} size="lg" />
           </div>

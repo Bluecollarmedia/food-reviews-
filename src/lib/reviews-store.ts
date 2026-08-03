@@ -1,8 +1,28 @@
 import { getStore } from "@netlify/blobs";
+import { unstable_cache } from "next/cache";
 import type { Review, ReviewStatus, Reviewer } from "./data";
+import { getAllViews } from "./views";
+import { getAllViewSettings, publicViews } from "./view-counts";
 
 function reviewsStore() {
   return getStore("reviews");
+}
+
+/**
+ * Attach the public-facing padded view count to each review so cards and the
+ * video page can show it without every caller having to fetch views itself.
+ */
+async function withDisplayViews(reviews: Review[]): Promise<Review[]> {
+  if (reviews.length === 0) return reviews;
+  const slugs = reviews.map((r) => r.slug);
+  const [views, settings] = await Promise.all([
+    getAllViews(slugs),
+    getAllViewSettings(slugs),
+  ]);
+  return reviews.map((r) => ({
+    ...r,
+    displayViews: publicViews(r.slug, views[r.slug] ?? 0, settings[r.slug]),
+  }));
 }
 
 function slugify(input: string) {
@@ -179,27 +199,42 @@ export async function listAllReviews(): Promise<Review[]> {
   const reviews = await Promise.all(
     blobs.map((b) => store.get(b.key, { type: "json" }) as Promise<Review>)
   );
-  return reviews
+  const normalized = reviews
     .filter(Boolean)
     .map(normalizeReview)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return withDisplayViews(normalized);
 }
 
-export async function listPublishedReviews(): Promise<Review[]> {
-  const all = await listAllReviews();
-  return all.filter((r) => r.status === "published");
-}
+// The homepage and /reviews are public, look the same for every visitor, and
+// don't need to reflect an edit within the same second — so cache the list
+// for a minute instead of hitting Netlify Blobs on every single page view.
+export const listPublishedReviews = unstable_cache(
+  async (): Promise<Review[]> => {
+    const all = await listAllReviews();
+    return all.filter((r) => r.status === "published");
+  },
+  ["published-reviews"],
+  { revalidate: 60 }
+);
 
 export async function listLockedReviews(): Promise<Review[]> {
   const all = await listAllReviews();
   return all.filter((r) => r.status === "locked");
 }
 
+export async function listVaultReviews(): Promise<Review[]> {
+  const all = await listAllReviews();
+  return all.filter((r) => r.status === "vault");
+}
+
 export async function getReview(slug: string): Promise<Review | null> {
   await ensureSeeded();
   const store = reviewsStore();
   const review = (await store.get(slug, { type: "json" })) as Review | null;
-  return review ? normalizeReview(review) : null;
+  if (!review) return null;
+  const [enriched] = await withDisplayViews([normalizeReview(review)]);
+  return enriched;
 }
 
 export async function getPublishedReview(slug: string): Promise<Review | null> {

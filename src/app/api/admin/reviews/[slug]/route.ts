@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { updateReview, deleteReview, getReview, type ReviewInput } from "@/lib/reviews-store";
 import { deleteFile } from "@/lib/r2";
 import { notifyNewUpload } from "@/lib/notify";
+import { isSettingsUnlocked, isProtectedStatus } from "@/lib/settings-guard";
 
 async function deleteIfReplaced(oldKey: string | undefined, newKey: string | undefined) {
   if (oldKey && oldKey !== newKey) {
@@ -34,6 +35,22 @@ export async function PUT(
   }
 
   const existing = await getReview(slug);
+
+  // A Locked/Vault video can't have its visibility changed (e.g. made public)
+  // without the security passcode — otherwise anyone with the shared admin
+  // login could just publish protected content and watch it.
+  if (
+    existing &&
+    isProtectedStatus(existing.status) &&
+    body.status !== existing.status &&
+    !(await isSettingsUnlocked())
+  ) {
+    return NextResponse.json(
+      { error: "This video is in the Locked/Vault. Enter the security passcode in Settings to move it out." },
+      { status: 403 }
+    );
+  }
+
   const review = await updateReview(slug, body);
   if (!review) {
     return NextResponse.json({ error: "Review not found." }, { status: 404 });
@@ -63,6 +80,16 @@ export async function DELETE(
 ) {
   const { slug } = await params;
   const existing = await getReview(slug);
+
+  // Protected videos can't be deleted without the security passcode either —
+  // "once it's in the Vault, it stays" unless you have the code.
+  if (existing && isProtectedStatus(existing.status) && !(await isSettingsUnlocked())) {
+    return NextResponse.json(
+      { error: "This video is in the Locked/Vault. Enter the security passcode in Settings to remove it." },
+      { status: 403 }
+    );
+  }
+
   if (existing?.videoKey) {
     await deleteFile(existing.videoKey).catch(() => {});
   }

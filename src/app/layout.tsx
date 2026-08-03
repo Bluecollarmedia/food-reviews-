@@ -3,6 +3,9 @@ import { Geist, Geist_Mono, Bebas_Neue } from "next/font/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import VisitorTracker from "@/components/VisitorTracker";
+import AnnouncementScreen from "@/components/AnnouncementScreen";
+import { getActiveBanner } from "@/lib/site-settings";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -38,17 +41,25 @@ export const viewport: Viewport = {
   themeColor: "#c8102e",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const banner = await getActiveBanner();
+
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${bebasNeue.variable} h-full antialiased`}
     >
       <head>
+        {process.env.NEXT_PUBLIC_R2_PUBLIC_BASE_URL && (
+          <>
+            <link rel="preconnect" href={process.env.NEXT_PUBLIC_R2_PUBLIC_BASE_URL} crossOrigin="anonymous" />
+            <link rel="dns-prefetch" href={process.env.NEXT_PUBLIC_R2_PUBLIC_BASE_URL} />
+          </>
+        )}
         <script
           dangerouslySetInnerHTML={{
             __html:
@@ -58,6 +69,8 @@ export default function RootLayout({
       </head>
       <body className="flex min-h-full flex-col bg-background text-foreground">
         <ServiceWorkerRegister />
+        <VisitorTracker />
+        {banner && <AnnouncementScreen message={banner.message} version={banner.version} />}
         <Header />
         <main className="flex flex-1 flex-col">{children}</main>
         <Footer />

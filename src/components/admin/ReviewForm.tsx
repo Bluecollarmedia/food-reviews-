@@ -4,10 +4,21 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { categories, cities, reviewers, prices, type Review } from "@/lib/data";
 import ImageCropper from "../ImageCropper";
+import { compressVideo, type VideoQuality } from "@/lib/compress-video";
+import { uploadFile } from "@/lib/upload-file";
+
+const QUALITY_OPTIONS: { value: "full" | VideoQuality; label: string }[] = [
+  { value: "full", label: "Full quality" },
+  { value: "1080p", label: "1080p" },
+  { value: "720p", label: "720p" },
+  { value: "480p", label: "480p" },
+  { value: "360p", label: "360p" },
+];
 
 type Props = {
   mode: "create" | "edit";
   initial?: Review;
+  unlocked?: boolean;
 };
 
 function UploadDropzone({
@@ -59,7 +70,10 @@ function MediaUploadFields({
   videoKey,
   videoFile,
   videoProgress,
+  videoPhase,
   onVideoPicked,
+  videoQuality,
+  onVideoQualityChange,
 }: {
   label?: string;
   thumbnailKey?: string;
@@ -69,7 +83,10 @@ function MediaUploadFields({
   videoKey?: string;
   videoFile: File | null;
   videoProgress: number | null;
+  videoPhase?: "compressing" | "uploading";
   onVideoPicked: (file: File | undefined) => void;
+  videoQuality: "full" | VideoQuality;
+  onVideoQualityChange: (quality: "full" | VideoQuality) => void;
 }) {
   return (
     <div className="flex flex-col gap-6">
@@ -94,10 +111,36 @@ function MediaUploadFields({
           }
           onPicked={onVideoPicked}
         />
+
+        <div className="mt-3">
+          <p className="mb-1 text-sm font-semibold text-foreground">Video quality</p>
+          <div className="flex flex-wrap gap-2">
+            {QUALITY_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => onVideoQualityChange(opt.value)}
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  videoQuality === opt.value
+                    ? "border-primary bg-primary text-white"
+                    : "border-border bg-surface text-foreground/70"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-1.5 text-xs text-foreground/50">
+            {videoQuality === "full"
+              ? "Uploads the file as-is, no compression."
+              : `Compresses down to ${videoQuality} before uploading, right in your browser (the first time, it downloads a one-time ~30MB tool to do this).`}
+          </p>
+        </div>
+
         {videoProgress !== null && (
           <div className="mt-3">
             <div className="mb-1 flex items-center justify-between text-sm font-semibold text-foreground">
-              <span>Uploading...</span>
+              <span>{videoPhase === "compressing" ? "Compressing..." : "Uploading..."}</span>
               <span>{videoProgress}%</span>
             </div>
             <div className="h-3 w-full overflow-hidden rounded-full border border-border bg-surface-muted">
@@ -156,41 +199,14 @@ function MediaUploadFields({
   );
 }
 
-function uploadFile(
-  file: File | Blob,
-  filename: string,
-  folder: "videos" | "thumbnails",
-  onProgress: (pct: number) => void
-): Promise<string> {
-  return fetch("/api/admin/upload-url", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ filename, contentType: file.type, folder }),
-  })
-    .then((res) => {
-      if (!res.ok) throw new Error("Could not get upload URL");
-      return res.json();
-    })
-    .then(({ uploadUrl, key }) => {
-      return new Promise<string>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("PUT", uploadUrl);
-        xhr.setRequestHeader("Content-Type", file.type);
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
-        };
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) resolve(key);
-          else reject(new Error(`Upload failed (${xhr.status})`));
-        };
-        xhr.onerror = () => reject(new Error("Upload failed"));
-        xhr.send(file);
-      });
-    });
-}
-
-export default function ReviewForm({ mode, initial }: Props) {
+export default function ReviewForm({ mode, initial, unlocked = true }: Props) {
   const router = useRouter();
+
+  // A Locked/Vault video's visibility is frozen unless the security passcode has
+  // been entered this session. This stops a co-admin with just the shared admin
+  // login from moving protected content out to Published and watching it.
+  const isProtected = initial?.status === "locked" || initial?.status === "vault";
+  const visibilityLocked = mode === "edit" && isProtected && !unlocked;
 
   const [title, setTitle] = useState(initial?.title ?? "");
   const [store, setStore] = useState(initial?.store ?? "");
@@ -208,12 +224,14 @@ export default function ReviewForm({ mode, initial }: Props) {
   const [guestName, setGuestName] = useState(
     initial && !reviewers.includes(initial.reviewer) ? initial.reviewer : ""
   );
-  const [status, setStatus] = useState<"published" | "draft" | "locked">(
+  const [status, setStatus] = useState<"published" | "draft" | "locked" | "vault">(
     initial?.status ?? "draft"
   );
   const [videoKey, setVideoKey] = useState<string | undefined>(initial?.videoKey);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoProgress, setVideoProgress] = useState<number | null>(null);
+  const [videoPhase, setVideoPhase] = useState<"compressing" | "uploading">("uploading");
+  const [videoQuality, setVideoQuality] = useState<"full" | VideoQuality>("full");
 
   const [thumbnailKey, setThumbnailKey] = useState<string | undefined>(
     initial?.thumbnailKey
@@ -244,6 +262,12 @@ export default function ReviewForm({ mode, initial }: Props) {
   const [secondReviewerVideoProgress, setSecondReviewerVideoProgress] = useState<
     number | null
   >(null);
+  const [secondReviewerVideoPhase, setSecondReviewerVideoPhase] = useState<
+    "compressing" | "uploading"
+  >("uploading");
+  const [secondReviewerVideoQuality, setSecondReviewerVideoQuality] = useState<
+    "full" | VideoQuality
+  >("full");
 
   const [secondReviewerThumbnailKey, setSecondReviewerThumbnailKey] = useState<
     string | undefined
@@ -326,13 +350,21 @@ export default function ReviewForm({ mode, initial }: Props) {
 
       let finalVideoKey = videoKey;
       if (videoFile) {
+        let uploadBlob: File | Blob = videoFile;
+        let uploadName = videoFile.name;
+        if (videoQuality !== "full") {
+          setVideoPhase("compressing");
+          setVideoProgress(0);
+          try {
+            uploadBlob = await compressVideo(videoFile, setVideoProgress, videoQuality);
+            uploadName = "video.mp4";
+          } catch (err) {
+            console.error("Video compression failed, uploading the original file instead", err);
+          }
+        }
+        setVideoPhase("uploading");
         setVideoProgress(0);
-        finalVideoKey = await uploadFile(
-          videoFile,
-          videoFile.name,
-          "videos",
-          setVideoProgress
-        );
+        finalVideoKey = await uploadFile(uploadBlob, uploadName, "videos", setVideoProgress);
         setVideoProgress(null);
       }
 
@@ -350,10 +382,27 @@ export default function ReviewForm({ mode, initial }: Props) {
 
       let finalSecondReviewerVideoKey = secondReviewerVideoKey;
       if (hasSecondReviewer && secondReviewerVideoFile) {
+        let uploadBlob: File | Blob = secondReviewerVideoFile;
+        let uploadName = secondReviewerVideoFile.name;
+        if (secondReviewerVideoQuality !== "full") {
+          setSecondReviewerVideoPhase("compressing");
+          setSecondReviewerVideoProgress(0);
+          try {
+            uploadBlob = await compressVideo(
+              secondReviewerVideoFile,
+              setSecondReviewerVideoProgress,
+              secondReviewerVideoQuality
+            );
+            uploadName = "video.mp4";
+          } catch (err) {
+            console.error("Video compression failed, uploading the original file instead", err);
+          }
+        }
+        setSecondReviewerVideoPhase("uploading");
         setSecondReviewerVideoProgress(0);
         finalSecondReviewerVideoKey = await uploadFile(
-          secondReviewerVideoFile,
-          secondReviewerVideoFile.name,
+          uploadBlob,
+          uploadName,
           "videos",
           setSecondReviewerVideoProgress
         );
@@ -704,7 +753,10 @@ export default function ReviewForm({ mode, initial }: Props) {
             videoKey={videoKey}
             videoFile={videoFile}
             videoProgress={videoProgress}
+            videoPhase={videoPhase}
             onVideoPicked={(file) => setVideoFile(file ?? null)}
+            videoQuality={videoQuality}
+            onVideoQualityChange={setVideoQuality}
           />
         </div>
 
@@ -724,7 +776,10 @@ export default function ReviewForm({ mode, initial }: Props) {
               videoKey={secondReviewerVideoKey}
               videoFile={secondReviewerVideoFile}
               videoProgress={secondReviewerVideoProgress}
+              videoPhase={secondReviewerVideoPhase}
               onVideoPicked={(file) => setSecondReviewerVideoFile(file ?? null)}
+              videoQuality={secondReviewerVideoQuality}
+              onVideoQualityChange={setSecondReviewerVideoQuality}
             />
           </div>
         )}
@@ -733,45 +788,86 @@ export default function ReviewForm({ mode, initial }: Props) {
           <label className="mb-1 block text-sm font-semibold text-foreground">
             Visibility
           </label>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setStatus("published")}
-              className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
-                status === "published"
-                  ? "border-emerald-600 bg-emerald-600 text-white"
-                  : "border-border bg-surface text-foreground/70"
-              }`}
-            >
-              Published (public)
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatus("draft")}
-              className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
-                status === "draft"
-                  ? "border-foreground/40 bg-foreground/10 text-foreground"
-                  : "border-border bg-surface text-foreground/70"
-              }`}
-            >
-              Private / Draft
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatus("locked")}
-              className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
-                status === "locked"
-                  ? "border-accent bg-accent text-white"
-                  : "border-border bg-surface text-foreground/70"
-              }`}
-            >
-              Locked (passcode)
-            </button>
-          </div>
-          {status === "locked" && (
-            <p className="mt-2 text-xs text-foreground/50">
-              Visible under the site&apos;s &quot;Locked&quot; menu, only to visitors who enter the passcode.
-            </p>
+          {visibilityLocked ? (
+            <div className="rounded-xl border border-border bg-surface-muted p-4">
+              <div className="flex items-center gap-2">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5 text-foreground/60">
+                  <rect x="5" y="11" width="14" height="9" rx="2" />
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                </svg>
+                <span className="text-sm font-semibold text-foreground">
+                  {initial?.status === "vault"
+                    ? "This video is in the Vault"
+                    : "This video is Locked"}
+                </span>
+              </div>
+              <p className="mt-2 text-xs text-foreground/60">
+                Its visibility is frozen. You can still edit the details above, but to move
+                it out of the {initial?.status === "vault" ? "Vault" : "Locked"} area (or make
+                it public), enter the security passcode in{" "}
+                <span className="font-semibold">Settings</span> first.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setStatus("published")}
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                    status === "published"
+                      ? "border-emerald-600 bg-emerald-600 text-white"
+                      : "border-border bg-surface text-foreground/70"
+                  }`}
+                >
+                  Published (public)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatus("draft")}
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                    status === "draft"
+                      ? "border-foreground/40 bg-foreground/10 text-foreground"
+                      : "border-border bg-surface text-foreground/70"
+                  }`}
+                >
+                  Private / Draft
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatus("locked")}
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                    status === "locked"
+                      ? "border-accent bg-accent text-white"
+                      : "border-border bg-surface text-foreground/70"
+                  }`}
+                >
+                  Locked (passcode)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatus("vault")}
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                    status === "vault"
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border bg-surface text-foreground/70"
+                  }`}
+                >
+                  Vault (2nd passcode)
+                </button>
+              </div>
+              {status === "locked" && (
+                <p className="mt-2 text-xs text-foreground/50">
+                  Visible under the site&apos;s &quot;Locked&quot; menu, only to visitors who enter the passcode.
+                </p>
+              )}
+              {status === "vault" && (
+                <p className="mt-2 text-xs text-foreground/50">
+                  Hidden inside the Vault — visitors need the Locked passcode first, then the Vault
+                  passcode on top of it.
+                </p>
+              )}
+            </>
           )}
         </div>
 
@@ -786,7 +882,9 @@ export default function ReviewForm({ mode, initial }: Props) {
             ? thumbnailProgress !== null
               ? `Uploading thumbnail... ${thumbnailProgress}%`
               : videoProgress !== null
-              ? `Uploading video... ${videoProgress}%`
+              ? videoPhase === "compressing"
+                ? `Compressing video... ${videoProgress}%`
+                : `Uploading video... ${videoProgress}%`
               : "Saving..."
             : mode === "create"
             ? "Create Review"

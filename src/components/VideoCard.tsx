@@ -1,27 +1,25 @@
 import Link from "next/link";
 import ScoreBadge from "./ScoreBadge";
+import ThumbnailImage from "./ThumbnailImage";
 import { getPublicFileUrl } from "@/lib/media-url";
+import { formatViewsShort } from "@/lib/view-format";
 import type { Review } from "@/lib/data";
 
 function Thumbnail({
   review,
   thumbnailUrl,
   progressPercent,
+  priority,
 }: {
   review: Review;
   thumbnailUrl: string | null;
   progressPercent?: number;
+  priority?: boolean;
 }) {
   return (
     <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-gradient-to-br from-primary to-accent">
       {thumbnailUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={thumbnailUrl}
-          alt=""
-          loading="lazy"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+        <ThumbnailImage src={thumbnailUrl} priority={priority} />
       ) : (
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.25),transparent_60%)]" />
       )}
@@ -55,15 +53,22 @@ function Thumbnail({
 export default function VideoCard({
   review,
   progressPercent,
+  priority,
 }: {
   review: Review;
   progressPercent?: number;
+  priority?: boolean;
 }) {
   const thumbnailUrl = getPublicFileUrl(review.thumbnailKey);
 
   return (
     <Link href={`/videos/${review.slug}`} className="group flex flex-col">
-      <Thumbnail review={review} thumbnailUrl={thumbnailUrl} progressPercent={progressPercent} />
+      <Thumbnail
+        review={review}
+        thumbnailUrl={thumbnailUrl}
+        progressPercent={progressPercent}
+        priority={priority}
+      />
       <div className="flex gap-3 py-3">
         <div className="shrink-0">
           <ScoreBadge rating={review.rating} size="sm" />
@@ -76,6 +81,11 @@ export default function VideoCard({
             {review.reviewer}
             {review.secondReviewer ? ` & ${review.secondReviewer}` : ""} &middot; {review.city}
           </p>
+          {typeof review.displayViews === "number" && (
+            <p className="mt-0.5 truncate text-xs text-foreground/50">
+              {formatViewsShort(review.displayViews)} views
+            </p>
+          )}
         </div>
       </div>
     </Link>

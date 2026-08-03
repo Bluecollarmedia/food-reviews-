@@ -11,7 +11,7 @@ export type Comment = {
 };
 
 export type Reviewer = string;
-export type ReviewStatus = "published" | "draft" | "locked";
+export type ReviewStatus = "published" | "draft" | "locked" | "vault";
 
 export type Review = {
   slug: string;
@@ -33,6 +33,8 @@ export type Review = {
   secondReviewerRating?: number;
   createdAt: string;
   updatedAt: string;
+  /** Public-facing padded view count, attached when the review is read. */
+  displayViews?: number;
 };
 
 export const categories = [

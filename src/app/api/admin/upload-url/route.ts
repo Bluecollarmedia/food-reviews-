@@ -16,7 +16,14 @@ export async function POST(req: NextRequest) {
 
   const safeName = filename.replace(/[^a-zA-Z0-9.\-_]/g, "-");
   const key = `${folder}/${crypto.randomUUID()}-${safeName}`;
-  const uploadUrl = await getUploadUrl(key, contentType);
+  // Thumbnails are small, one-shot downloads with a fresh UUID key that's
+  // never overwritten in place, so it's safe to cache them indefinitely.
+  // Videos are streamed/seeked in pieces rather than fetched once, and a
+  // long-lived cache directive interacting with range requests is the
+  // likely cause of a real reported bug (pausing then resuming a video
+  // stalling for ~15s) — so they're left uncached.
+  const cacheControl = folder === "thumbnails" ? "public, max-age=31536000, immutable" : undefined;
+  const uploadUrl = await getUploadUrl(key, contentType, cacheControl);
 
   return NextResponse.json({ uploadUrl, key });
 }

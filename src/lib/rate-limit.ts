@@ -6,6 +6,8 @@ const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
 type Record = { count: number; firstAttemptAt: number };
 
+type Limits = { maxAttempts?: number; windowMs?: number };
+
 function rateLimitStore() {
   // Attempts are read-then-written on every request in quick succession, so
   // the default eventual consistency can miss the previous write and let
@@ -22,15 +24,18 @@ export function getClientIp(req: NextRequest): string {
 }
 
 export async function checkRateLimit(
-  key: string
+  key: string,
+  limits: Limits = {}
 ): Promise<{ allowed: boolean; retryAfterSeconds?: number }> {
+  const maxAttempts = limits.maxAttempts ?? MAX_ATTEMPTS;
+  const windowMs = limits.windowMs ?? WINDOW_MS;
   try {
     const store = rateLimitStore();
     const record = (await store.get(key, { type: "json" })) as Record | null;
     const now = Date.now();
 
-    if (record && now - record.firstAttemptAt < WINDOW_MS && record.count >= MAX_ATTEMPTS) {
-      const retryAfterSeconds = Math.ceil((record.firstAttemptAt + WINDOW_MS - now) / 1000);
+    if (record && now - record.firstAttemptAt < windowMs && record.count >= maxAttempts) {
+      const retryAfterSeconds = Math.ceil((record.firstAttemptAt + windowMs - now) / 1000);
       return { allowed: false, retryAfterSeconds };
     }
     return { allowed: true };
@@ -40,14 +45,15 @@ export async function checkRateLimit(
   }
 }
 
-export async function recordFailedAttempt(key: string): Promise<void> {
+export async function recordFailedAttempt(key: string, limits: Limits = {}): Promise<void> {
+  const windowMs = limits.windowMs ?? WINDOW_MS;
   try {
     const store = rateLimitStore();
     const now = Date.now();
     const record = (await store.get(key, { type: "json" })) as Record | null;
 
     const next =
-      record && now - record.firstAttemptAt < WINDOW_MS
+      record && now - record.firstAttemptAt < windowMs
         ? { count: record.count + 1, firstAttemptAt: record.firstAttemptAt }
         : { count: 1, firstAttemptAt: now };
 
