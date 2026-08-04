@@ -31,10 +31,12 @@ function isValidPublicIp(ip: string): boolean {
 export async function POST(req: NextRequest) {
   let path = "/";
   let reportedIp = "";
+  let vid = "";
   try {
     const body = await req.json();
     if (typeof body?.path === "string") path = body.path;
     if (typeof body?.ip === "string") reportedIp = body.ip.trim();
+    if (typeof body?.vid === "string") vid = body.vid.trim().slice(0, 64);
   } catch {
     // no body / bad JSON — just log the visit with a default path
   }
@@ -60,6 +62,6 @@ export async function POST(req: NextRequest) {
   }
   await recordFailedAttempt(key, TRACK_LIMIT);
 
-  await recordVisit(ip, path).catch(() => {});
+  await recordVisit(vid, ip, path).catch(() => {});
   return NextResponse.json({ ok: true });
 }
