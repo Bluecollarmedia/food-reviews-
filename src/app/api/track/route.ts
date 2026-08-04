@@ -7,18 +7,45 @@ import { getClientIp, checkRateLimit, recordFailedAttempt } from "@/lib/rate-lim
 // handful of page views a minute) completely untouched.
 const TRACK_LIMIT = { maxAttempts: 30, windowMs: 60_000 };
 
-export async function POST(req: NextRequest) {
-  // The middleware (which runs at the edge, where the real client IP is intact)
-  // forwards it here in x-visitor-ip. Fall back to the raw headers otherwise.
-  const ip = req.headers.get("x-visitor-ip")?.trim() || getClientIp(req);
+function isValidPublicIp(ip: string): boolean {
+  const v4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+  const m = ip.match(v4);
+  if (m) {
+    if (m.slice(1).some((o) => Number(o) > 255)) return false;
+    // Reject obvious non-public ranges.
+    if (
+      ip.startsWith("10.") ||
+      ip.startsWith("127.") ||
+      ip.startsWith("192.168.") ||
+      ip.startsWith("169.254.") ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(ip)
+    ) {
+      return false;
+    }
+    return true;
+  }
+  // Loose IPv6 check.
+  return ip.includes(":") && /^[0-9a-fA-F:.]+$/.test(ip) && ip.length >= 3;
+}
 
+export async function POST(req: NextRequest) {
   let path = "/";
+  let reportedIp = "";
   try {
     const body = await req.json();
     if (typeof body?.path === "string") path = body.path;
+    if (typeof body?.ip === "string") reportedIp = body.ip.trim();
   } catch {
     // no body / bad JSON — just log the visit with a default path
   }
+
+  // Prefer the IP the browser looked up for itself (it can see the real client
+  // address the server can't). Fall back to the edge-forwarded header, then to
+  // whatever the server can read directly.
+  const ip =
+    (reportedIp && isValidPublicIp(reportedIp) && reportedIp) ||
+    req.headers.get("x-visitor-ip")?.trim() ||
+    getClientIp(req);
 
   // The admin panel isn't a "visitor to the website" — don't log it.
   if (path.startsWith("/admin")) {
