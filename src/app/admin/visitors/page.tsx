@@ -1,15 +1,21 @@
 import { listVisitors, getHiddenVisitors } from "@/lib/visitors";
 import { getBans } from "@/lib/bans";
+import { listAllReviews } from "@/lib/reviews-store";
 import AdminVisitors from "@/components/admin/AdminVisitors";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminVisitorsPage() {
-  const [visitors, hidden, bans] = await Promise.all([
+  const [visitors, hidden, bans, reviews] = await Promise.all([
     listVisitors(),
     getHiddenVisitors(),
     getBans(),
+    listAllReviews(),
   ]);
+
+  // slug -> title, so a visit to /videos/<slug> can show the real video name.
+  const titles: Record<string, string> = {};
+  for (const r of reviews) titles[r.slug] = r.title;
 
   return (
     <div className="mx-auto w-full max-w-3xl px-5 py-10">
@@ -21,7 +27,13 @@ export default async function AdminVisitorsPage() {
         changing. Name a device so you know who it is, or hide one (like your own).
       </p>
 
-      <AdminVisitors visitors={visitors} hidden={hidden} bannedIps={bans.ips} banMessage={bans.message} />
+      <AdminVisitors
+        visitors={visitors}
+        hidden={hidden}
+        bannedIps={bans.ips}
+        banMessage={bans.message}
+        titles={titles}
+      />
     </div>
   );
 }

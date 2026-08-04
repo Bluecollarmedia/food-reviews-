@@ -14,6 +14,48 @@ function fullTime(iso: string) {
   });
 }
 
+function prettySlug(slug: string): string {
+  return slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+// Turn a raw URL path into a plain-English "what they did" line.
+function describePath(
+  path: string,
+  titles: Record<string, string>
+): { icon: string; label: string } {
+  const clean = path.split("?")[0].replace(/\/+$/, "") || "/";
+
+  const simple: Record<string, { icon: string; label: string }> = {
+    "/": { icon: "🏠", label: "Home page" },
+    "/reviews": { icon: "📋", label: "Browsed all reviews" },
+    "/shorts": { icon: "▶️", label: "Shorts feed" },
+    "/about": { icon: "ℹ️", label: "About page" },
+    "/history": { icon: "🕘", label: "Watch history" },
+    "/locked": { icon: "🔒", label: "Locked section" },
+    "/locked/login": { icon: "🔒", label: "Locked login" },
+    "/locked/vault": { icon: "🗝️", label: "Vault" },
+    "/locked/vault/login": { icon: "🗝️", label: "Vault login" },
+    "/notifications": { icon: "🔔", label: "Notifications" },
+    "/settings": { icon: "⚙️", label: "Account settings" },
+    "/login": { icon: "👤", label: "Log in page" },
+    "/signup": { icon: "👤", label: "Sign up page" },
+  };
+  if (simple[clean]) return simple[clean];
+
+  const comments = clean.match(/^\/videos\/([^/]+)\/comments$/);
+  if (comments) {
+    const t = titles[comments[1]] || prettySlug(comments[1]);
+    return { icon: "💬", label: `Comments on “${t}”` };
+  }
+  const video = clean.match(/^\/videos\/([^/]+)$/);
+  if (video) {
+    const t = titles[video[1]] || prettySlug(video[1]);
+    return { icon: "🎬", label: `Watched “${t}”` };
+  }
+
+  return { icon: "•", label: clean };
+}
+
 function placeLabel(loc: VisitorLocation | undefined): string {
   if (!loc?.geo) return loc?.ip || "unknown";
   const { geo } = loc;
@@ -53,6 +95,7 @@ function VisitorRow({
   isMe,
   hidden,
   banned,
+  titles,
   onAction,
   busy,
 }: {
@@ -60,6 +103,7 @@ function VisitorRow({
   isMe: boolean;
   hidden: boolean;
   banned: boolean;
+  titles: Record<string, string>;
   onAction: (action: string, opts: { id?: string; ip?: string; label?: string }) => void;
   busy: boolean;
 }) {
@@ -220,18 +264,21 @@ function VisitorRow({
           )}
           <div>
             <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-foreground/40">
-              Recent visits
+              Everything they did ({visitor.hits.length})
             </p>
-            <ul className="flex flex-col gap-1">
-              {visitor.hits.map((hit, i) => (
-                <li
-                  key={i}
-                  className="flex items-center justify-between gap-3 text-xs text-foreground/70"
-                >
-                  <span>{fullTime(hit.t)}</span>
-                  <span className="truncate font-mono text-foreground/50">{hit.p}</span>
-                </li>
-              ))}
+            <ul className="flex flex-col gap-1.5">
+              {visitor.hits.map((hit, i) => {
+                const d = describePath(hit.p, titles);
+                return (
+                  <li key={i} className="flex items-start justify-between gap-3 text-xs">
+                    <span className="min-w-0 text-foreground/80">
+                      <span className="mr-1">{d.icon}</span>
+                      {d.label}
+                    </span>
+                    <span className="shrink-0 text-foreground/40">{fullTime(hit.t)}</span>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>
@@ -245,11 +292,13 @@ export default function AdminVisitors({
   hidden,
   bannedIps,
   banMessage,
+  titles,
 }: {
   visitors: VisitorRecord[];
   hidden: string[];
   bannedIps: string[];
   banMessage: string;
+  titles: Record<string, string>;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -358,6 +407,7 @@ export default function AdminVisitors({
           isMe={!!myId && v.id === myId}
           hidden={false}
           banned={isBanned(v)}
+          titles={titles}
           onAction={onAction}
           busy={busy}
         />
@@ -380,6 +430,7 @@ export default function AdminVisitors({
                   isMe={!!myId && v.id === myId}
                   hidden={true}
                   banned={isBanned(v)}
+                  titles={titles}
                   onAction={onAction}
                   busy={busy}
                 />
