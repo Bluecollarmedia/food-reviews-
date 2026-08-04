@@ -1,54 +1,58 @@
 import { NextRequest, NextResponse } from "next/server";
-import { hideIp, unhideIp, setLabel, clearVisitor, clearAllVisitors } from "@/lib/visitors";
+import {
+  hideVisitor,
+  unhideVisitor,
+  setLabel,
+  clearVisitor,
+  clearAllVisitors,
+} from "@/lib/visitors";
 import { banIp, unbanIp, setBanMessage } from "@/lib/bans";
 
 export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as
-    | { action?: string; ip?: string; label?: string; message?: string }
+    | { action?: string; id?: string; ip?: string; label?: string; message?: string }
     | null;
 
   if (!body || !body.action) {
     return NextResponse.json({ error: "Missing action." }, { status: 400 });
   }
 
-  // The ban message isn't tied to a specific IP.
-  if (body.action === "ban-message") {
-    await setBanMessage(body.message ?? "");
-    return NextResponse.json({ ok: true });
-  }
-
-  // Wipe the whole visitor log (e.g. to clear bad data).
-  if (body.action === "clear-all") {
-    await clearAllVisitors();
-    return NextResponse.json({ ok: true });
-  }
-
-  if (!body.ip) {
-    return NextResponse.json({ error: "Missing ip." }, { status: 400 });
-  }
-
   switch (body.action) {
+    // Site-wide, not tied to a specific visitor.
+    case "ban-message":
+      await setBanMessage(body.message ?? "");
+      return NextResponse.json({ ok: true });
+    case "clear-all":
+      await clearAllVisitors();
+      return NextResponse.json({ ok: true });
+
+    // Device-level actions.
     case "hide":
-      await hideIp(body.ip);
-      break;
     case "unhide":
-      await unhideIp(body.ip);
-      break;
     case "label":
-      await setLabel(body.ip, body.label ?? "");
-      break;
-    case "clear":
-      await clearVisitor(body.ip);
-      break;
+    case "clear": {
+      if (!body.id) {
+        return NextResponse.json({ error: "Missing id." }, { status: 400 });
+      }
+      if (body.action === "hide") await hideVisitor(body.id);
+      else if (body.action === "unhide") await unhideVisitor(body.id);
+      else if (body.action === "label") await setLabel(body.id, body.label ?? "");
+      else await clearVisitor(body.id);
+      return NextResponse.json({ ok: true });
+    }
+
+    // IP-level bans (the middleware blocks by IP).
     case "ban":
-      await banIp(body.ip);
-      break;
-    case "unban":
-      await unbanIp(body.ip);
-      break;
+    case "unban": {
+      if (!body.ip) {
+        return NextResponse.json({ error: "Missing ip." }, { status: 400 });
+      }
+      if (body.action === "ban") await banIp(body.ip);
+      else await unbanIp(body.ip);
+      return NextResponse.json({ ok: true });
+    }
+
     default:
       return NextResponse.json({ error: "Unknown action." }, { status: 400 });
   }
-
-  return NextResponse.json({ ok: true });
 }

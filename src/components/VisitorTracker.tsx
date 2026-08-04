@@ -3,27 +3,36 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
-/**
- * Pings /api/track on each page view so the admin can see who's visiting.
- *
- * The site's server sits behind Netlify's edge, so it can't reliably see the
- * real visitor IP (it only sees Netlify's own machines). So the browser asks a
- * public "what's my IP" service directly — that request comes FROM the visitor,
- * so it sees the true address — and we pass that along. Falls back to whatever
- * the server can figure out if the lookup fails.
- */
+const VID_KEY = "dsfr_vid";
+
+// A stable per-browser id so one device is ONE visitor in the log, even when its
+// IP keeps changing (which cellular does constantly).
+function getVisitorId(): string {
+  try {
+    let id = localStorage.getItem(VID_KEY);
+    if (!id) {
+      id =
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+      localStorage.setItem(VID_KEY, id);
+    }
+    return id;
+  } catch {
+    return "";
+  }
+}
+
+// The server sits behind Netlify's edge and can't see the real client IP, so
+// the browser looks it up itself (this request comes FROM the visitor).
 async function lookupOwnIp(): Promise<string | undefined> {
-  const providers = [
-    { url: "https://api.ipify.org?format=json", key: "ip" },
-    { url: "https://api64.ipify.org?format=json", key: "ip" },
-  ];
-  for (const p of providers) {
+  const urls = ["https://api.ipify.org?format=json", "https://api64.ipify.org?format=json"];
+  for (const url of urls) {
     try {
-      const res = await fetch(p.url, { cache: "no-store" });
+      const res = await fetch(url, { cache: "no-store" });
       if (!res.ok) continue;
       const data = await res.json();
-      const ip = data?.[p.key];
-      if (typeof ip === "string" && ip.length >= 7) return ip;
+      if (typeof data?.ip === "string" && data.ip.length >= 7) return data.ip;
     } catch {
       // try the next provider
     }
@@ -37,6 +46,7 @@ export default function VisitorTracker() {
   useEffect(() => {
     if (!pathname || pathname.startsWith("/admin")) return;
     let cancelled = false;
+    const vid = getVisitorId();
 
     (async () => {
       const ip = await lookupOwnIp();
@@ -44,7 +54,7 @@ export default function VisitorTracker() {
       fetch("/api/track", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: pathname, ip }),
+        body: JSON.stringify({ path: pathname, ip, vid }),
         keepalive: true,
       }).catch(() => {});
     })();

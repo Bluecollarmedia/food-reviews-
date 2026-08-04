@@ -1,17 +1,16 @@
 import { getStore } from "@netlify/blobs";
 
-// A lightweight visitor log grouped by IP: instead of a flat firehose of "the
-// same IP a million times", each IP gets ONE record with its recent visit
-// times. The admin can label who an IP is, and hide IPs (e.g. their own) so
-// they don't clutter the list.
+// A visitor log grouped by DEVICE, not IP. Each browser sends a stable id, so a
+// phone that cycles through a dozen IPs (as cellular does) is still one visitor.
+// The IPs/locations a device has used are tracked inside its record.
 
-const MAX_HITS = 150; // keep the last N visits per IP; plenty for a small site
+const MAX_HITS = 150; // recent visits kept per device
+const MAX_LOCATIONS = 25; // distinct IPs/places kept per device
 
-// Reloading the same page within this window doesn't count as a new visit, so
-// hammering refresh doesn't pad the number.
+// Reloading the same page within this window doesn't count as a new visit.
 const DEDUPE_MS = 45_000;
 
-export type VisitorHit = { t: string; p: string };
+export type VisitorHit = { t: string; p: string; ip: string };
 
 export type VisitorGeo = {
   city?: string;
@@ -26,15 +25,34 @@ export type VisitorGeo = {
   flag?: string;
 };
 
-export type VisitorRecord = {
+export type VisitorLocation = {
   ip: string;
+  geo?: VisitorGeo;
+  count: number;
+  lastSeen: string;
+};
+
+export type VisitorRecord = {
+  id: string;
   label?: string;
   count: number;
   firstSeen: string;
   lastSeen: string;
-  hits: VisitorHit[]; // most recent first, capped at MAX_HITS
-  geo?: VisitorGeo;
+  hits: VisitorHit[]; // most recent first, capped
+  locations: VisitorLocation[]; // distinct IPs/places, most recent first
 };
+
+type VisitorConfig = { hidden: string[] }; // hidden device ids
+
+function store() {
+  return getStore("visitors");
+}
+
+const CONFIG_KEY = "config";
+
+function keyFor(id: string): string {
+  return "v_" + id.replace(/[^a-zA-Z0-9]/g, "_");
+}
 
 function isPrivateIp(ip: string): boolean {
   return (
@@ -51,8 +69,6 @@ function isPrivateIp(ip: string): boolean {
   );
 }
 
-// One-time geolocation lookup for an IP (city / region / country / ISP / coords)
-// via the free, no-key ipwho.is HTTPS API. Best-effort — never throws.
 async function lookupGeo(ip: string): Promise<VisitorGeo | null> {
   if (isPrivateIp(ip)) return null;
   try {
@@ -90,59 +106,58 @@ async function lookupGeo(ip: string): Promise<VisitorGeo | null> {
   }
 }
 
-type VisitorConfig = { hidden: string[] };
+export async function recordVisit(id: string, ip: string, path: string): Promise<void> {
+  const visitorId = id || (ip ? `ip:${ip}` : "");
+  if (!visitorId) return;
 
-function store() {
-  return getStore("visitors");
-}
-
-const CONFIG_KEY = "config";
-
-// Blob keys must be simple; turn an IP into a safe key (and keep the "ip_"
-// prefix so we can tell visitor records apart from the config blob).
-function keyFor(ip: string): string {
-  return "ip_" + ip.replace(/[^a-zA-Z0-9]/g, "_");
-}
-
-export async function recordVisit(ip: string, path: string): Promise<void> {
-  if (!ip) return;
   const s = store();
-  const key = keyFor(ip);
+  const key = keyFor(visitorId);
   const nowMs = Date.now();
   const now = new Date(nowMs).toISOString();
   const cleanPath = path || "/";
-  const hit: VisitorHit = { t: now, p: cleanPath };
+  const cleanIp = ip || "unknown";
+  const hit: VisitorHit = { t: now, p: cleanPath, ip: cleanIp };
 
   const existing = (await s.get(key, { type: "json" })) as VisitorRecord | null;
 
   if (existing) {
-    // Refresh de-dupe: same page reloaded within the window isn't a new visit.
     const last = existing.hits[0];
     const isRefresh =
-      last && last.p === cleanPath && nowMs - new Date(last.t).getTime() < DEDUPE_MS;
+      last && last.p === cleanPath && last.ip === cleanIp && nowMs - new Date(last.t).getTime() < DEDUPE_MS;
 
     if (!isRefresh) {
       existing.count += 1;
       existing.hits = [hit, ...existing.hits].slice(0, MAX_HITS);
     }
     existing.lastSeen = now;
-    // Fill in geolocation once, if we don't already have it.
-    if (!existing.geo) {
-      const geo = await lookupGeo(ip);
-      if (geo) existing.geo = geo;
+
+    if (!existing.locations) existing.locations = [];
+    const loc = existing.locations.find((l) => l.ip === cleanIp);
+    if (loc) {
+      if (!isRefresh) loc.count += 1;
+      loc.lastSeen = now;
+      // move to front
+      existing.locations = [loc, ...existing.locations.filter((l) => l.ip !== cleanIp)];
+    } else {
+      const geo = await lookupGeo(cleanIp);
+      existing.locations = [
+        { ip: cleanIp, geo: geo ?? undefined, count: 1, lastSeen: now },
+        ...existing.locations,
+      ].slice(0, MAX_LOCATIONS);
     }
+
     await s.setJSON(key, existing);
     return;
   }
 
-  const geo = await lookupGeo(ip);
+  const geo = await lookupGeo(cleanIp);
   const record: VisitorRecord = {
-    ip,
+    id: visitorId,
     count: 1,
     firstSeen: now,
     lastSeen: now,
     hits: [hit],
-    ...(geo ? { geo } : {}),
+    locations: [{ ip: cleanIp, geo: geo ?? undefined, count: 1, lastSeen: now }],
   };
   await s.setJSON(key, record);
 }
@@ -152,7 +167,7 @@ export async function listVisitors(): Promise<VisitorRecord[]> {
   const { blobs } = await s.list();
   const records = await Promise.all(
     blobs
-      .filter((b) => b.key.startsWith("ip_"))
+      .filter((b) => b.key.startsWith("v_"))
       .map((b) => s.get(b.key, { type: "json" }) as Promise<VisitorRecord>)
   );
   return records
@@ -165,27 +180,27 @@ async function getConfig(): Promise<VisitorConfig> {
   return c && Array.isArray(c.hidden) ? c : { hidden: [] };
 }
 
-export async function getHiddenIps(): Promise<string[]> {
+export async function getHiddenVisitors(): Promise<string[]> {
   return (await getConfig()).hidden;
 }
 
-export async function hideIp(ip: string): Promise<void> {
+export async function hideVisitor(id: string): Promise<void> {
   const config = await getConfig();
-  if (!config.hidden.includes(ip)) {
-    config.hidden.push(ip);
+  if (!config.hidden.includes(id)) {
+    config.hidden.push(id);
     await store().setJSON(CONFIG_KEY, config);
   }
 }
 
-export async function unhideIp(ip: string): Promise<void> {
+export async function unhideVisitor(id: string): Promise<void> {
   const config = await getConfig();
-  config.hidden = config.hidden.filter((x) => x !== ip);
+  config.hidden = config.hidden.filter((x) => x !== id);
   await store().setJSON(CONFIG_KEY, config);
 }
 
-export async function setLabel(ip: string, label: string): Promise<void> {
+export async function setLabel(id: string, label: string): Promise<void> {
   const s = store();
-  const key = keyFor(ip);
+  const key = keyFor(id);
   const record = (await s.get(key, { type: "json" })) as VisitorRecord | null;
   if (record) {
     record.label = label.trim() || undefined;
@@ -193,15 +208,17 @@ export async function setLabel(ip: string, label: string): Promise<void> {
   }
 }
 
-export async function clearVisitor(ip: string): Promise<void> {
-  await store().delete(keyFor(ip));
-  await unhideIp(ip);
+export async function clearVisitor(id: string): Promise<void> {
+  await store().delete(keyFor(id));
+  await unhideVisitor(id);
 }
 
 export async function clearAllVisitors(): Promise<void> {
   const s = store();
   const { blobs } = await s.list();
   await Promise.all(
-    blobs.filter((b) => b.key.startsWith("ip_")).map((b) => s.delete(b.key))
+    blobs
+      .filter((b) => b.key.startsWith("v_") || b.key.startsWith("ip_"))
+      .map((b) => s.delete(b.key))
   );
 }
