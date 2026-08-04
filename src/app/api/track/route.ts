@@ -8,7 +8,9 @@ import { getClientIp, checkRateLimit, recordFailedAttempt } from "@/lib/rate-lim
 const TRACK_LIMIT = { maxAttempts: 30, windowMs: 60_000 };
 
 export async function POST(req: NextRequest) {
-  const ip = getClientIp(req);
+  // The middleware (which runs at the edge, where the real client IP is intact)
+  // forwards it here in x-visitor-ip. Fall back to the raw headers otherwise.
+  const ip = req.headers.get("x-visitor-ip")?.trim() || getClientIp(req);
 
   let path = "/";
   try {
