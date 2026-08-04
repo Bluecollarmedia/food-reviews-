@@ -73,12 +73,39 @@ async function getBannedIps(): Promise<string[]> {
   }
 }
 
-function clientIp(req: NextRequest): string {
+function isPrivateIp(ip: string): boolean {
   return (
-    req.headers.get("x-nf-client-connection-ip") ||
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    ""
+    !ip ||
+    ip === "::1" ||
+    ip.startsWith("127.") ||
+    ip.startsWith("10.") ||
+    ip.startsWith("192.168.") ||
+    ip.startsWith("169.254.") ||
+    ip.startsWith("fc") ||
+    ip.startsWith("fd") ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(ip)
   );
+}
+
+function clientIp(req: NextRequest): string {
+  // Netlify's edge header is the authoritative client IP; the others are
+  // fallbacks for other CDNs. As a last resort, take the first public entry
+  // from x-forwarded-for (the left-most is the original client).
+  const direct =
+    req.headers.get("x-nf-client-connection-ip") ||
+    req.headers.get("cf-connecting-ip") ||
+    req.headers.get("true-client-ip") ||
+    req.headers.get("x-real-ip");
+  if (direct && !isPrivateIp(direct.trim())) return direct.trim();
+
+  const forwarded = req.headers.get("x-forwarded-for");
+  if (forwarded) {
+    for (const part of forwarded.split(",")) {
+      const ip = part.trim();
+      if (ip && !isPrivateIp(ip)) return ip;
+    }
+  }
+  return direct?.trim() || "";
 }
 
 // The separate "security passcode": with just the shared admin code you can
@@ -130,6 +157,18 @@ function isBasicAdminPath(pathname: string): boolean {
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  // The visitor tracker (/api/track) runs as a serverless function BEHIND the
+  // edge, where the real client IP has already been replaced by an internal
+  // Netlify/AWS hop. Here in the middleware we're AT the edge and still see the
+  // true visitor IP — so grab it and forward it to the route in a header it can
+  // trust. (Done first so it works even for admins, who bypass the rest below.)
+  if (pathname === "/api/track") {
+    const realIp = clientIp(req);
+    const headers = new Headers(req.headers);
+    if (realIp) headers.set("x-visitor-ip", realIp);
+    return NextResponse.next({ request: { headers } });
+  }
 
   // --- Admin area: its own auth, and ALWAYS reachable (even during a site
   // lockdown) so the owner can never be locked out of turning the lock off. ---

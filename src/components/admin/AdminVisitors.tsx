@@ -252,6 +252,18 @@ export default function AdminVisitors({
     router.refresh();
   }
 
+  async function clearAll() {
+    if (!confirm("Clear the entire visitor log? This can't be undone.")) return;
+    setBusy(true);
+    await fetch("/api/admin/visitors", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "clear-all" }),
+    }).catch(() => {});
+    setBusy(false);
+    router.refresh();
+  }
+
   const hiddenSet = new Set(hidden);
   const bannedSet = new Set(bannedIps);
   const visible = visitors.filter((v) => !hiddenSet.has(v.ip));
@@ -282,6 +294,21 @@ export default function AdminVisitors({
           Save message
         </button>
       </div>
+
+      {visitors.length > 0 && (
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-foreground/50">
+            {visitors.length} {visitors.length === 1 ? "IP" : "IPs"} logged
+          </p>
+          <button
+            onClick={clearAll}
+            disabled={busy}
+            className="text-xs font-semibold text-primary hover:underline disabled:opacity-50"
+          >
+            Clear all history
+          </button>
+        </div>
+      )}
 
       {visible.length === 0 && (
         <p className="text-center text-foreground/60">

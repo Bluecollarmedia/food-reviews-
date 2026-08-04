@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { hideIp, unhideIp, setLabel, clearVisitor } from "@/lib/visitors";
+import { hideIp, unhideIp, setLabel, clearVisitor, clearAllVisitors } from "@/lib/visitors";
 import { banIp, unbanIp, setBanMessage } from "@/lib/bans";
 
 export async function POST(req: NextRequest) {
@@ -14,6 +14,12 @@ export async function POST(req: NextRequest) {
   // The ban message isn't tied to a specific IP.
   if (body.action === "ban-message") {
     await setBanMessage(body.message ?? "");
+    return NextResponse.json({ ok: true });
+  }
+
+  // Wipe the whole visitor log (e.g. to clear bad data).
+  if (body.action === "clear-all") {
+    await clearAllVisitors();
     return NextResponse.json({ ok: true });
   }
 

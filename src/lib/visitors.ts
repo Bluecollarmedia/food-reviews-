@@ -197,3 +197,11 @@ export async function clearVisitor(ip: string): Promise<void> {
   await store().delete(keyFor(ip));
   await unhideIp(ip);
 }
+
+export async function clearAllVisitors(): Promise<void> {
+  const s = store();
+  const { blobs } = await s.list();
+  await Promise.all(
+    blobs.filter((b) => b.key.startsWith("ip_")).map((b) => s.delete(b.key))
+  );
+}
