@@ -13,9 +13,10 @@ export default async function AdminVisitorsPage() {
     listAllReviews(),
   ]);
 
-  // slug -> title, so a visit to /videos/<slug> can show the real video name.
-  const titles: Record<string, string> = {};
-  for (const r of reviews) titles[r.slug] = r.title;
+  // slug -> { title, status }, so a visit to /videos/<slug> shows the real video
+  // name and can be flagged when it's a Locked/Vault video.
+  const videos: Record<string, { title: string; status: string }> = {};
+  for (const r of reviews) videos[r.slug] = { title: r.title, status: r.status };
 
   return (
     <div className="mx-auto w-full max-w-3xl px-5 py-10">
@@ -32,7 +33,7 @@ export default async function AdminVisitorsPage() {
         hidden={hidden}
         bannedIps={bans.ips}
         banMessage={bans.message}
-        titles={titles}
+        videos={videos}
       />
     </div>
   );

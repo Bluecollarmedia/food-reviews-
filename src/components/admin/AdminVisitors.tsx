@@ -18,11 +18,10 @@ function prettySlug(slug: string): string {
   return slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+type VideoMeta = Record<string, { title: string; status: string }>;
+
 // Turn a raw URL path into a plain-English "what they did" line.
-function describePath(
-  path: string,
-  titles: Record<string, string>
-): { icon: string; label: string } {
+function describePath(path: string, videos: VideoMeta): { icon: string; label: string } {
   const clean = path.split("?")[0].replace(/\/+$/, "") || "/";
 
   const simple: Record<string, { icon: string; label: string }> = {
@@ -31,9 +30,9 @@ function describePath(
     "/shorts": { icon: "▶️", label: "Shorts feed" },
     "/about": { icon: "ℹ️", label: "About page" },
     "/history": { icon: "🕘", label: "Watch history" },
-    "/locked": { icon: "🔒", label: "Locked section" },
+    "/locked": { icon: "🔒", label: "Opened the Locked list" },
     "/locked/login": { icon: "🔒", label: "Locked login" },
-    "/locked/vault": { icon: "🗝️", label: "Vault" },
+    "/locked/vault": { icon: "🗝️", label: "Opened the Vault list" },
     "/locked/vault/login": { icon: "🗝️", label: "Vault login" },
     "/notifications": { icon: "🔔", label: "Notifications" },
     "/settings": { icon: "⚙️", label: "Account settings" },
@@ -44,12 +43,15 @@ function describePath(
 
   const comments = clean.match(/^\/videos\/([^/]+)\/comments$/);
   if (comments) {
-    const t = titles[comments[1]] || prettySlug(comments[1]);
+    const t = videos[comments[1]]?.title || prettySlug(comments[1]);
     return { icon: "💬", label: `Comments on “${t}”` };
   }
   const video = clean.match(/^\/videos\/([^/]+)$/);
   if (video) {
-    const t = titles[video[1]] || prettySlug(video[1]);
+    const meta = videos[video[1]];
+    const t = meta?.title || prettySlug(video[1]);
+    if (meta?.status === "vault") return { icon: "🗝️", label: `Watched Vault video “${t}”` };
+    if (meta?.status === "locked") return { icon: "🔒", label: `Watched Locked video “${t}”` };
     return { icon: "🎬", label: `Watched “${t}”` };
   }
 
@@ -95,7 +97,7 @@ function VisitorRow({
   isMe,
   hidden,
   banned,
-  titles,
+  videos,
   onAction,
   busy,
 }: {
@@ -103,7 +105,7 @@ function VisitorRow({
   isMe: boolean;
   hidden: boolean;
   banned: boolean;
-  titles: Record<string, string>;
+  videos: VideoMeta;
   onAction: (action: string, opts: { id?: string; ip?: string; label?: string }) => void;
   busy: boolean;
 }) {
@@ -268,7 +270,7 @@ function VisitorRow({
             </p>
             <ul className="flex flex-col gap-1.5">
               {visitor.hits.map((hit, i) => {
-                const d = describePath(hit.p, titles);
+                const d = describePath(hit.p, videos);
                 return (
                   <li key={i} className="flex items-start justify-between gap-3 text-xs">
                     <span className="min-w-0 text-foreground/80">
@@ -292,13 +294,13 @@ export default function AdminVisitors({
   hidden,
   bannedIps,
   banMessage,
-  titles,
+  videos,
 }: {
   visitors: VisitorRecord[];
   hidden: string[];
   bannedIps: string[];
   banMessage: string;
-  titles: Record<string, string>;
+  videos: VideoMeta;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -407,7 +409,7 @@ export default function AdminVisitors({
           isMe={!!myId && v.id === myId}
           hidden={false}
           banned={isBanned(v)}
-          titles={titles}
+          videos={videos}
           onAction={onAction}
           busy={busy}
         />
@@ -430,7 +432,7 @@ export default function AdminVisitors({
                   isMe={!!myId && v.id === myId}
                   hidden={true}
                   banned={isBanned(v)}
-                  titles={titles}
+                  videos={videos}
                   onAction={onAction}
                   busy={busy}
                 />
