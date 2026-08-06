@@ -17,7 +17,8 @@ export default async function PendingPage() {
     .select("display_name, approval_status")
     .eq("id", user.id)
     .single();
-  if ((data?.approval_status ?? "approved") === "approved") redirect("/");
+  const status = data?.approval_status ?? "approved";
+  if (status === "approved") redirect("/");
 
-  return <PendingScreen name={data?.display_name ?? ""} />;
+  return <PendingScreen name={data?.display_name ?? ""} denied={status === "denied"} />;
 }

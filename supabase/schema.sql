@@ -133,15 +133,21 @@ alter table public.profiles add column if not exists approval_status text not nu
 alter table public.profiles add column if not exists selfie_key text;
 
 -- The "update own profile" policy has no WITH CHECK, so RLS alone can't stop
--- a user from setting is_admin=true on their own row via the browser client.
--- Force it back to its previous value on every update from that path instead.
+-- a user from setting is_admin=true (or self-approving) on their own row via the
+-- browser client. Force those fields back on every update from that path.
 create or replace function public.protect_is_admin()
 returns trigger
 language plpgsql
 security definer set search_path = public
 as $$
 begin
+  -- is_admin can never be changed via a client row update.
   new.is_admin := old.is_admin;
+  -- Only the admin panel (service role) may change approval_status, so a normal
+  -- user can't approve themselves by updating their own profile.
+  if coalesce(auth.role(), '') <> 'service_role' then
+    new.approval_status := old.approval_status;
+  end if;
   return new;
 end;
 $$;

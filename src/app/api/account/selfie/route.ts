@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { putObject } from "@/lib/r2";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyNewAccount } from "@/lib/notify";
 import { getClientIp, checkRateLimit, recordFailedAttempt } from "@/lib/rate-limit";
 
 const SELFIE_LIMIT = { maxAttempts: 10, windowMs: 60 * 60 * 1000 }; // 10 per hour per IP
@@ -51,12 +52,48 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createAdminClient();
-  // Write-once per field: only claim a slot that's still empty.
+  // Write-once per field: only claim a slot that's still empty. Whether the
+  // selfie slot was actually claimed tells us this is a fresh signup (vs. a
+  // repeat call), which gates the one-time new-account side effects below.
+  let firstTime = false;
   if (selfieKey) {
-    await supabase.from("profiles").update({ selfie_key: selfieKey }).eq("id", userId).is("selfie_key", null);
+    const { data: claimed } = await supabase
+      .from("profiles")
+      .update({ selfie_key: selfieKey })
+      .eq("id", userId)
+      .is("selfie_key", null)
+      .select("id");
+    firstTime = !!claimed && claimed.length > 0;
   }
   if (avatarKey) {
     await supabase.from("profiles").update({ avatar_key: avatarKey }).eq("id", userId).is("avatar_key", null);
+  }
+
+  if (firstTime) {
+    // New accounts must await approval. Force any brand-new profile off the
+    // default 'approved' so members-only mode actually gates it, even if the
+    // database signup trigger was never updated. Guarded to a recently-created
+    // row so this can never be used to suspend an existing member.
+    await supabase
+      .from("profiles")
+      .update({ approval_status: "pending" })
+      .eq("id", userId)
+      .eq("approval_status", "approved")
+      .gt("created_at", new Date(Date.now() - 5 * 60 * 1000).toISOString());
+
+    // Let the owner know someone signed up (best-effort; needs a notify email).
+    try {
+      const [{ data: profile }, { data: authUser }] = await Promise.all([
+        supabase.from("profiles").select("display_name").eq("id", userId).single(),
+        supabase.auth.admin.getUserById(userId),
+      ]);
+      await notifyNewAccount({
+        name: profile?.display_name ?? "",
+        email: authUser?.user?.email ?? "",
+      });
+    } catch {
+      // non-critical
+    }
   }
 
   return NextResponse.json({ ok: true });
