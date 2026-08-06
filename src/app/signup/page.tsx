@@ -4,8 +4,10 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { authErrorMessage } from "@/lib/auth-error";
 import { uploadAvatar } from "@/lib/upload-avatar";
 import ImageCropper from "@/components/ImageCropper";
+import SelfieCapture, { type SelfieResult } from "@/components/SelfieCapture";
 
 function SignupForm() {
   const router = useRouter();
@@ -16,6 +18,9 @@ function SignupForm() {
   const [avatarBlob, setAvatarBlob] = useState<Blob | null>(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
   const [croppingFile, setCroppingFile] = useState<File | null>(null);
+  const [selfie, setSelfie] = useState<string | null>(null);
+  const [faceOk, setFaceOk] = useState(false);
+  const [scannerBroken, setScannerBroken] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
@@ -27,6 +32,14 @@ function SignupForm() {
     setCroppingFile(file);
   }
 
+  function handleSelfie(result: SelfieResult) {
+    setSelfie(result?.dataUrl ?? null);
+    setFaceOk(result?.faceOk ?? false);
+    if (result?.scannerBroken) setScannerBroken(true);
+  }
+
+  const selfieReady = !!selfie && (faceOk || scannerBroken);
+
   function handleCropConfirm(blob: Blob) {
     setCroppingFile(null);
     setAvatarBlob(blob);
@@ -35,6 +48,10 @@ function SignupForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!selfieReady) {
+      setError("Please take a live selfie so the owner can verify it's you.");
+      return;
+    }
     setSubmitting(true);
     setError("");
 
@@ -46,9 +63,23 @@ function SignupForm() {
     });
 
     if (error) {
-      setError(error.message);
+      setError(authErrorMessage(error.message));
       setSubmitting(false);
       return;
+    }
+
+    // Attach the verification selfie to the new profile. Uses a server route so
+    // it works even before email confirmation (when there's no session yet).
+    if (data.user && selfie) {
+      try {
+        await fetch("/api/account/selfie", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: data.user.id, selfie }),
+        });
+      } catch {
+        // non-critical for the account itself
+      }
     }
 
     if (data.session && data.user) {
@@ -148,10 +179,20 @@ function SignupForm() {
           required
           className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
         />
+        <div>
+          <label className="mb-1 block text-sm font-semibold text-foreground/70">
+            Live selfie (required — camera only)
+          </label>
+          <p className="mb-2 text-xs text-foreground/50">
+            Snap a quick photo so the owner can confirm who you are before approving your account.
+          </p>
+          <SelfieCapture onChange={handleSelfie} />
+        </div>
+
         {error && <p className="text-sm text-primary">{error}</p>}
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || !selfieReady}
           className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-60"
         >
           {submitting ? "Signing up..." : "Sign Up"}

@@ -9,6 +9,7 @@ export type AdminUserRow = {
   email: string | null;
   displayName: string;
   avatarUrl: string | null;
+  selfieUrl: string | null;
   isAdmin: boolean;
   approvalStatus: string;
   createdAt: string;
@@ -18,6 +19,7 @@ export default function AdminUsersList({ users }: { users: AdminUserRow[] }) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
   async function handleDelete(id: string) {
     setBusyId(id);
@@ -43,6 +45,7 @@ export default function AdminUsersList({ users }: { users: AdminUserRow[] }) {
   }
 
   return (
+    <>
     <div className="mt-6 flex flex-col divide-y divide-border">
       {users.map((u) => {
         const pending = u.approvalStatus === "pending";
@@ -79,6 +82,23 @@ export default function AdminUsersList({ users }: { users: AdminUserRow[] }) {
               </div>
               <p className="truncate text-xs text-foreground/50">{u.email}</p>
               <p className="text-[11px] text-foreground/40">Joined {relativeTime(u.createdAt)}</p>
+              {u.selfieUrl && (
+                <button
+                  type="button"
+                  onClick={() => setLightbox(u.selfieUrl)}
+                  className="mt-2 flex items-center gap-2"
+                  title="Tap to enlarge the verification selfie"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={u.selfieUrl}
+                    alt={`${u.displayName} verification selfie`}
+                    loading="lazy"
+                    className="h-12 w-12 rounded-lg border border-border object-cover"
+                  />
+                  <span className="text-[11px] font-semibold text-foreground/50">Verification selfie</span>
+                </button>
+              )}
             </div>
 
             <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -132,5 +152,20 @@ export default function AdminUsersList({ users }: { users: AdminUserRow[] }) {
         );
       })}
     </div>
+
+      {lightbox && (
+        <div
+          onClick={() => setLightbox(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={lightbox}
+            alt="Verification selfie"
+            className="max-h-[85vh] max-w-full rounded-xl"
+          />
+        </div>
+      )}
+    </>
   );
 }
