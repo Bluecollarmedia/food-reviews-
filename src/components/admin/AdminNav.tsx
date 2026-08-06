@@ -18,15 +18,15 @@ export default function AdminNav({
   // other tab needs the separate security passcode, so hide them until it's
   // entered.
   const restrictedLinks = [
-    { href: "/admin/comments", label: "Comments" },
+    { href: "/admin/settings", label: "Settings" },
     { href: "/admin/visitors", label: "Visitors" },
     { href: "/admin/users", label: "Accounts" },
+    { href: "/admin/comments", label: "Comments" },
     {
       href: "/admin/notifications",
       label: `Notifications${unreadNotifications ? ` (${unreadNotifications})` : ""}`,
     },
     { href: "/admin/storage", label: "Storage" },
-    { href: "/admin/settings", label: "Settings" },
   ];
 
   const links = [
