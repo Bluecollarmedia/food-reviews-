@@ -127,6 +127,11 @@ alter table public.profiles add column if not exists avatar_key text;
 -- members-only mode, only 'approved' accounts can view it.
 alter table public.profiles add column if not exists approval_status text not null default 'approved';
 
+-- Verification selfie captured at signup (an R2 object key). Lets the owner see
+-- who's behind a pending account before approving it. Existing accounts have
+-- none, which is fine — the column is nullable.
+alter table public.profiles add column if not exists selfie_key text;
+
 -- The "update own profile" policy has no WITH CHECK, so RLS alone can't stop
 -- a user from setting is_admin=true on their own row via the browser client.
 -- Force it back to its previous value on every update from that path instead.
