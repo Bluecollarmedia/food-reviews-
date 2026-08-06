@@ -68,6 +68,17 @@ export default function SelfieCapture({ onChange }: { onChange: (result: SelfieR
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Attach the stream only once the <video> is actually on screen. Setting
+  // srcObject inside startCamera doesn't work: the video element isn't mounted
+  // until cameraOn flips true, so the ref is still null and the preview stays
+  // blank (and a blank video has zero size, so "Take selfie" would no-op).
+  useEffect(() => {
+    if (cameraOn && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [cameraOn]);
+
   function stopCamera() {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
@@ -85,11 +96,7 @@ export default function SelfieCapture({ onChange }: { onChange: (result: SelfieR
         audio: false,
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play().catch(() => {});
-      }
-      setCameraOn(true);
+      setCameraOn(true); // mounts the <video>; the effect above attaches the stream
     } catch {
       setCameraError("Couldn't open the camera. Allow camera access and try again.");
     }
@@ -97,7 +104,11 @@ export default function SelfieCapture({ onChange }: { onChange: (result: SelfieR
 
   async function capture() {
     const video = videoRef.current;
-    if (!video || !video.videoWidth) return;
+    if (!video || !video.videoWidth) {
+      setCameraError("Camera is still starting — give it a second and tap again.");
+      return;
+    }
+    setCameraError("");
     setScanning(true);
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
@@ -159,7 +170,7 @@ export default function SelfieCapture({ onChange }: { onChange: (result: SelfieR
   if (cameraOn) {
     return (
       <div>
-        <video ref={videoRef} playsInline muted className="w-full max-w-xs rounded-xl border border-border" />
+        <video ref={videoRef} autoPlay playsInline muted className="w-full max-w-xs rounded-xl border border-border" />
         <button
           type="button"
           onClick={capture}
@@ -168,6 +179,7 @@ export default function SelfieCapture({ onChange }: { onChange: (result: SelfieR
         >
           {scanning ? "Checking..." : "Take selfie"}
         </button>
+        {cameraError && <p className="mt-1 text-xs text-primary">{cameraError}</p>}
       </div>
     );
   }
