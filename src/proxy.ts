@@ -221,11 +221,14 @@ export async function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // The lock/ban screens and the lock login endpoint must always be reachable.
+  // The lock/ban screens, the lock login, and the ban-appeal endpoints must
+  // always be reachable — even by a banned visitor (that's the whole point of
+  // letting them appeal or redeem an unban code).
   if (
     pathname === "/site-locked" ||
     pathname === "/banned" ||
-    pathname.startsWith("/api/site-lock")
+    pathname.startsWith("/api/site-lock") ||
+    pathname.startsWith("/api/appeal")
   ) {
     return NextResponse.next();
   }
