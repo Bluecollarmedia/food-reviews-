@@ -27,6 +27,15 @@ const bebasNeue = Bebas_Neue({
 export const metadata: Metadata = {
   title: "D&S Food Reviews",
   description: "Honest, brutal, non-biased reviews on food.",
+  // Keep the site OUT of Google (and other search engines). Anyone with the
+  // direct link can still visit — this only stops it from being listed in
+  // search results. Remove this block if you ever want it publicly findable.
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: { index: false, follow: false },
+  },
   manifest: "/manifest.json",
   icons: {
     icon: [
