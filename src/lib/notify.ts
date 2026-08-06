@@ -66,6 +66,28 @@ export async function notifyByEmail({
   });
 }
 
+export async function notifyNewAccount({ name, email }: { name: string; email: string }) {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("admin_settings")
+    .select("notify_email")
+    .eq("id", 1)
+    .single();
+  const to = data?.notify_email;
+  if (!to) return;
+
+  await sendEmail({
+    to,
+    subject: `New account request: ${name || email || "someone"}`,
+    html: `
+      <h2>New account awaiting approval</h2>
+      <p><strong>Name:</strong> ${escapeHtml(name || "—")}</p>
+      <p><strong>Email:</strong> ${escapeHtml(email || "—")}</p>
+      <p>Review their profile picture and verification selfie, then Approve or Deny them in the admin panel &rarr; Accounts.</p>
+    `,
+  });
+}
+
 export async function notifyNewUpload({
   origin,
   slug,
