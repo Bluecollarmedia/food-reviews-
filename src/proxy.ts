@@ -226,12 +226,14 @@ export async function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Blocked IPs get the ban screen (with the owner's custom message), before
-  // anything else on the public site.
-  const ip = clientIp(req);
-  if (ip) {
-    const banned = await getBannedIps();
-    if (banned.includes(ip)) {
+  // Blocked visitors get the ban screen (with the owner's custom message),
+  // before anything else on the public site. We block by DEVICE id (from the
+  // cookie) — reliable even as the IP changes — and still by IP as a fallback.
+  const banned = await getBannedIps();
+  if (banned.length) {
+    const ip = clientIp(req);
+    const deviceId = req.cookies.get("dsfr_vid")?.value;
+    if ((ip && banned.includes(ip)) || (deviceId && banned.includes(deviceId))) {
       const url = req.nextUrl.clone();
       url.pathname = "/banned";
       url.search = "";

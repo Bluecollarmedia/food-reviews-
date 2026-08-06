@@ -180,27 +180,30 @@ function VisitorRow({
               Hide
             </button>
           )}
-          {topIp &&
-            (banned ? (
-              <button
-                onClick={() => onAction("unban", { ip: topIp })}
-                disabled={busy}
-                className="text-foreground/60 hover:text-emerald-600 disabled:opacity-50"
-              >
-                Unban
-              </button>
-            ) : (
-              <button
-                onClick={() => {
-                  if (confirm(`Ban ${topIp}? They'll see your ban message. Note: on cellular they can dodge it by getting a new IP.`))
-                    onAction("ban", { ip: topIp });
-                }}
-                disabled={busy}
-                className="text-primary hover:underline disabled:opacity-50"
-              >
-                Ban
-              </button>
-            ))}
+          {banned ? (
+            <button
+              onClick={() => onAction("unban", { id: visitor.id, ip: topIp })}
+              disabled={busy}
+              className="text-foreground/60 hover:text-emerald-600 disabled:opacity-50"
+            >
+              Unban
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                if (
+                  confirm(
+                    "Ban this device? They'll see your ban message on every page. (They could still get back in by clearing their browser data or using a different device.)"
+                  )
+                )
+                  onAction("ban", { id: visitor.id, ip: topIp });
+              }}
+              disabled={busy}
+              className="text-primary hover:underline disabled:opacity-50"
+            >
+              Ban
+            </button>
+          )}
           <button
             onClick={() => {
               if (confirm("Delete this device's history?")) onAction("clear", { id: visitor.id });
@@ -352,7 +355,8 @@ export default function AdminVisitors({
 
   const hiddenSet = new Set(hidden);
   const bannedSet = new Set(bannedIps);
-  const isBanned = (v: VisitorRecord) => (v.locations ?? []).some((l) => bannedSet.has(l.ip));
+  const isBanned = (v: VisitorRecord) =>
+    bannedSet.has(v.id) || (v.locations ?? []).some((l) => bannedSet.has(l.ip));
   const visible = visitors.filter((v) => !hiddenSet.has(v.id));
   const hiddenVisitors = visitors.filter((v) => hiddenSet.has(v.id));
 
