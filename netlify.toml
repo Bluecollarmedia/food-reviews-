@@ -3,3 +3,10 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# Tell search engines not to index the site. Direct visitors are unaffected —
+# this only keeps it out of search results.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
