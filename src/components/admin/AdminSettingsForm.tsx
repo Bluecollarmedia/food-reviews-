@@ -161,6 +161,8 @@ export default function AdminSettingsForm({
   initialBannerExpiresAt,
   initialSiteLockMode,
   initialSiteLockPasscode,
+  initialSiteLockPasscode2,
+  initialSiteLockHint,
 }: {
   initialEmailNotifications: boolean;
   initialNotifyEmail: string;
@@ -172,6 +174,8 @@ export default function AdminSettingsForm({
   initialBannerExpiresAt: string | null;
   initialSiteLockMode: SiteLockMode;
   initialSiteLockPasscode: string;
+  initialSiteLockPasscode2: string;
+  initialSiteLockHint: string;
 }) {
   const router = useRouter();
 
@@ -188,6 +192,8 @@ export default function AdminSettingsForm({
 
   const [siteLockMode, setSiteLockMode] = useState<SiteLockMode>(initialSiteLockMode);
   const [siteLockPasscode, setSiteLockPasscode] = useState(initialSiteLockPasscode);
+  const [siteLockPasscode2, setSiteLockPasscode2] = useState(initialSiteLockPasscode2);
+  const [siteLockHint, setSiteLockHint] = useState(initialSiteLockHint);
 
   // Passcodes — we only know whether each is set, never its value.
   const unlocked = initialUnlocked;
@@ -249,6 +255,8 @@ export default function AdminSettingsForm({
       bannerDuration,
       siteLockMode,
       siteLockPasscode,
+      siteLockPasscode2,
+      siteLockHint,
     };
 
     if (unlocked) {
@@ -455,17 +463,58 @@ export default function AdminSettingsForm({
           ))}
         </div>
         {siteLockMode === "code" && (
-          <input
-            value={siteLockPasscode}
-            onChange={(e) => setSiteLockPasscode(e.target.value)}
-            type="text"
-            placeholder="Passcode visitors must enter"
-            autoComplete="off"
-            autoCapitalize="off"
-            autoCorrect="off"
-            spellCheck={false}
-            className="mt-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-          />
+          <div className="mt-3 flex flex-col gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-foreground/70">
+                Passcode 1
+              </label>
+              <input
+                value={siteLockPasscode}
+                onChange={(e) => setSiteLockPasscode(e.target.value)}
+                type="text"
+                placeholder="e.g. a code for your friends"
+                autoComplete="off"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-foreground/70">
+                Passcode 2 (optional)
+              </label>
+              <input
+                value={siteLockPasscode2}
+                onChange={(e) => setSiteLockPasscode2(e.target.value)}
+                type="text"
+                placeholder="e.g. a different code for someone special"
+                autoComplete="off"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+              <p className="mt-1 text-[11px] text-foreground/50">
+                Either passcode lets someone in — hand out different ones to different people.
+              </p>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-foreground/70">
+                Hint (optional)
+              </label>
+              <input
+                value={siteLockHint}
+                onChange={(e) => setSiteLockHint(e.target.value)}
+                type="text"
+                placeholder="e.g. My favorite color / July's nickname"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+              <p className="mt-1 text-[11px] text-foreground/50">
+                Shown on the lock screen to help close friends remember the passcode.
+              </p>
+            </div>
+          </div>
         )}
       </SettingsSection>
 

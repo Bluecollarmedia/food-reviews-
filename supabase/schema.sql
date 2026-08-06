@@ -223,6 +223,10 @@ alter table public.admin_settings add column if not exists banner_updated_at tim
 -- is never affected, so the owner can always turn it back off.
 alter table public.admin_settings add column if not exists site_lock_mode text not null default 'off';
 alter table public.admin_settings add column if not exists site_lock_passcode text;
+-- A second passcode that also unlocks the site (e.g. one for a partner, one for
+-- friends), plus a hint shown on the lock screen to jog close friends' memory.
+alter table public.admin_settings add column if not exists site_lock_passcode_2 text;
+alter table public.admin_settings add column if not exists site_lock_hint text;
 
 -- Per-IP bans. banned_ips is a JSON array of IP strings blocked from the public
 -- site; ban_message is the note shown to a blocked visitor. The admin panel is

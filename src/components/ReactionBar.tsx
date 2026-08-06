@@ -7,17 +7,14 @@ type UserReaction = "like" | "dislike" | null;
 export default function ReactionBar({
   slug,
   title,
-  videoUrl,
 }: {
   slug: string;
   title: string;
-  videoUrl?: string | null;
 }) {
   const [likes, setLikes] = useState<number | null>(null);
   const [dislikes, setDislikes] = useState<number | null>(null);
   const [userReaction, setUserReaction] = useState<UserReaction>(null);
   const [copied, setCopied] = useState(false);
-  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     fetch(`/api/reactions/${slug}`)
@@ -84,27 +81,6 @@ export default function ReactionBar({
     }
   }
 
-  async function handleDownload() {
-    if (!videoUrl || downloading) return;
-    setDownloading(true);
-    try {
-      const res = await fetch(videoUrl);
-      const blob = await res.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = videoUrl.split("/").pop() || `${slug}.mp4`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(blobUrl);
-    } catch {
-      window.open(videoUrl, "_blank");
-    } finally {
-      setDownloading(false);
-    }
-  }
-
   const buttonBase =
     "flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors";
 
@@ -150,19 +126,6 @@ export default function ReactionBar({
         </svg>
         {copied ? "Link copied!" : "Share"}
       </button>
-
-      {videoUrl && (
-        <button
-          onClick={handleDownload}
-          disabled={downloading}
-          className={`${buttonBase} border-border bg-surface text-foreground/70 hover:border-accent hover:text-accent disabled:opacity-60`}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
-            <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          {downloading ? "Downloading..." : "Download"}
-        </button>
-      )}
     </div>
   );
 }

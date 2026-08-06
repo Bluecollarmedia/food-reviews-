@@ -57,3 +57,27 @@ export async function getSiteLockPasscode(): Promise<string> {
     .single();
   return data?.site_lock_passcode || "";
 }
+
+/** All passcodes that unlock the site (up to two), for the login check. */
+export async function getSiteLockPasscodes(): Promise<string[]> {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("admin_settings")
+    .select("site_lock_passcode, site_lock_passcode_2")
+    .eq("id", 1)
+    .single();
+  return [data?.site_lock_passcode, data?.site_lock_passcode_2]
+    .map((p) => (typeof p === "string" ? p.trim() : ""))
+    .filter(Boolean);
+}
+
+/** The hint shown on the lock screen, or "" if none. */
+export async function getSiteLockHint(): Promise<string> {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("admin_settings")
+    .select("site_lock_hint")
+    .eq("id", 1)
+    .single();
+  return data?.site_lock_hint?.trim() || "";
+}
