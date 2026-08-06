@@ -51,7 +51,13 @@ export type SelfieResult = { dataUrl: string; faceOk: boolean; scannerBroken: bo
  * selfie (with whether a face was detected and whether the scanner even ran) or
  * null when cleared/retaken.
  */
-export default function SelfieCapture({ onChange }: { onChange: (result: SelfieResult) => void }) {
+export default function SelfieCapture({
+  onChange,
+  requireFace = false,
+}: {
+  onChange: (result: SelfieResult) => void;
+  requireFace?: boolean;
+}) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [cameraOn, setCameraOn] = useState(false);
@@ -153,8 +159,14 @@ export default function SelfieCapture({ onChange }: { onChange: (result: SelfieR
       <div>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={selfie} alt="selfie" className="w-full max-w-xs rounded-xl border border-border" />
-        <p className={`mt-1 text-xs font-semibold ${faceOk ? "text-emerald-600" : scannerBroken ? "text-foreground/50" : "text-primary"}`}>
-          {faceOk ? "Face detected ✓" : scannerBroken ? "Couldn't run the face check — you can still continue." : "No face detected — please retake."}
+        <p className={`mt-1 text-xs font-semibold ${faceOk ? "text-emerald-600" : requireFace || !scannerBroken ? "text-primary" : "text-foreground/50"}`}>
+          {faceOk
+            ? "Face detected ✓"
+            : scannerBroken
+            ? requireFace
+              ? "Face check couldn't load — check your connection and tap Retake."
+              : "Couldn't run the face check — you can still continue."
+            : "No face detected — please retake."}
         </p>
         <button
           type="button"
