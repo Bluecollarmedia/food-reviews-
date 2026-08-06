@@ -10,7 +10,7 @@ import { banIp, unbanIp, setBanMessage } from "@/lib/bans";
 
 export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as
-    | { action?: string; id?: string; ip?: string; label?: string; message?: string }
+    | { action?: string; id?: string; ip?: string; ips?: string[]; label?: string; message?: string }
     | null;
 
   if (!body || !body.action) {
@@ -41,16 +41,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // Bans: block the DEVICE id (reliable across IP changes) and its current IP
-    // as a fallback. The middleware checks both.
+    // Bans: block the DEVICE id (reliable across IP changes) plus every IP that
+    // device has used, as a fallback. Unban clears all of them, so a leftover
+    // old IP can't keep someone stuck as "banned". The middleware checks both.
     case "ban":
     case "unban": {
-      if (!body.id && !body.ip) {
+      const targets = [
+        ...(body.id ? [body.id] : []),
+        ...(body.ip ? [body.ip] : []),
+        ...(Array.isArray(body.ips) ? body.ips : []),
+      ].filter((v): v is string => typeof v === "string" && v.length > 0);
+
+      if (targets.length === 0) {
         return NextResponse.json({ error: "Missing id or ip." }, { status: 400 });
       }
       const fn = body.action === "ban" ? banIp : unbanIp;
-      if (body.id) await fn(body.id);
-      if (body.ip) await fn(body.ip);
+      // De-dupe so we don't hit the same identifier twice.
+      for (const t of [...new Set(targets)]) await fn(t);
       return NextResponse.json({ ok: true });
     }
 

@@ -106,7 +106,7 @@ function VisitorRow({
   hidden: boolean;
   banned: boolean;
   videos: VideoMeta;
-  onAction: (action: string, opts: { id?: string; ip?: string; label?: string }) => void;
+  onAction: (action: string, opts: { id?: string; ip?: string; ips?: string[]; label?: string }) => void;
   busy: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -182,7 +182,7 @@ function VisitorRow({
           )}
           {banned ? (
             <button
-              onClick={() => onAction("unban", { id: visitor.id, ip: topIp })}
+              onClick={() => onAction("unban", { id: visitor.id, ips: locations.map((l) => l.ip) })}
               disabled={busy}
               className="text-foreground/60 hover:text-emerald-600 disabled:opacity-50"
             >
@@ -196,7 +196,7 @@ function VisitorRow({
                     "Ban this device? They'll see your ban message on every page. (They could still get back in by clearing their browser data or using a different device.)"
                   )
                 )
-                  onAction("ban", { id: visitor.id, ip: topIp });
+                  onAction("ban", { id: visitor.id, ips: locations.map((l) => l.ip) });
               }}
               disabled={busy}
               className="text-primary hover:underline disabled:opacity-50"
@@ -319,7 +319,7 @@ export default function AdminVisitors({
     }
   }, []);
 
-  async function onAction(action: string, opts: { id?: string; ip?: string; label?: string }) {
+  async function onAction(action: string, opts: { id?: string; ip?: string; ips?: string[]; label?: string }) {
     setBusy(true);
     await fetch("/api/admin/visitors", {
       method: "POST",
