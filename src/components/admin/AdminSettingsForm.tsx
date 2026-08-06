@@ -188,6 +188,8 @@ export default function AdminSettingsForm({
 
   const [emailNotifications, setEmailNotifications] = useState(initialEmailNotifications);
   const [notifyEmail, setNotifyEmail] = useState(initialNotifyEmail);
+  const [testing, setTesting] = useState(false);
+  const [testMsg, setTestMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const [bannerMessage, setBannerMessage] = useState(initialBannerMessage);
   const [bannerDuration, setBannerDuration] = useState<BannerDuration>("none");
@@ -217,6 +219,28 @@ export default function AdminSettingsForm({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+
+  async function sendTestEmail() {
+    setTesting(true);
+    setTestMsg(null);
+    try {
+      const res = await fetch("/api/admin/test-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: notifyEmail }),
+      });
+      const d = await res.json().catch(() => null);
+      if (d?.ok) {
+        setTestMsg({ ok: true, text: `Sent to ${d.to}. Check your inbox and spam folder. (From: ${d.from})` });
+      } else {
+        setTestMsg({ ok: false, text: d?.error ?? "Couldn't send the test email." });
+      }
+    } catch {
+      setTestMsg({ ok: false, text: "Couldn't reach the server." });
+    } finally {
+      setTesting(false);
+    }
+  }
 
   async function handleUnlock() {
     setUnlocking(true);
@@ -316,9 +340,7 @@ export default function AdminSettingsForm({
   ];
 
   // Short at-a-glance status shown on each collapsed row.
-  const notifSummary = emailNotifications
-    ? `On · ${notifyEmail || "no address yet"}`
-    : "Off";
+  const notifSummary = notifyEmail ? notifyEmail : "No email set";
   const bannerSummary = bannerMessage.trim() ? "Showing a message" : "None";
   const lockSummary =
     siteLockMode === "full"
@@ -341,9 +363,39 @@ export default function AdminSettingsForm({
         isOpen={openKey === "notif"}
         onToggle={() => toggle("notif")}
       >
-        <div className="flex items-center justify-between gap-3">
+        <label className="mb-1 block text-sm font-semibold text-foreground">
+          Send my notifications to
+        </label>
+        <input
+          value={notifyEmail}
+          onChange={(e) => setNotifyEmail(e.target.value)}
+          type="email"
+          placeholder="you@example.com"
+          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+        />
+        <p className="mt-1.5 text-xs text-foreground/60">
+          New account requests and ban appeals are always emailed here. Save after changing it.
+        </p>
+
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={sendTestEmail}
+            disabled={testing}
+            className="rounded-full border border-border px-4 py-1.5 text-xs font-semibold text-foreground/70 hover:border-primary hover:text-primary disabled:opacity-60"
+          >
+            {testing ? "Sending…" : "Send test email"}
+          </button>
+          {testMsg && (
+            <p className={`mt-2 text-xs ${testMsg.ok ? "text-emerald-600" : "text-primary"}`}>
+              {testMsg.text}
+            </p>
+          )}
+        </div>
+
+        <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-4">
           <div>
-            <p className="text-sm font-semibold text-foreground">Email me about comments</p>
+            <p className="text-sm font-semibold text-foreground">Also email me about comments</p>
             <p className="mt-0.5 text-xs text-foreground/60">
               Get an email every time someone comments or replies.
             </p>
@@ -363,20 +415,6 @@ export default function AdminSettingsForm({
             />
           </button>
         </div>
-        {emailNotifications && (
-          <div className="mt-4">
-            <label className="mb-1 block text-sm font-semibold text-foreground">
-              Send those emails to
-            </label>
-            <input
-              value={notifyEmail}
-              onChange={(e) => setNotifyEmail(e.target.value)}
-              type="email"
-              placeholder="you@example.com"
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </div>
-        )}
       </SettingsSection>
 
       {/* Announcement */}
