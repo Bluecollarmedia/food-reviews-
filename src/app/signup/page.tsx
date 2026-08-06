@@ -28,7 +28,6 @@ function SignupForm() {
   const [croppingFile, setCroppingFile] = useState<File | null>(null);
   const [selfie, setSelfie] = useState<string | null>(null);
   const [faceOk, setFaceOk] = useState(false);
-  const [scannerBroken, setScannerBroken] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
@@ -43,10 +42,10 @@ function SignupForm() {
   function handleSelfie(result: SelfieResult) {
     setSelfie(result?.dataUrl ?? null);
     setFaceOk(result?.faceOk ?? false);
-    if (result?.scannerBroken) setScannerBroken(true);
   }
 
-  const selfieReady = !!selfie && (faceOk || scannerBroken);
+  // Signup demands a real, detected face — no bypass if the scanner fails.
+  const selfieReady = !!selfie && faceOk;
 
   function handleCropConfirm(blob: Blob) {
     setCroppingFile(null);
@@ -61,7 +60,7 @@ function SignupForm() {
       return;
     }
     if (!selfieReady) {
-      setError("Please take a live selfie so the owner can verify it's you.");
+      setError("Please take a live selfie with your face clearly visible.");
       return;
     }
     setSubmitting(true);
@@ -187,7 +186,7 @@ function SignupForm() {
           <p className="mb-2 text-xs text-foreground/50">
             Snap a quick photo so the owner can confirm who you are before approving your account.
           </p>
-          <SelfieCapture onChange={handleSelfie} />
+          <SelfieCapture onChange={handleSelfie} requireFace />
         </div>
 
         {error && <p className="text-sm text-primary">{error}</p>}
