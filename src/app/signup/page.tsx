@@ -5,9 +5,17 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { authErrorMessage } from "@/lib/auth-error";
-import { uploadAvatar } from "@/lib/upload-avatar";
 import ImageCropper from "@/components/ImageCropper";
 import SelfieCapture, { type SelfieResult } from "@/components/SelfieCapture";
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
 
 function SignupForm() {
   const router = useRouter();
@@ -48,6 +56,10 @@ function SignupForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!avatarBlob) {
+      setError("Please add a profile picture.");
+      return;
+    }
     if (!selfieReady) {
       setError("Please take a live selfie so the owner can verify it's you.");
       return;
@@ -68,14 +80,16 @@ function SignupForm() {
       return;
     }
 
-    // Attach the verification selfie to the new profile. Uses a server route so
-    // it works even before email confirmation (when there's no session yet).
-    if (data.user && selfie) {
+    // Attach the profile picture and verification selfie to the new profile via
+    // a server route, so they save even before email confirmation (when there's
+    // no session yet).
+    if (data.user) {
       try {
+        const avatar = await blobToDataUrl(avatarBlob);
         await fetch("/api/account/selfie", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: data.user.id, selfie }),
+          body: JSON.stringify({ userId: data.user.id, selfie, avatar }),
         });
       } catch {
         // non-critical for the account itself
@@ -83,14 +97,6 @@ function SignupForm() {
     }
 
     if (data.session && data.user) {
-      if (avatarBlob) {
-        try {
-          const avatarKey = await uploadAvatar(avatarBlob);
-          await supabase.from("profiles").update({ avatar_key: avatarKey }).eq("id", data.user.id);
-        } catch {
-          // non-critical, they can add a picture later in Settings
-        }
-      }
       router.push(redirect);
       router.refresh();
       return;
@@ -110,11 +116,6 @@ function SignupForm() {
           We sent a confirmation link to <span className="font-semibold">{email}</span>. Tap it,
           then come back and log in.
         </p>
-        {avatarBlob && (
-          <p className="mt-2 text-xs text-foreground/50">
-            You can add your profile picture once you&apos;re logged in, under Settings.
-          </p>
-        )}
         <Link
           href="/login"
           className="mt-6 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
@@ -150,7 +151,7 @@ function SignupForm() {
             />
           </label>
           <p className="text-xs text-foreground/50">
-            Profile picture (optional) — shown next to your comments.
+            Profile picture (required) — tap to add. Shown next to your comments.
           </p>
         </div>
         <input
@@ -192,7 +193,7 @@ function SignupForm() {
         {error && <p className="text-sm text-primary">{error}</p>}
         <button
           type="submit"
-          disabled={submitting || !selfieReady}
+          disabled={submitting || !avatarBlob || !selfieReady}
           className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-60"
         >
           {submitting ? "Signing up..." : "Sign Up"}
