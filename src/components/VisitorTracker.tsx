@@ -6,7 +6,9 @@ import { usePathname } from "next/navigation";
 const VID_KEY = "dsfr_vid";
 
 // A stable per-browser id so one device is ONE visitor in the log, even when its
-// IP keeps changing (which cellular does constantly).
+// IP keeps changing (which cellular does constantly). Also mirrored into a
+// cookie so the middleware can block a banned device before any page loads —
+// far more reliable than banning an ever-changing IP.
 function getVisitorId(): string {
   try {
     let id = localStorage.getItem(VID_KEY);
@@ -17,6 +19,8 @@ function getVisitorId(): string {
           : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
       localStorage.setItem(VID_KEY, id);
     }
+    // Keep the cookie in sync (1 year) so the server sees the device id too.
+    document.cookie = `${VID_KEY}=${id}; path=/; max-age=31536000; samesite=lax`;
     return id;
   } catch {
     return "";

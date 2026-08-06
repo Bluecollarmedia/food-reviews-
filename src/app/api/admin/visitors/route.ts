@@ -41,14 +41,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // IP-level bans (the middleware blocks by IP).
+    // Bans: block the DEVICE id (reliable across IP changes) and its current IP
+    // as a fallback. The middleware checks both.
     case "ban":
     case "unban": {
-      if (!body.ip) {
-        return NextResponse.json({ error: "Missing ip." }, { status: 400 });
+      if (!body.id && !body.ip) {
+        return NextResponse.json({ error: "Missing id or ip." }, { status: 400 });
       }
-      if (body.action === "ban") await banIp(body.ip);
-      else await unbanIp(body.ip);
+      const fn = body.action === "ban" ? banIp : unbanIp;
+      if (body.id) await fn(body.id);
+      if (body.ip) await fn(body.ip);
       return NextResponse.json({ ok: true });
     }
 
