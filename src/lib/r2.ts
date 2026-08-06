@@ -28,6 +28,13 @@ export async function deleteFile(key: string) {
   await client().send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
 }
 
+/** Server-side upload of a buffer (used for appeal selfies). */
+export async function putObject(key: string, body: Uint8Array, contentType: string) {
+  await client().send(
+    new PutObjectCommand({ Bucket: BUCKET, Key: key, Body: body, ContentType: contentType })
+  );
+}
+
 export type BucketFile = { key: string; size: number; lastModified: string };
 
 export async function listFiles(prefix: string): Promise<BucketFile[]> {

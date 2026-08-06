@@ -10,7 +10,7 @@ export default async function AdminUsersPage() {
 
   const [{ data: authData }, { data: profiles }] = await Promise.all([
     supabase.auth.admin.listUsers({ perPage: 200 }),
-    supabase.from("profiles").select("id, display_name, avatar_key, is_admin"),
+    supabase.from("profiles").select("id, display_name, avatar_key, is_admin, approval_status"),
   ]);
 
   const profileById = new Map((profiles ?? []).map((p) => [p.id, p]));
@@ -24,6 +24,7 @@ export default async function AdminUsersPage() {
         displayName: profile?.display_name ?? u.email?.split("@")[0] ?? "Unknown",
         avatarUrl: getPublicFileUrl(profile?.avatar_key),
         isAdmin: profile?.is_admin ?? false,
+        approvalStatus: profile?.approval_status ?? "approved",
         createdAt: u.created_at,
       };
     })

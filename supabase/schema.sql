@@ -26,8 +26,10 @@ language plpgsql
 security definer set search_path = public
 as $$
 begin
-  insert into public.profiles (id, display_name)
-  values (new.id, coalesce(new.raw_user_meta_data->>'display_name', split_part(new.email, '@', 1)));
+  -- New signups start as 'pending' so the owner can approve them. Existing
+  -- accounts were grandfathered to 'approved' when the column was added.
+  insert into public.profiles (id, display_name, approval_status)
+  values (new.id, coalesce(new.raw_user_meta_data->>'display_name', split_part(new.email, '@', 1)), 'pending');
   return new;
 end;
 $$;
@@ -119,6 +121,11 @@ alter table public.profiles add column if not exists new_upload_notifications bo
 
 -- R2 object key for the user's profile picture (shown next to their comments).
 alter table public.profiles add column if not exists avatar_key text;
+
+-- Account approval. Existing accounts default to 'approved' (grandfathered);
+-- the signup trigger sets new accounts to 'pending'. When the site is in
+-- members-only mode, only 'approved' accounts can view it.
+alter table public.profiles add column if not exists approval_status text not null default 'approved';
 
 -- The "update own profile" policy has no WITH CHECK, so RLS alone can't stop
 -- a user from setting is_admin=true on their own row via the browser client.
@@ -227,6 +234,10 @@ alter table public.admin_settings add column if not exists site_lock_passcode te
 -- friends), plus a hint shown on the lock screen to jog close friends' memory.
 alter table public.admin_settings add column if not exists site_lock_passcode_2 text;
 alter table public.admin_settings add column if not exists site_lock_hint text;
+
+-- Members-only mode: when on, the public site requires a logged-in, approved
+-- account. New signups wait for the owner's approval.
+alter table public.admin_settings add column if not exists require_approval boolean not null default false;
 
 -- Per-IP bans. banned_ips is a JSON array of IP strings blocked from the public
 -- site; ban_message is the note shown to a blocked visitor. The admin panel is

@@ -35,6 +35,7 @@ export async function PUT(req: NextRequest) {
   const siteLockPasscode = typeof body?.siteLockPasscode === "string" ? body.siteLockPasscode.trim() : "";
   const siteLockPasscode2 = typeof body?.siteLockPasscode2 === "string" ? body.siteLockPasscode2.trim() : "";
   const siteLockHint = typeof body?.siteLockHint === "string" ? body.siteLockHint.trim() : "";
+  const requireApproval = body?.requireApproval === true;
 
   if (siteLockMode === "code" && !siteLockPasscode && !siteLockPasscode2) {
     return NextResponse.json(
@@ -78,6 +79,7 @@ export async function PUT(req: NextRequest) {
     site_lock_passcode: siteLockMode === "code" ? siteLockPasscode || null : null,
     site_lock_passcode_2: siteLockMode === "code" ? siteLockPasscode2 || null : null,
     site_lock_hint: siteLockMode === "code" ? siteLockHint || null : null,
+    require_approval: requireApproval,
   };
 
   if (settingsUnlocked) {

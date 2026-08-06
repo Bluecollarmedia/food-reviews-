@@ -14,3 +14,27 @@ export async function DELETE(
   }
   return NextResponse.json({ ok: true });
 }
+
+// Approve / suspend an account (sets approval_status on their profile).
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ userId: string }> }
+) {
+  const { userId } = await params;
+  const body = (await req.json().catch(() => null)) as { approval_status?: string } | null;
+  const status = body?.approval_status;
+  if (status !== "approved" && status !== "denied" && status !== "pending") {
+    return NextResponse.json({ error: "Bad status." }, { status: 400 });
+  }
+
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ approval_status: status })
+    .eq("id", userId);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  return NextResponse.json({ ok: true });
+}

@@ -163,6 +163,7 @@ export default function AdminSettingsForm({
   initialSiteLockPasscode,
   initialSiteLockPasscode2,
   initialSiteLockHint,
+  initialRequireApproval,
 }: {
   initialEmailNotifications: boolean;
   initialNotifyEmail: string;
@@ -176,6 +177,7 @@ export default function AdminSettingsForm({
   initialSiteLockPasscode: string;
   initialSiteLockPasscode2: string;
   initialSiteLockHint: string;
+  initialRequireApproval: boolean;
 }) {
   const router = useRouter();
 
@@ -194,6 +196,7 @@ export default function AdminSettingsForm({
   const [siteLockPasscode, setSiteLockPasscode] = useState(initialSiteLockPasscode);
   const [siteLockPasscode2, setSiteLockPasscode2] = useState(initialSiteLockPasscode2);
   const [siteLockHint, setSiteLockHint] = useState(initialSiteLockHint);
+  const [requireApproval, setRequireApproval] = useState(initialRequireApproval);
 
   // Passcodes — we only know whether each is set, never its value.
   const unlocked = initialUnlocked;
@@ -257,6 +260,7 @@ export default function AdminSettingsForm({
       siteLockPasscode,
       siteLockPasscode2,
       siteLockHint,
+      requireApproval,
     };
 
     if (unlocked) {
@@ -516,6 +520,43 @@ export default function AdminSettingsForm({
             </div>
           </div>
         )}
+      </SettingsSection>
+
+      {/* Members-only */}
+      <SettingsSection
+        title="Members-only (approve accounts)"
+        summary={requireApproval ? "On · accounts need your approval" : "Off · anyone can view"}
+        isOpen={openKey === "members"}
+        onToggle={() => toggle("members")}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-foreground">Require an approved account</p>
+            <p className="mt-0.5 text-xs text-foreground/60">
+              When on, the whole site needs a logged-in account that YOU&apos;ve approved. New
+              signups wait in the Accounts tab until you approve them. Everyone already signed in
+              stays in.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setRequireApproval((v) => !v)}
+            aria-pressed={requireApproval}
+            className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
+              requireApproval ? "bg-primary" : "bg-foreground/20"
+            }`}
+          >
+            <span
+              className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-transform ${
+                requireApproval ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
+        <p className="mt-3 text-[11px] text-foreground/50">
+          Manage who&apos;s in from the <span className="font-semibold">Accounts</span> tab —
+          approve, suspend, or remove people there.
+        </p>
       </SettingsSection>
 
       {/* Advanced: video passcodes */}

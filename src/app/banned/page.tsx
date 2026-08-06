@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { getBanMessage } from "@/lib/bans";
+import BannedActions from "@/components/BannedActions";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,8 @@ export default async function BannedPage() {
       <p className="mt-4 max-w-sm whitespace-pre-line text-foreground/70">
         {message?.trim() || "You no longer have access to this site."}
       </p>
+
+      <BannedActions />
     </div>
   );
 }
