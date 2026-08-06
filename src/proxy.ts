@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 import {
   ADMIN_SESSION_COOKIE,
   SETTINGS_SESSION_COOKIE,
@@ -74,6 +75,56 @@ async function getBannedIps(): Promise<string[]> {
   } catch {
     // Fail OPEN: never accidentally block everyone on a database hiccup.
     return [];
+  }
+}
+
+// Members-only mode toggle, cached and fetched independently.
+let approvalCache: { value: boolean; at: number } | null = null;
+
+async function getRequireApproval(): Promise<boolean> {
+  if (approvalCache && Date.now() - approvalCache.at < LOCK_TTL_MS) return approvalCache.value;
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/admin_settings?id=eq.1&select=require_approval`,
+      {
+        headers: {
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""}`,
+        },
+      }
+    );
+    if (!res.ok) return false;
+    const rows = await res.json();
+    const row = Array.isArray(rows) ? rows[0] : null;
+    const value = row?.require_approval === true;
+    approvalCache = { value, at: Date.now() };
+    return value;
+  } catch {
+    return false;
+  }
+}
+
+// Is the current visitor a logged-in, approved account?
+async function checkApprovedUser(req: NextRequest): Promise<"ok" | "login" | "pending"> {
+  try {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { getAll: () => req.cookies.getAll(), setAll: () => {} } }
+    );
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return "login";
+    const { data } = await supabase
+      .from("profiles")
+      .select("approval_status")
+      .eq("id", user.id)
+      .single();
+    return (data?.approval_status ?? "approved") === "approved" ? "ok" : "pending";
+  } catch {
+    // Fail OPEN: never lock everyone out on a hiccup.
+    return "ok";
   }
 }
 
@@ -245,6 +296,30 @@ export async function proxy(req: NextRequest) {
       url.pathname = "/banned";
       url.search = "";
       return NextResponse.rewrite(url);
+    }
+  }
+
+  // Members-only mode: the public site needs a logged-in, APPROVED account.
+  // Auth pages and API routes are exempt (else you couldn't log in / sign up).
+  const authPath =
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname === "/pending" ||
+    pathname.startsWith("/reset-password");
+  if (!pathname.startsWith("/api/") && !authPath) {
+    if (await getRequireApproval()) {
+      const status = await checkApprovedUser(req);
+      if (status === "login") {
+        const url = new URL("/login", req.url);
+        url.searchParams.set("redirect", pathname);
+        return NextResponse.redirect(url);
+      }
+      if (status === "pending") {
+        const url = req.nextUrl.clone();
+        url.pathname = "/pending";
+        url.search = "";
+        return NextResponse.rewrite(url);
+      }
     }
   }
 

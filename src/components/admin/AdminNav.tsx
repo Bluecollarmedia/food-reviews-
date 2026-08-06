@@ -6,10 +6,12 @@ import { usePathname } from "next/navigation";
 export default function AdminNav({
   unreadNotifications = 0,
   newAppeals = 0,
+  pendingAccounts = 0,
   unlocked = true,
 }: {
   unreadNotifications?: number;
   newAppeals?: number;
+  pendingAccounts?: number;
   unlocked?: boolean;
 }) {
   const pathname = usePathname();
@@ -23,7 +25,7 @@ export default function AdminNav({
     { href: "/admin/settings", label: "Settings" },
     { href: "/admin/visitors", label: "Visitors" },
     { href: "/admin/appeals", label: `Appeals${newAppeals ? ` (${newAppeals})` : ""}` },
-    { href: "/admin/users", label: "Accounts" },
+    { href: "/admin/users", label: `Accounts${pendingAccounts ? ` (${pendingAccounts})` : ""}` },
     { href: "/admin/comments", label: "Comments" },
     {
       href: "/admin/notifications",
