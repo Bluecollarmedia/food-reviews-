@@ -10,6 +10,13 @@ export const VAULT_SESSION_MAX_AGE_SECONDS = 60 * 60 * 12; // 12 hours
 export const SITE_LOCK_SESSION_COOKIE = "site_lock_session";
 export const SITE_LOCK_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24; // 24 hours
 
+// The site lock can have more than one valid passcode. Sign the unlock session
+// with a secret derived from ALL of them, so a session made from either code
+// verifies the same way — and changing the codes invalidates old sessions.
+export function siteLockSecret(passcodes: (string | null | undefined)[]): string {
+  return "sitelock:" + passcodes.map((p) => (p ?? "").trim()).filter(Boolean).join("|");
+}
+
 export const SETTINGS_SESSION_COOKIE = "settings_session";
 export const SETTINGS_SESSION_MAX_AGE_SECONDS = 60 * 60 * 12; // 12 hours
 

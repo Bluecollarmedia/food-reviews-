@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation";
 import Image from "next/image";
-import { getSiteLockMode } from "@/lib/site-settings";
+import { getSiteLockMode, getSiteLockHint } from "@/lib/site-settings";
 import SiteLockForm from "@/components/SiteLockForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function SiteLockedPage() {
   const mode = await getSiteLockMode();
+  const hint = mode === "code" ? await getSiteLockHint() : "";
 
   // Not locked — nothing to show here, send them home.
   if (mode === "off") redirect("/");
@@ -35,6 +36,11 @@ export default async function SiteLockedPage() {
           <p className="mt-4 max-w-sm text-foreground/70">
             The site is members-only right now. Enter the passcode to come in.
           </p>
+          {hint && (
+            <p className="mt-3 max-w-sm rounded-xl bg-surface-muted px-4 py-2 text-sm text-foreground/60">
+              <span className="font-semibold text-foreground/70">Hint:</span> {hint}
+            </p>
+          )}
           <div className="mt-6 w-full max-w-xs">
             <SiteLockForm />
           </div>

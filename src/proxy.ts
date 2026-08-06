@@ -3,10 +3,11 @@ import {
   ADMIN_SESSION_COOKIE,
   SETTINGS_SESSION_COOKIE,
   SITE_LOCK_SESSION_COOKIE,
+  siteLockSecret,
   verifySessionToken,
 } from "@/lib/session";
 
-type Lock = { mode: "off" | "full" | "code"; passcode: string };
+type Lock = { mode: "off" | "full" | "code"; passcodes: string[] };
 
 // Small in-memory cache so the site-lock state isn't a database read on every
 // single request. Toggling the lock takes effect within this window.
@@ -14,12 +15,12 @@ let lockCache: { value: Lock; at: number } | null = null;
 const LOCK_TTL_MS = 10_000;
 
 async function getSiteLock(): Promise<Lock> {
-  const off: Lock = { mode: "off", passcode: "" };
+  const off: Lock = { mode: "off", passcodes: [] };
   if (lockCache && Date.now() - lockCache.at < LOCK_TTL_MS) return lockCache.value;
 
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/admin_settings?id=eq.1&select=site_lock_mode,site_lock_passcode`,
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/admin_settings?id=eq.1&select=site_lock_mode,site_lock_passcode,site_lock_passcode_2`,
       {
         headers: {
           apikey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
@@ -34,7 +35,10 @@ async function getSiteLock(): Promise<Lock> {
       row?.site_lock_mode === "full" || row?.site_lock_mode === "code"
         ? row.site_lock_mode
         : "off";
-    const value: Lock = { mode, passcode: row?.site_lock_passcode ?? "" };
+    const passcodes = [row?.site_lock_passcode, row?.site_lock_passcode_2]
+      .map((p) => (typeof p === "string" ? p.trim() : ""))
+      .filter(Boolean);
+    const value: Lock = { mode, passcodes };
     lockCache = { value, at: Date.now() };
     return value;
   } catch {
@@ -246,7 +250,7 @@ export async function proxy(req: NextRequest) {
 
   if (lock.mode === "code") {
     const token = req.cookies.get(SITE_LOCK_SESSION_COOKIE)?.value;
-    if (await verifySessionToken(token, lock.passcode || "site-lock")) {
+    if (await verifySessionToken(token, siteLockSecret(lock.passcodes))) {
       return NextResponse.next();
     }
   }

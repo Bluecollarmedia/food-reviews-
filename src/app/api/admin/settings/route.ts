@@ -33,10 +33,12 @@ export async function PUT(req: NextRequest) {
   const rawMode = body?.siteLockMode;
   const siteLockMode = rawMode === "full" || rawMode === "code" ? rawMode : "off";
   const siteLockPasscode = typeof body?.siteLockPasscode === "string" ? body.siteLockPasscode.trim() : "";
+  const siteLockPasscode2 = typeof body?.siteLockPasscode2 === "string" ? body.siteLockPasscode2.trim() : "";
+  const siteLockHint = typeof body?.siteLockHint === "string" ? body.siteLockHint.trim() : "";
 
-  if (siteLockMode === "code" && !siteLockPasscode) {
+  if (siteLockMode === "code" && !siteLockPasscode && !siteLockPasscode2) {
     return NextResponse.json(
-      { error: "Enter a passcode to lock the site behind a code." },
+      { error: "Enter at least one passcode to lock the site behind a code." },
       { status: 400 }
     );
   }
@@ -74,6 +76,8 @@ export async function PUT(req: NextRequest) {
     banner_updated_at: bannerUpdatedAt,
     site_lock_mode: siteLockMode,
     site_lock_passcode: siteLockMode === "code" ? siteLockPasscode || null : null,
+    site_lock_passcode_2: siteLockMode === "code" ? siteLockPasscode2 || null : null,
+    site_lock_hint: siteLockMode === "code" ? siteLockHint || null : null,
   };
 
   if (settingsUnlocked) {
