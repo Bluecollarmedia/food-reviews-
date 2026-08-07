@@ -100,6 +100,21 @@ export async function notifyNewUpload({
   const supabase = createAdminClient();
   const videoUrl = `${origin}/videos/${slug}`;
 
+  // Always send the owner a confirmation that a review went live.
+  const { data: settings } = await supabase
+    .from("admin_settings")
+    .select("notify_email")
+    .eq("id", 1)
+    .single();
+  if (settings?.notify_email) {
+    await sendEmail({
+      to: settings.notify_email,
+      subject: `Published: ${title}`,
+      html: `<p>Your review <strong>${escapeHtml(title)}</strong> is now live.</p><p><a href="${videoUrl}">View it</a></p>`,
+    });
+  }
+
+  // Notify only members who opted into new-video alerts (off by default).
   const { data: subscribers } = await supabase
     .from("profiles")
     .select("id")
