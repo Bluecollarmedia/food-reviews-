@@ -44,51 +44,41 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Bad request." }, { status: 400 });
   }
 
+  const supabase = createAdminClient();
+
+  // FORCE PENDING FIRST — before anything that could fail (R2 uploads, email).
+  // A brand-new account must await approval, regardless of the database's column
+  // default or whether the signup trigger was ever updated. Guarded to a row
+  // created in the last 15 minutes (and not already denied) so this can never be
+  // used to suspend or un-deny an established member. `firstTime` (a row was
+  // actually flipped from approved→pending) gates the one-time owner email.
+  const { data: pended } = await supabase
+    .from("profiles")
+    .update({ approval_status: "pending" })
+    .eq("id", userId)
+    .eq("approval_status", "approved")
+    .gt("created_at", new Date(Date.now() - 15 * 60 * 1000).toISOString())
+    .select("id, display_name");
+  const firstTime = !!pended && pended.length > 0;
+
+  // Save the photos (best-effort — the account is already pending either way).
   const selfieKey = body?.selfie ? await saveDataUrl(body.selfie, "selfies", userId) : null;
   const avatarKey = body?.avatar ? await saveDataUrl(body.avatar, "avatars", userId) : null;
 
-  if (!selfieKey && !avatarKey) {
-    return NextResponse.json({ error: "Nothing to save." }, { status: 400 });
-  }
-
-  const supabase = createAdminClient();
-  // Write-once per field: only claim a slot that's still empty. Whether the
-  // selfie slot was actually claimed tells us this is a fresh signup (vs. a
-  // repeat call), which gates the one-time new-account side effects below.
-  let firstTime = false;
+  // Write-once per field: only claim a slot that's still empty.
   if (selfieKey) {
-    const { data: claimed } = await supabase
-      .from("profiles")
-      .update({ selfie_key: selfieKey })
-      .eq("id", userId)
-      .is("selfie_key", null)
-      .select("id");
-    firstTime = !!claimed && claimed.length > 0;
+    await supabase.from("profiles").update({ selfie_key: selfieKey }).eq("id", userId).is("selfie_key", null);
   }
   if (avatarKey) {
     await supabase.from("profiles").update({ avatar_key: avatarKey }).eq("id", userId).is("avatar_key", null);
   }
 
   if (firstTime) {
-    // New accounts must await approval. Force any brand-new profile off the
-    // default 'approved' so members-only mode actually gates it, even if the
-    // database signup trigger was never updated. Guarded to a recently-created
-    // row so this can never be used to suspend an existing member.
-    await supabase
-      .from("profiles")
-      .update({ approval_status: "pending" })
-      .eq("id", userId)
-      .eq("approval_status", "approved")
-      .gt("created_at", new Date(Date.now() - 5 * 60 * 1000).toISOString());
-
     // Let the owner know someone signed up (best-effort; needs a notify email).
     try {
-      const [{ data: profile }, { data: authUser }] = await Promise.all([
-        supabase.from("profiles").select("display_name").eq("id", userId).single(),
-        supabase.auth.admin.getUserById(userId),
-      ]);
+      const { data: authUser } = await supabase.auth.admin.getUserById(userId);
       await notifyNewAccount({
-        name: profile?.display_name ?? "",
+        name: pended?.[0]?.display_name ?? "",
         email: authUser?.user?.email ?? "",
       });
     } catch {
