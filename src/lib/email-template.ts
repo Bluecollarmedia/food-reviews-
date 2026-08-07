@@ -6,34 +6,30 @@ function escapeHtml(s: string) {
 }
 
 const RED = "#c8102e";
-const CREAM = "#fbf6ef";
+const CARD = "#fffaf3";
+const PAGE = "#efe6d8";
 const INK = "#221d19";
-const MUTED = "#6b625a";
-const BORDER = "#e7dcc9";
+const MUTED = "#8a7f72";
+const BORDER = "#ece0cd";
 
-/** Wrap inner content in the branded shell (header bar + footer). */
+/** Wrap inner content in the branded shell (warm, rounded card). */
 export function emailShell(innerHtml: string): string {
   return `
-  <div style="margin:0;padding:24px 12px;background:${CREAM};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;margin:0 auto;background:#ffffff;border:1px solid ${BORDER};border-radius:16px;overflow:hidden;">
+  <div style="margin:0;padding:28px 14px;background:${PAGE};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;margin:0 auto;background:${CARD};border-radius:24px;overflow:hidden;box-shadow:0 8px 30px rgba(60,40,20,0.12);">
       <tr>
-        <td style="background:${RED};padding:18px 24px;">
-          <span style="color:#ffffff;font-size:18px;font-weight:800;letter-spacing:0.5px;">D&amp;S FOOD REVIEWS</span>
+        <td style="padding:26px 28px 6px;text-align:center;">
+          <span style="color:${RED};font-size:16px;font-weight:800;letter-spacing:1.5px;">D&amp;S FOOD REVIEWS</span>
         </td>
       </tr>
-      <tr><td style="padding:24px;">${innerHtml}</td></tr>
+      ${innerHtml}
       <tr>
-        <td style="padding:16px 24px;border-top:1px solid ${BORDER};">
-          <p style="margin:0;color:${MUTED};font-size:12px;">Honest, brutal, non-biased reviews on food.</p>
+        <td style="padding:18px;border-top:1px solid ${BORDER};text-align:center;">
+          <p style="margin:0;color:#a89a88;font-size:12px;">Honest, brutal, non-biased reviews on food.</p>
         </td>
       </tr>
     </table>
   </div>`;
-}
-
-/** A branded button. */
-function button(url: string, label: string): string {
-  return `<a href="${url}" style="display:inline-block;background:${RED};color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:12px 28px;border-radius:999px;">${escapeHtml(label)}</a>`;
 }
 
 /** "New review published" email with the thumbnail. */
@@ -46,28 +42,25 @@ export function reviewEmail(opts: {
   videoUrl: string;
   forOwner: boolean;
 }): string {
-  const { title, store, city, rating, thumbnailUrl, videoUrl, forOwner } = opts;
+  const { title, store, city, rating, thumbnailUrl, videoUrl } = opts;
   const place = [store, city].filter(Boolean).map((s) => escapeHtml(String(s))).join(" · ");
 
   const thumb = thumbnailUrl
-    ? `<a href="${videoUrl}"><img src="${thumbnailUrl}" alt="${escapeHtml(title)}" width="472" style="display:block;width:100%;max-width:472px;height:auto;border-radius:12px;border:1px solid ${BORDER};margin-bottom:18px;" /></a>`
+    ? `<tr><td style="padding:14px 20px 0;"><a href="${videoUrl}"><img src="${thumbnailUrl}" alt="${escapeHtml(title)}" width="480" style="display:block;width:100%;border-radius:18px;" /></a></td></tr>`
     : "";
 
   const ratingBadge =
     typeof rating === "number"
-      ? `<span style="display:inline-block;background:${RED};color:#ffffff;font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;margin-bottom:10px;">★ ${escapeHtml(String(rating))}</span><br/>`
+      ? `<span style="display:inline-block;background:#fdecef;color:${RED};font-size:14px;font-weight:800;padding:5px 14px;border-radius:999px;">★ ${escapeHtml(String(rating))}</span>`
       : "";
-
-  const intro = forOwner
-    ? `<p style="margin:0 0 14px;color:${MUTED};font-size:14px;">Your new review is now live. 🎉</p>`
-    : `<p style="margin:0 0 14px;color:${MUTED};font-size:14px;">A new review just dropped.</p>`;
 
   return emailShell(`
     ${thumb}
-    ${intro}
-    ${ratingBadge}
-    <h1 style="margin:0 0 6px;color:${INK};font-size:22px;font-weight:800;">${escapeHtml(title)}</h1>
-    ${place ? `<p style="margin:0 0 20px;color:${MUTED};font-size:14px;">${place}</p>` : `<div style="height:8px;"></div>`}
-    ${button(videoUrl, "Watch it")}
+    <tr><td style="padding:20px 28px 28px;text-align:center;">
+      ${ratingBadge}
+      <h1 style="margin:14px 0 4px;color:${INK};font-size:24px;font-weight:800;line-height:1.2;">${escapeHtml(title)}</h1>
+      ${place ? `<p style="margin:0 0 22px;color:${MUTED};font-size:15px;">${place}</p>` : `<div style="height:10px;"></div>`}
+      <a href="${videoUrl}" style="display:inline-block;background:${RED};color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;padding:14px 40px;border-radius:999px;">Watch it &rarr;</a>
+    </td></tr>
   `);
 }
