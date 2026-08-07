@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createReview, type ReviewInput } from "@/lib/reviews-store";
 import { notifyNewUpload } from "@/lib/notify";
+import { getPublicFileUrl } from "@/lib/media-url";
 
 export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as ReviewInput | null;
@@ -29,6 +30,10 @@ export async function POST(req: NextRequest) {
       origin: req.nextUrl.origin,
       slug: review.slug,
       title: review.title,
+      store: review.store,
+      city: review.city,
+      rating: review.rating,
+      thumbnailUrl: getPublicFileUrl(review.thumbnailKey),
     }).catch(() => {});
   }
 
