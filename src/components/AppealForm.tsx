@@ -11,8 +11,6 @@ export default function AppealForm() {
   const [message, setMessage] = useState("");
 
   const [selfie, setSelfie] = useState<string | null>(null);
-  const [faceOk, setFaceOk] = useState(false);
-  const [scannerBroken, setScannerBroken] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -20,8 +18,6 @@ export default function AppealForm() {
 
   function handleSelfie(result: SelfieResult) {
     setSelfie(result?.dataUrl ?? null);
-    setFaceOk(result?.faceOk ?? false);
-    if (result?.scannerBroken) setScannerBroken(true);
   }
 
   async function ownIp(): Promise<string | undefined> {
@@ -31,7 +27,7 @@ export default function AppealForm() {
     } catch {}
   }
 
-  const canSubmit = !!name.trim() && !!selfie && (faceOk || scannerBroken) && !submitting;
+  const canSubmit = !!name.trim() && !!selfie && !submitting;
 
   async function submit() {
     if (!canSubmit) return;
@@ -44,7 +40,7 @@ export default function AppealForm() {
     const res = await fetch("/api/appeal", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, contact, message, selfie, deviceId, ip, faceVerified: faceOk }),
+      body: JSON.stringify({ name, contact, message, selfie, deviceId, ip }),
     });
     setSubmitting(false);
     if (!res.ok) {
