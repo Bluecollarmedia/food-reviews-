@@ -13,34 +13,59 @@ declare global {
   }
 }
 
-let modelPromise: Promise<{ estimateFaces: (i: HTMLCanvasElement, f?: boolean) => Promise<unknown[]> } | null> | null =
-  null;
+type FaceModel = { estimateFaces: (i: HTMLCanvasElement, f?: boolean) => Promise<unknown[]> };
+
+let loadedModel: FaceModel | null = null;
+let inFlight: Promise<FaceModel | null> | null = null;
 
 function loadScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    const s = document.createElement("script");
+    // Reuse an existing tag if a previous attempt already added one.
+    const existing = document.querySelector<HTMLScriptElement>(`script[src="${src}"]`);
+    if (existing && existing.dataset.loaded === "true") return resolve();
+    const s = existing ?? document.createElement("script");
     s.src = src;
     s.async = true;
-    s.onload = () => resolve();
+    s.onload = () => {
+      s.dataset.loaded = "true";
+      resolve();
+    };
     s.onerror = () => reject(new Error("script failed"));
-    document.head.appendChild(s);
+    if (!existing) document.head.appendChild(s);
   });
 }
 
-async function getFaceModel() {
-  if (!modelPromise) {
-    modelPromise = (async () => {
-      try {
-        if (!window.tf) await loadScript("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js");
-        if (!window.blazeface) await loadScript("https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.1.0");
-        if (!window.blazeface) return null;
-        return await window.blazeface.load();
-      } catch {
-        return null;
-      }
-    })();
+async function attemptLoad(): Promise<FaceModel | null> {
+  try {
+    if (!window.tf) await loadScript("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js");
+    if (!window.blazeface) await loadScript("https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.1.0");
+    if (!window.blazeface) return null;
+    return (await window.blazeface.load()) as FaceModel;
+  } catch {
+    return null;
   }
-  return modelPromise;
+}
+
+// Load the face model, retrying a few times (spotty mobile connections often
+// fail the first fetch of the ~1MB library). A failure is NOT cached, so a later
+// Retake gets a fresh attempt instead of being stuck "broken" for the session.
+async function getFaceModel(): Promise<FaceModel | null> {
+  if (loadedModel) return loadedModel;
+  if (inFlight) return inFlight;
+  inFlight = (async () => {
+    for (let i = 0; i < 3; i++) {
+      const model = await attemptLoad();
+      if (model) {
+        loadedModel = model;
+        inFlight = null;
+        return model;
+      }
+      await new Promise((r) => setTimeout(r, 800));
+    }
+    inFlight = null; // allow future retries
+    return null;
+  })();
+  return inFlight;
 }
 
 export type SelfieResult = { dataUrl: string; faceOk: boolean; scannerBroken: boolean } | null;
@@ -51,13 +76,7 @@ export type SelfieResult = { dataUrl: string; faceOk: boolean; scannerBroken: bo
  * selfie (with whether a face was detected and whether the scanner even ran) or
  * null when cleared/retaken.
  */
-export default function SelfieCapture({
-  onChange,
-  requireFace = false,
-}: {
-  onChange: (result: SelfieResult) => void;
-  requireFace?: boolean;
-}) {
+export default function SelfieCapture({ onChange }: { onChange: (result: SelfieResult) => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [cameraOn, setCameraOn] = useState(false);
@@ -68,8 +87,9 @@ export default function SelfieCapture({
   const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
-    // Warm up the face model early.
-    getFaceModel().then((m) => { if (!m) setScannerBroken(true); });
+    // Warm up the face model early (no flagging here — capture decides, after a
+    // real attempt with retries, whether the scanner is genuinely unavailable).
+    getFaceModel();
     return () => stopCamera();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -159,13 +179,11 @@ export default function SelfieCapture({
       <div>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={selfie} alt="selfie" className="w-full max-w-xs rounded-xl border border-border" />
-        <p className={`mt-1 text-xs font-semibold ${faceOk ? "text-emerald-600" : requireFace || !scannerBroken ? "text-primary" : "text-foreground/50"}`}>
+        <p className={`mt-1 text-xs font-semibold ${faceOk ? "text-emerald-600" : scannerBroken ? "text-foreground/50" : "text-primary"}`}>
           {faceOk
             ? "Face detected ✓"
             : scannerBroken
-            ? requireFace
-              ? "Face check couldn't load — check your connection and tap Retake."
-              : "Couldn't run the face check — you can still continue."
+            ? "Couldn't auto-check your face — you can continue; the owner will verify your photo."
             : "No face detected — please retake."}
         </p>
         <button
