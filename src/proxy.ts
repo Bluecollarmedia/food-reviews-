@@ -121,7 +121,10 @@ async function checkApprovedUser(req: NextRequest): Promise<"ok" | "login" | "pe
       .select("approval_status")
       .eq("id", user.id)
       .single();
-    return (data?.approval_status ?? "approved") === "approved" ? "ok" : "pending";
+    // Only an explicitly-approved account gets in. Anything else — pending,
+    // denied, or a missing/blank status — is held at the pending screen. (This
+    // is a per-account decision, not the database-outage fail-open in catch.)
+    return data?.approval_status === "approved" ? "ok" : "pending";
   } catch {
     // Fail OPEN: never lock everyone out on a hiccup.
     return "ok";
