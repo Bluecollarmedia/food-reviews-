@@ -27,8 +27,6 @@ function SignupForm() {
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
   const [croppingFile, setCroppingFile] = useState<File | null>(null);
   const [selfie, setSelfie] = useState<string | null>(null);
-  const [faceOk, setFaceOk] = useState(false);
-  const [scannerBroken, setScannerBroken] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
@@ -42,14 +40,9 @@ function SignupForm() {
 
   function handleSelfie(result: SelfieResult) {
     setSelfie(result?.dataUrl ?? null);
-    setFaceOk(result?.faceOk ?? false);
-    if (result?.scannerBroken) setScannerBroken(true);
   }
 
-  // A detected face is required. The only exception is when the scanner genuinely
-  // can't load after retries (bad connection) — then we don't trap the user; the
-  // owner reviews and approves every account and sees the photo anyway.
-  const selfieReady = !!selfie && (faceOk || scannerBroken);
+  const selfieReady = !!selfie;
 
   function handleCropConfirm(blob: Blob) {
     setCroppingFile(null);
