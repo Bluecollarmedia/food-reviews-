@@ -18,19 +18,42 @@ type FaceModel = { estimateFaces: (i: HTMLCanvasElement, f?: boolean) => Promise
 let loadedModel: FaceModel | null = null;
 let inFlight: Promise<FaceModel | null> | null = null;
 
+// Reject a promise if it doesn't settle in time, so a stalled network fetch can
+// never hang the "Checking…" state forever.
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error("timeout")), ms);
+    p.then(
+      (v) => { clearTimeout(t); resolve(v); },
+      (e) => { clearTimeout(t); reject(e); }
+    );
+  });
+}
+
 function loadScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    // Reuse an existing tag if a previous attempt already added one.
     const existing = document.querySelector<HTMLScriptElement>(`script[src="${src}"]`);
     if (existing && existing.dataset.loaded === "true") return resolve();
     const s = existing ?? document.createElement("script");
+    let done = false;
+    const timer = setTimeout(() => {
+      if (!done) { done = true; reject(new Error("timeout")); }
+    }, 8000);
     s.src = src;
     s.async = true;
     s.onload = () => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
       s.dataset.loaded = "true";
       resolve();
     };
-    s.onerror = () => reject(new Error("script failed"));
+    s.onerror = () => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      reject(new Error("script failed"));
+    };
     if (!existing) document.head.appendChild(s);
   });
 }
@@ -40,27 +63,27 @@ async function attemptLoad(): Promise<FaceModel | null> {
     if (!window.tf) await loadScript("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js");
     if (!window.blazeface) await loadScript("https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.1.0");
     if (!window.blazeface) return null;
-    return (await window.blazeface.load()) as FaceModel;
+    return (await withTimeout(window.blazeface.load(), 8000)) as FaceModel;
   } catch {
     return null;
   }
 }
 
-// Load the face model, retrying a few times (spotty mobile connections often
-// fail the first fetch of the ~1MB library). A failure is NOT cached, so a later
-// Retake gets a fresh attempt instead of being stuck "broken" for the session.
+// Load the face model, retrying twice (spotty mobile connections often fail the
+// first fetch of the ~1MB library). Every step is time-bounded, and a failure is
+// NOT cached, so a later Retake gets a fresh attempt instead of being stuck.
 async function getFaceModel(): Promise<FaceModel | null> {
   if (loadedModel) return loadedModel;
   if (inFlight) return inFlight;
   inFlight = (async () => {
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 2; i++) {
       const model = await attemptLoad();
       if (model) {
         loadedModel = model;
         inFlight = null;
         return model;
       }
-      await new Promise((r) => setTimeout(r, 800));
+      await new Promise((r) => setTimeout(r, 500));
     }
     inFlight = null; // allow future retries
     return null;
@@ -140,19 +163,31 @@ export default function SelfieCapture({ onChange }: { onChange: (result: SelfieR
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    if (!ctx) {
+      setScanning(false);
+      return;
+    }
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Face scan.
+    // Face scan. Bounded so "Checking…" can never hang: if the model isn't ready
+    // within a few seconds, or the scan itself stalls, we treat it as unavailable
+    // rather than spinning forever.
     let ok = false;
     let broken = scannerBroken;
-    const model = await getFaceModel();
+    let model: FaceModel | null = null;
+    try {
+      model = await withTimeout(getFaceModel(), 9000);
+    } catch {
+      model = null;
+    }
     if (model) {
       try {
-        const faces = await model.estimateFaces(canvas, false);
+        const faces = await withTimeout(model.estimateFaces(canvas, false), 5000);
         ok = Array.isArray(faces) && faces.length > 0;
       } catch {
-        ok = false;
+        // Scan stalled/failed — don't trap the user; defer to owner review.
+        broken = true;
+        setScannerBroken(true);
       }
     } else {
       broken = true;
