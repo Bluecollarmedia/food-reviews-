@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { updateReview, deleteReview, getReview, type ReviewInput } from "@/lib/reviews-store";
 import { deleteFile } from "@/lib/r2";
 import { notifyNewUpload } from "@/lib/notify";
+import { getPublicFileUrl } from "@/lib/media-url";
 import { isSettingsUnlocked, isProtectedStatus } from "@/lib/settings-guard";
 
 async function deleteIfReplaced(oldKey: string | undefined, newKey: string | undefined) {
@@ -68,6 +69,10 @@ export async function PUT(
       origin: req.nextUrl.origin,
       slug: review.slug,
       title: review.title,
+      store: review.store,
+      city: review.city,
+      rating: review.rating,
+      thumbnailUrl: getPublicFileUrl(review.thumbnailKey),
     }).catch(() => {});
   }
 

@@ -1,5 +1,6 @@
 import { createAdminClient } from "./supabase/admin";
 import { sendEmail } from "./email";
+import { reviewEmail } from "./email-template";
 
 function escapeHtml(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -92,13 +93,22 @@ export async function notifyNewUpload({
   origin,
   slug,
   title,
+  store,
+  city,
+  rating,
+  thumbnailUrl,
 }: {
   origin: string;
   slug: string;
   title: string;
+  store?: string;
+  city?: string;
+  rating?: number | null;
+  thumbnailUrl?: string | null;
 }) {
   const supabase = createAdminClient();
   const videoUrl = `${origin}/videos/${slug}`;
+  const details = { title, store, city, rating, thumbnailUrl, videoUrl };
 
   // Always send the owner a confirmation that a review went live.
   const { data: settings } = await supabase
@@ -110,7 +120,7 @@ export async function notifyNewUpload({
     await sendEmail({
       to: settings.notify_email,
       subject: `Published: ${title}`,
-      html: `<p>Your review <strong>${escapeHtml(title)}</strong> is now live.</p><p><a href="${videoUrl}">View it</a></p>`,
+      html: reviewEmail({ ...details, forOwner: true }),
     });
   }
 
@@ -122,6 +132,7 @@ export async function notifyNewUpload({
 
   if (!subscribers || subscribers.length === 0) return;
 
+  const memberHtml = reviewEmail({ ...details, forOwner: false });
   await Promise.all(
     subscribers.map(async ({ id }) => {
       const { data: userResult } = await supabase.auth.admin.getUserById(id);
@@ -131,7 +142,7 @@ export async function notifyNewUpload({
       await sendEmail({
         to: email,
         subject: `New review: ${title}`,
-        html: `<p>A new review just went up: <strong>${escapeHtml(title)}</strong></p><p><a href="${videoUrl}">Watch it</a></p>`,
+        html: memberHtml,
       });
     })
   );
