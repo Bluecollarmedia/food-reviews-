@@ -32,6 +32,31 @@ export function emailShell(innerHtml: string): string {
   </div>`;
 }
 
+/** A general branded notice (comment, reply, new account, etc.). */
+export function noticeEmail(opts: {
+  heading: string;
+  message?: string; // shown as a quote block
+  extraHtml?: string; // extra lines above the quote
+  ctaUrl?: string;
+  ctaLabel?: string;
+}): string {
+  const quote = opts.message
+    ? `<div style="background:#f6efe4;border-left:3px solid ${RED};border-radius:8px;padding:12px 14px;color:${INK};font-size:15px;line-height:1.45;">${escapeHtml(opts.message)}</div>`
+    : "";
+  const cta =
+    opts.ctaUrl && opts.ctaLabel
+      ? `<div style="margin-top:22px;"><a href="${opts.ctaUrl}" style="display:inline-block;background:${RED};color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:12px 34px;border-radius:999px;">${escapeHtml(opts.ctaLabel)}</a></div>`
+      : "";
+  return emailShell(`
+    <tr><td style="padding:22px 28px 28px;">
+      <h1 style="margin:0 0 14px;color:${INK};font-size:20px;font-weight:800;line-height:1.25;">${escapeHtml(opts.heading)}</h1>
+      ${opts.extraHtml ?? ""}
+      ${quote}
+      ${cta}
+    </td></tr>
+  `);
+}
+
 /** "New review published" email with the thumbnail. */
 export function reviewEmail(opts: {
   title: string;
