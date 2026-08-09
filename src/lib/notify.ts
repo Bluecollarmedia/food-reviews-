@@ -1,6 +1,6 @@
 import { createAdminClient } from "./supabase/admin";
 import { sendEmail } from "./email";
-import { reviewEmail } from "./email-template";
+import { reviewEmail, noticeEmail } from "./email-template";
 
 function escapeHtml(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -20,7 +20,7 @@ export async function notifyByEmail({
   authorId: string | null;
 }) {
   const supabase = createAdminClient();
-  const preview = escapeHtml(message.slice(0, 140));
+  const preview = message.slice(0, 240);
   const videoUrl = `${origin}/videos/${slug}`;
 
   const { data: adminSettings } = await supabase
@@ -33,7 +33,12 @@ export async function notifyByEmail({
     await sendEmail({
       to: adminSettings.notify_email,
       subject: parentId ? "New reply on D&S Food Reviews" : "New comment on D&S Food Reviews",
-      html: `<p>${preview}</p><p><a href="${videoUrl}">View it</a></p>`,
+      html: noticeEmail({
+        heading: parentId ? "New reply on your site" : "New comment on your site",
+        message: preview,
+        ctaUrl: videoUrl,
+        ctaLabel: "View it",
+      }),
     });
   }
 
@@ -63,7 +68,12 @@ export async function notifyByEmail({
   await sendEmail({
     to: email,
     subject: "Someone replied to your comment",
-    html: `<p>${preview}</p><p><a href="${videoUrl}">View the reply</a></p>`,
+    html: noticeEmail({
+      heading: "Someone replied to your comment",
+      message: preview,
+      ctaUrl: videoUrl,
+      ctaLabel: "View the reply",
+    }),
   });
 }
 
@@ -80,12 +90,11 @@ export async function notifyNewAccount({ name, email }: { name: string; email: s
   await sendEmail({
     to,
     subject: `New account request: ${name || email || "someone"}`,
-    html: `
-      <h2>New account awaiting approval</h2>
-      <p><strong>Name:</strong> ${escapeHtml(name || "—")}</p>
-      <p><strong>Email:</strong> ${escapeHtml(email || "—")}</p>
-      <p>Review their profile picture and verification selfie, then Approve or Deny them in the admin panel &rarr; Accounts.</p>
-    `,
+    html: noticeEmail({
+      heading: "New account awaiting approval",
+      extraHtml: `<p style="margin:0 0 14px;color:#6b625a;font-size:15px;"><strong style="color:#221d19;">${escapeHtml(name || "—")}</strong><br/>${escapeHtml(email || "—")}</p>`,
+      message: "Review their profile picture and verification selfie, then Approve or Deny them in the admin panel → Accounts.",
+    }),
   });
 }
 
