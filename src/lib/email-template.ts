@@ -35,11 +35,20 @@ export function emailShell(innerHtml: string): string {
 /** A general branded notice (comment, reply, new account, etc.). */
 export function noticeEmail(opts: {
   heading: string;
+  onTitle?: string; // e.g. the review the comment is on
+  replyingTo?: string; // the parent comment a reply is answering
   message?: string; // shown as a quote block
   extraHtml?: string; // extra lines above the quote
   ctaUrl?: string;
   ctaLabel?: string;
 }): string {
+  const onLine = opts.onTitle
+    ? `<p style="margin:0 0 16px;color:${MUTED};font-size:13px;">On <strong style="color:${INK};">${escapeHtml(opts.onTitle)}</strong></p>`
+    : "";
+  const replyingTo = opts.replyingTo
+    ? `<p style="margin:0 0 5px;color:${MUTED};font-size:11px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;">In reply to</p>
+       <div style="background:#f0e8da;border-radius:8px;padding:10px 13px;color:${MUTED};font-size:14px;line-height:1.4;font-style:italic;margin-bottom:14px;">${escapeHtml(opts.replyingTo)}</div>`
+    : "";
   const quote = opts.message
     ? `<div style="background:#f6efe4;border-left:3px solid ${RED};border-radius:8px;padding:12px 14px;color:${INK};font-size:15px;line-height:1.45;">${escapeHtml(opts.message)}</div>`
     : "";
@@ -49,8 +58,10 @@ export function noticeEmail(opts: {
       : "";
   return emailShell(`
     <tr><td style="padding:22px 28px 28px;">
-      <h1 style="margin:0 0 14px;color:${INK};font-size:20px;font-weight:800;line-height:1.25;">${escapeHtml(opts.heading)}</h1>
+      <h1 style="margin:0 0 10px;color:${INK};font-size:20px;font-weight:800;line-height:1.25;">${escapeHtml(opts.heading)}</h1>
+      ${onLine}
       ${opts.extraHtml ?? ""}
+      ${replyingTo}
       ${quote}
       ${cta}
     </td></tr>

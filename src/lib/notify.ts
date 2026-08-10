@@ -1,6 +1,7 @@
 import { createAdminClient } from "./supabase/admin";
 import { sendEmail } from "./email";
 import { reviewEmail, noticeEmail } from "./email-template";
+import { getReview } from "./reviews-store";
 
 function escapeHtml(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -23,6 +24,22 @@ export async function notifyByEmail({
   const preview = message.slice(0, 240);
   const videoUrl = `${origin}/videos/${slug}`;
 
+  // Which review this is on, for context in the email.
+  const review = await getReview(slug).catch(() => null);
+  const videoTitle = review?.title;
+
+  // The parent comment (both its author and its text) when this is a reply.
+  let parent: { user_id: string | null; message: string } | null = null;
+  if (parentId) {
+    const { data } = await supabase
+      .from("comments")
+      .select("user_id, message")
+      .eq("id", parentId)
+      .single();
+    parent = data ?? null;
+  }
+  const parentText = parent?.message ? parent.message.slice(0, 200) : undefined;
+
   const { data: adminSettings } = await supabase
     .from("admin_settings")
     .select("email_notifications, notify_email")
@@ -35,6 +52,8 @@ export async function notifyByEmail({
       subject: parentId ? "New reply on D&S Food Reviews" : "New comment on D&S Food Reviews",
       html: noticeEmail({
         heading: parentId ? "New reply on your site" : "New comment on your site",
+        onTitle: videoTitle,
+        replyingTo: parentId ? parentText : undefined,
         message: preview,
         ctaUrl: videoUrl,
         ctaLabel: "View it",
@@ -43,12 +62,6 @@ export async function notifyByEmail({
   }
 
   if (!parentId) return;
-
-  const { data: parent } = await supabase
-    .from("comments")
-    .select("user_id")
-    .eq("id", parentId)
-    .single();
 
   const parentUserId = parent?.user_id;
   if (!parentUserId || parentUserId === authorId) return;
@@ -70,6 +83,8 @@ export async function notifyByEmail({
     subject: "Someone replied to your comment",
     html: noticeEmail({
       heading: "Someone replied to your comment",
+      onTitle: videoTitle,
+      replyingTo: parentText,
       message: preview,
       ctaUrl: videoUrl,
       ctaLabel: "View the reply",
