@@ -131,6 +131,15 @@ async function checkApprovedUser(req: NextRequest): Promise<"ok" | "login" | "pe
   }
 }
 
+// Known link-preview / social crawlers that fetch a page to build a share card.
+// Deliberately excludes search-engine indexers (Googlebot/bingbot) — the site is
+// noindex and members-only, so only share previews are allowed through.
+function isPreviewBot(ua: string): boolean {
+  return /facebookexternalhit|Facebot|Twitterbot|Slackbot|LinkedInBot|WhatsApp|TelegramBot|Discordbot|Applebot|SkypeUriPreview|redditbot|Pinterest|vkShare|Embedly|Iframely|Google-InspectionTool|SnapchatAds|Snapchat/i.test(
+    ua
+  );
+}
+
 function isPrivateIp(ip: string): boolean {
   return (
     !ip ||
@@ -272,6 +281,16 @@ export async function proxy(req: NextRequest) {
   // preview the public site while it's locked to everyone else.
   const adminToken = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
   if (await verifySessionToken(adminToken, process.env.ADMIN_PASSWORD ?? "")) {
+    return NextResponse.next();
+  }
+
+  // Link-preview crawlers (WhatsApp, iMessage, Facebook, etc.) fetch the page
+  // logged-out to build the share card. If members-only mode or the site lock
+  // redirected them to a login/lock screen, shared links would show no
+  // thumbnail. Let these bots read the normal public page so previews work. The
+  // video files themselves are public URLs regardless, so this exposes nothing
+  // new — and real people still hit the gate.
+  if (isPreviewBot(req.headers.get("user-agent") || "")) {
     return NextResponse.next();
   }
 
