@@ -258,6 +258,7 @@ export type ReviewInput = {
   secondReviewerVideoKey?: string;
   secondReviewerThumbnailKey?: string;
   secondReviewerRating?: number;
+  showBothScores?: boolean;
 };
 
 export async function createReview(input: ReviewInput): Promise<Review> {

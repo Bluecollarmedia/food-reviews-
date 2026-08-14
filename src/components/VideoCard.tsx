@@ -61,6 +61,13 @@ export default function VideoCard({
 }) {
   const thumbnailUrl = getPublicFileUrl(review.thumbnailKey);
 
+  // Show each reviewer's own score (first on the left, second on the right) only
+  // when the review opted in and the second reviewer actually has a score.
+  const showBoth =
+    review.showBothScores &&
+    !!review.secondReviewer &&
+    typeof review.secondReviewerRating === "number";
+
   return (
     <Link href={`/videos/${review.slug}`} className="group flex flex-col">
       <Thumbnail
@@ -70,8 +77,13 @@ export default function VideoCard({
         priority={priority}
       />
       <div className="flex gap-3 py-3">
-        <div className="shrink-0">
+        <div className="shrink-0 text-center">
           <ScoreBadge rating={review.rating} size="sm" />
+          {showBoth && (
+            <p className="mt-1 max-w-[3rem] truncate text-[10px] font-semibold text-foreground/50">
+              {review.reviewer}
+            </p>
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground lg:text-base">
@@ -87,6 +99,14 @@ export default function VideoCard({
             </p>
           )}
         </div>
+        {showBoth && (
+          <div className="shrink-0 text-center">
+            <ScoreBadge rating={review.secondReviewerRating!} size="sm" />
+            <p className="mt-1 max-w-[3rem] truncate text-[10px] font-semibold text-foreground/50">
+              {review.secondReviewer}
+            </p>
+          </div>
+        )}
       </div>
     </Link>
   );

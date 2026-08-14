@@ -251,6 +251,7 @@ export default function ReviewForm({ mode, initial, unlocked = true }: Props) {
       ? initial.secondReviewer
       : ""
   );
+  const [showBothScores, setShowBothScores] = useState(initial?.showBothScores ?? false);
   const [secondReviewerRating, setSecondReviewerRating] = useState(
     initial?.secondReviewerRating?.toString() ?? ""
   );
@@ -430,6 +431,7 @@ export default function ReviewForm({ mode, initial, unlocked = true }: Props) {
           hasSecondReviewer && secondReviewerRating
             ? parseFloat(secondReviewerRating)
             : undefined,
+        showBothScores: hasSecondReviewer ? showBothScores : false,
       };
 
       const url =
@@ -726,6 +728,18 @@ export default function ReviewForm({ mode, initial, unlocked = true }: Props) {
                   className={inputClass}
                 />
               </div>
+              <label className="mt-3 flex items-start gap-2 text-sm text-foreground/80">
+                <input
+                  type="checkbox"
+                  checked={showBothScores}
+                  onChange={(e) => setShowBothScores(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 accent-primary"
+                />
+                <span>
+                  Show <strong>both scores</strong> on the review card (one for each reviewer). Off
+                  by default — the card just shows the first reviewer&apos;s score.
+                </span>
+              </label>
             </>
           )}
         </div>
