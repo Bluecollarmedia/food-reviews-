@@ -31,6 +31,8 @@ export type Review = {
   secondReviewerVideoKey?: string;
   secondReviewerThumbnailKey?: string;
   secondReviewerRating?: number;
+  /** Show each reviewer's own score on the card, not just the first reviewer's. */
+  showBothScores?: boolean;
   createdAt: string;
   updatedAt: string;
   /** Public-facing padded view count, attached when the review is read. */
