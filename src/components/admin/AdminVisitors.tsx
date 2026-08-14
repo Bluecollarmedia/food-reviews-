@@ -58,6 +58,71 @@ function describePath(path: string, videos: VideoMeta): { icon: string; label: s
   return { icon: "•", label: clean };
 }
 
+type Hit = { p: string; t: string };
+type Visit = { end: string; start: string; hits: Hit[] };
+
+// Group a flat activity list into "visits" (sessions): consecutive actions are
+// the same visit unless there's a gap of more than 30 minutes. Newest first.
+const VISIT_GAP_MS = 30 * 60 * 1000;
+function groupVisits(hits: Hit[]): Visit[] {
+  const sorted = [...hits].sort((a, b) => new Date(b.t).getTime() - new Date(a.t).getTime());
+  const visits: Visit[] = [];
+  for (const h of sorted) {
+    const last = visits[visits.length - 1];
+    if (last && new Date(last.start).getTime() - new Date(h.t).getTime() <= VISIT_GAP_MS) {
+      last.hits.push(h);
+      last.start = h.t;
+    } else {
+      visits.push({ end: h.t, start: h.t, hits: [h] });
+    }
+  }
+  return visits;
+}
+
+// One collapsible visit: shows when it happened + how many actions, expands to
+// reveal what they did in that session.
+function VisitItem({
+  visit,
+  videos,
+  defaultOpen = false,
+}: {
+  visit: Visit;
+  videos: VideoMeta;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="overflow-hidden rounded-lg border border-border bg-background/60">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
+      >
+        <span className="text-xs font-semibold text-foreground/80">{fullTime(visit.end)}</span>
+        <span className="flex items-center gap-1 text-[11px] text-foreground/40">
+          {visit.hits.length} {visit.hits.length === 1 ? "action" : "actions"}
+          <span className={`transition-transform ${open ? "rotate-180" : ""}`}>▾</span>
+        </span>
+      </button>
+      {open && (
+        <ul className="flex flex-col gap-1.5 border-t border-border px-3 py-2">
+          {visit.hits.map((hit, i) => {
+            const d = describePath(hit.p, videos);
+            return (
+              <li key={i} className="flex items-start justify-between gap-3 text-xs">
+                <span className="min-w-0 text-foreground/80">
+                  <span className="mr-1">{d.icon}</span>
+                  {d.label}
+                </span>
+                <span className="shrink-0 text-foreground/40">{fullTime(hit.t)}</span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function placeLabel(loc: VisitorLocation | undefined): string {
   if (!loc?.geo) return loc?.ip || "unknown";
   const { geo } = loc;
@@ -112,6 +177,8 @@ function VisitorRow({
   const [expanded, setExpanded] = useState(false);
   const [editingLabel, setEditingLabel] = useState(false);
   const [labelInput, setLabelInput] = useState(visitor.label ?? "");
+  const [shownVisits, setShownVisits] = useState(3);
+  const visits = groupVisits(visitor.hits);
 
   const locations = visitor.locations ?? [];
   const primary = locations[0];
@@ -141,8 +208,8 @@ function VisitorRow({
             )}
           </div>
           <p className="mt-1 text-xs text-foreground/60">
-            {visitor.count} {visitor.count === 1 ? "visit" : "visits"} &middot; last{" "}
-            {relativeTime(visitor.lastSeen)} ago &middot; first seen {fullTime(visitor.firstSeen)}
+            Last seen {relativeTime(visitor.lastSeen)} ago &middot; {visitor.count}{" "}
+            {visitor.count === 1 ? "visit" : "visits"}
           </p>
           {primary && (
             <div className="mt-1.5">
@@ -268,23 +335,22 @@ function VisitorRow({
             </div>
           )}
           <div>
-            <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-foreground/40">
-              Everything they did ({visitor.hits.length})
+            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-foreground/40">
+              Visits ({visits.length}) — tap one to see what they did
             </p>
-            <ul className="flex flex-col gap-1.5">
-              {visitor.hits.map((hit, i) => {
-                const d = describePath(hit.p, videos);
-                return (
-                  <li key={i} className="flex items-start justify-between gap-3 text-xs">
-                    <span className="min-w-0 text-foreground/80">
-                      <span className="mr-1">{d.icon}</span>
-                      {d.label}
-                    </span>
-                    <span className="shrink-0 text-foreground/40">{fullTime(hit.t)}</span>
-                  </li>
-                );
-              })}
-            </ul>
+            <div className="flex flex-col gap-2">
+              {visits.slice(0, shownVisits).map((visit, i) => (
+                <VisitItem key={visit.end + i} visit={visit} videos={videos} defaultOpen={i === 0} />
+              ))}
+            </div>
+            {visits.length > shownVisits && (
+              <button
+                onClick={() => setShownVisits((n) => n + 3)}
+                className="mt-2 text-xs font-semibold text-primary hover:underline"
+              >
+                Show more visits ({visits.length - shownVisits} older)
+              </button>
+            )}
           </div>
         </div>
       )}
