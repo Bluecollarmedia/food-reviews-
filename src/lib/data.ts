@@ -31,6 +31,11 @@ export type Review = {
   secondReviewerVideoKey?: string;
   secondReviewerThumbnailKey?: string;
   secondReviewerRating?: number;
+  /** A third person can also review the same video (any name or a guest). */
+  thirdReviewer?: string;
+  thirdReviewerVideoKey?: string;
+  thirdReviewerThumbnailKey?: string;
+  thirdReviewerRating?: number;
   /** Show each reviewer's own score on the card, not just the first reviewer's. */
   showBothScores?: boolean;
   createdAt: string;

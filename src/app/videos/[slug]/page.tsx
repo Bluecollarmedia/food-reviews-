@@ -106,7 +106,35 @@ export default async function VideoPage({
   const thumbnailUrl = getPublicFileUrl(review.thumbnailKey);
   const secondReviewerVideoUrl = getPublicFileUrl(review.secondReviewerVideoKey);
   const secondReviewerThumbnailUrl = getPublicFileUrl(review.secondReviewerThumbnailKey);
-  const hasSplitReviews = !!review.secondReviewer && !!secondReviewerVideoUrl;
+  const thirdReviewerVideoUrl = getPublicFileUrl(review.thirdReviewerVideoKey);
+  const thirdReviewerThumbnailUrl = getPublicFileUrl(review.thirdReviewerThumbnailKey);
+
+  // Build the list of reviewers who filmed their own take. Viewers get a switch
+  // between them; a lone reviewer just shows the single video below.
+  const splitReviewers = [
+    { name: review.reviewer, videoUrl, thumbnailUrl, rating: review.rating },
+    ...(review.secondReviewer && secondReviewerVideoUrl
+      ? [
+          {
+            name: review.secondReviewer,
+            videoUrl: secondReviewerVideoUrl,
+            thumbnailUrl: secondReviewerThumbnailUrl,
+            rating: review.secondReviewerRating ?? review.rating,
+          },
+        ]
+      : []),
+    ...(review.thirdReviewer && thirdReviewerVideoUrl
+      ? [
+          {
+            name: review.thirdReviewer,
+            videoUrl: thirdReviewerVideoUrl,
+            thumbnailUrl: thirdReviewerThumbnailUrl,
+            rating: review.thirdReviewerRating ?? review.rating,
+          },
+        ]
+      : []),
+  ];
+  const hasSplitReviews = splitReviewers.length > 1;
 
   return (
     <div className="mx-auto w-full max-w-6xl px-5 py-10">
@@ -122,14 +150,7 @@ export default async function VideoPage({
           store={review.store}
           city={review.city}
           price={review.price}
-          firstReviewerName={review.reviewer}
-          firstVideoUrl={videoUrl}
-          firstThumbnailUrl={thumbnailUrl}
-          firstRating={review.rating}
-          secondReviewerName={review.secondReviewer ?? ""}
-          secondVideoUrl={secondReviewerVideoUrl}
-          secondThumbnailUrl={secondReviewerThumbnailUrl}
-          secondRating={review.secondReviewerRating}
+          reviewers={splitReviewers}
         />
       ) : (
         <>

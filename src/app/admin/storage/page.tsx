@@ -33,6 +33,8 @@ export default async function AdminStoragePage() {
     if (review.thumbnailKey) inUseKeys.add(review.thumbnailKey);
     if (review.secondReviewerVideoKey) inUseKeys.add(review.secondReviewerVideoKey);
     if (review.secondReviewerThumbnailKey) inUseKeys.add(review.secondReviewerThumbnailKey);
+    if (review.thirdReviewerVideoKey) inUseKeys.add(review.thirdReviewerVideoKey);
+    if (review.thirdReviewerThumbnailKey) inUseKeys.add(review.thirdReviewerThumbnailKey);
   }
   for (const row of profilesRes.data ?? []) {
     if (row.avatar_key) inUseKeys.add(row.avatar_key);
