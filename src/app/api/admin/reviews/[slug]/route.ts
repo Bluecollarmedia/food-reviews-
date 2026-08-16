@@ -62,6 +62,8 @@ export async function PUT(
     deleteIfReplaced(existing?.thumbnailKey, review.thumbnailKey),
     deleteIfReplaced(existing?.secondReviewerVideoKey, review.secondReviewerVideoKey),
     deleteIfReplaced(existing?.secondReviewerThumbnailKey, review.secondReviewerThumbnailKey),
+    deleteIfReplaced(existing?.thirdReviewerVideoKey, review.thirdReviewerVideoKey),
+    deleteIfReplaced(existing?.thirdReviewerThumbnailKey, review.thirdReviewerThumbnailKey),
   ]);
 
   if (review.status === "published" && existing?.status !== "published") {
@@ -106,6 +108,12 @@ export async function DELETE(
   }
   if (existing?.secondReviewerThumbnailKey) {
     await deleteFile(existing.secondReviewerThumbnailKey).catch(() => {});
+  }
+  if (existing?.thirdReviewerVideoKey) {
+    await deleteFile(existing.thirdReviewerVideoKey).catch(() => {});
+  }
+  if (existing?.thirdReviewerThumbnailKey) {
+    await deleteFile(existing.thirdReviewerThumbnailKey).catch(() => {});
   }
   await deleteReview(slug);
   return NextResponse.json({ ok: true });

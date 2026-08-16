@@ -29,7 +29,9 @@ export async function DELETE(req: NextRequest) {
         r.videoKey === key ||
         r.thumbnailKey === key ||
         r.secondReviewerVideoKey === key ||
-        r.secondReviewerThumbnailKey === key
+        r.secondReviewerThumbnailKey === key ||
+        r.thirdReviewerVideoKey === key ||
+        r.thirdReviewerThumbnailKey === key
     ) ||
     (profileMatch.data?.length ?? 0) > 0 ||
     (commentMatch.data?.length ?? 0) > 0;

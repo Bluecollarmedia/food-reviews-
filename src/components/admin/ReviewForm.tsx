@@ -284,6 +284,41 @@ export default function ReviewForm({ mode, initial, unlocked = true }: Props) {
     number | null
   >(null);
 
+  // Third reviewer — mirrors the second-reviewer setup above.
+  const [hasThirdReviewer, setHasThirdReviewer] = useState(!!initial?.thirdReviewer);
+  const [thirdReviewer, setThirdReviewer] = useState(initial?.thirdReviewer ?? "");
+  const [isThirdGuestReviewer, setIsThirdGuestReviewer] = useState(
+    initial?.thirdReviewer ? !reviewers.includes(initial.thirdReviewer) : false
+  );
+  const [thirdGuestName, setThirdGuestName] = useState(
+    initial?.thirdReviewer && !reviewers.includes(initial.thirdReviewer) ? initial.thirdReviewer : ""
+  );
+  const [thirdReviewerRating, setThirdReviewerRating] = useState(
+    initial?.thirdReviewerRating?.toString() ?? ""
+  );
+  const [thirdReviewerVideoKey, setThirdReviewerVideoKey] = useState<string | undefined>(
+    initial?.thirdReviewerVideoKey
+  );
+  const [thirdReviewerVideoFile, setThirdReviewerVideoFile] = useState<File | null>(null);
+  const [thirdReviewerVideoProgress, setThirdReviewerVideoProgress] = useState<number | null>(null);
+  const [thirdReviewerVideoPhase, setThirdReviewerVideoPhase] = useState<
+    "compressing" | "uploading"
+  >("uploading");
+  const [thirdReviewerVideoQuality, setThirdReviewerVideoQuality] = useState<"full" | VideoQuality>(
+    "full"
+  );
+  const [thirdReviewerThumbnailKey, setThirdReviewerThumbnailKey] = useState<string | undefined>(
+    initial?.thirdReviewerThumbnailKey
+  );
+  const [thirdReviewerCropperFile, setThirdReviewerCropperFile] = useState<File | null>(null);
+  const [thirdReviewerThumbnailBlob, setThirdReviewerThumbnailBlob] = useState<Blob | null>(null);
+  const [thirdReviewerThumbnailPreviewUrl, setThirdReviewerThumbnailPreviewUrl] = useState<
+    string | null
+  >(null);
+  const [thirdReviewerThumbnailProgress, setThirdReviewerThumbnailProgress] = useState<
+    number | null
+  >(null);
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -315,6 +350,17 @@ export default function ReviewForm({ mode, initial, unlocked = true }: Props) {
     setSecondReviewerCropperFile(null);
   }
 
+  function handleThirdReviewerThumbnailPicked(file: File | undefined) {
+    if (!file) return;
+    setThirdReviewerCropperFile(file);
+  }
+
+  function handleThirdReviewerCropConfirm(blob: Blob) {
+    setThirdReviewerThumbnailBlob(blob);
+    setThirdReviewerThumbnailPreviewUrl(URL.createObjectURL(blob));
+    setThirdReviewerCropperFile(null);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (selectedCategories.length === 0) {
@@ -331,6 +377,14 @@ export default function ReviewForm({ mode, initial, unlocked = true }: Props) {
     }
     if (hasSecondReviewer && !secondReviewer.trim()) {
       setError("Pick who the second reviewer is.");
+      return;
+    }
+    if (hasThirdReviewer && isThirdGuestReviewer && !thirdGuestName.trim()) {
+      setError("Enter the third reviewer's name.");
+      return;
+    }
+    if (hasThirdReviewer && !thirdReviewer.trim()) {
+      setError("Pick who the third reviewer is.");
       return;
     }
     setSubmitting(true);
@@ -410,6 +464,47 @@ export default function ReviewForm({ mode, initial, unlocked = true }: Props) {
         setSecondReviewerVideoProgress(null);
       }
 
+      let finalThirdReviewerThumbnailKey = thirdReviewerThumbnailKey;
+      if (hasThirdReviewer && thirdReviewerThumbnailBlob) {
+        setThirdReviewerThumbnailProgress(0);
+        finalThirdReviewerThumbnailKey = await uploadFile(
+          thirdReviewerThumbnailBlob,
+          "thumbnail.webp",
+          "thumbnails",
+          setThirdReviewerThumbnailProgress
+        );
+        setThirdReviewerThumbnailProgress(null);
+      }
+
+      let finalThirdReviewerVideoKey = thirdReviewerVideoKey;
+      if (hasThirdReviewer && thirdReviewerVideoFile) {
+        let uploadBlob: File | Blob = thirdReviewerVideoFile;
+        let uploadName = thirdReviewerVideoFile.name;
+        if (thirdReviewerVideoQuality !== "full") {
+          setThirdReviewerVideoPhase("compressing");
+          setThirdReviewerVideoProgress(0);
+          try {
+            uploadBlob = await compressVideo(
+              thirdReviewerVideoFile,
+              setThirdReviewerVideoProgress,
+              thirdReviewerVideoQuality
+            );
+            uploadName = "video.mp4";
+          } catch (err) {
+            console.error("Video compression failed, uploading the original file instead", err);
+          }
+        }
+        setThirdReviewerVideoPhase("uploading");
+        setThirdReviewerVideoProgress(0);
+        finalThirdReviewerVideoKey = await uploadFile(
+          uploadBlob,
+          uploadName,
+          "videos",
+          setThirdReviewerVideoProgress
+        );
+        setThirdReviewerVideoProgress(null);
+      }
+
       const payload = {
         title: title.trim(),
         store: store.trim(),
@@ -431,6 +526,11 @@ export default function ReviewForm({ mode, initial, unlocked = true }: Props) {
           hasSecondReviewer && secondReviewerRating
             ? parseFloat(secondReviewerRating)
             : undefined,
+        thirdReviewer: hasThirdReviewer ? thirdReviewer.trim() : undefined,
+        thirdReviewerVideoKey: hasThirdReviewer ? finalThirdReviewerVideoKey : undefined,
+        thirdReviewerThumbnailKey: hasThirdReviewer ? finalThirdReviewerThumbnailKey : undefined,
+        thirdReviewerRating:
+          hasThirdReviewer && thirdReviewerRating ? parseFloat(thirdReviewerRating) : undefined,
         showBothScores: hasSecondReviewer ? showBothScores : false,
       };
 
@@ -478,6 +578,13 @@ export default function ReviewForm({ mode, initial, unlocked = true }: Props) {
           file={secondReviewerCropperFile}
           onConfirm={handleSecondReviewerCropConfirm}
           onCancel={() => setSecondReviewerCropperFile(null)}
+        />
+      )}
+      {thirdReviewerCropperFile && (
+        <ImageCropper
+          file={thirdReviewerCropperFile}
+          onConfirm={handleThirdReviewerCropConfirm}
+          onCancel={() => setThirdReviewerCropperFile(null)}
         />
       )}
 
@@ -744,6 +851,98 @@ export default function ReviewForm({ mode, initial, unlocked = true }: Props) {
           )}
         </div>
 
+        {hasSecondReviewer && (
+          <div>
+            <label className="mb-1 flex items-center gap-2 text-sm font-semibold text-foreground">
+              <input
+                type="checkbox"
+                checked={hasThirdReviewer}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setHasThirdReviewer(checked);
+                  if (!checked) {
+                    setThirdReviewer("");
+                    setIsThirdGuestReviewer(false);
+                    setThirdGuestName("");
+                  }
+                }}
+                className="h-4 w-4"
+              />
+              Add a third reviewer (three people reviewed this same video)
+            </label>
+            {hasThirdReviewer && (
+              <>
+                <p className="mb-2 text-xs text-foreground/50">
+                  Pick who else reviewed this. Viewers get a switch between all three reviewers on
+                  the video page.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {reviewers
+                    .filter((r) => r !== reviewer && r !== secondReviewer)
+                    .map((r) => (
+                      <button
+                        type="button"
+                        key={r}
+                        onClick={() => {
+                          setIsThirdGuestReviewer(false);
+                          setThirdReviewer(r);
+                        }}
+                        className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                          !isThirdGuestReviewer && thirdReviewer === r
+                            ? "border-accent bg-accent text-white"
+                            : "border-border bg-surface text-foreground/70 hover:border-accent hover:text-accent"
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsThirdGuestReviewer(true);
+                      setThirdReviewer(thirdGuestName);
+                    }}
+                    className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                      isThirdGuestReviewer
+                        ? "border-accent bg-accent text-white"
+                        : "border-border bg-surface text-foreground/70 hover:border-accent hover:text-accent"
+                    }`}
+                  >
+                    Guest Reviewer
+                  </button>
+                </div>
+                {isThirdGuestReviewer && (
+                  <input
+                    value={thirdGuestName}
+                    onChange={(e) => {
+                      setThirdGuestName(e.target.value);
+                      setThirdReviewer(e.target.value);
+                    }}
+                    placeholder="Guest's name"
+                    required
+                    className={`${inputClass} mt-2 max-w-xs`}
+                  />
+                )}
+                <div className="mt-3 max-w-xs">
+                  <label className="mb-1 block text-sm font-semibold text-foreground">
+                    {thirdReviewer ? `${thirdReviewer}'s rating (1-10)` : "Third reviewer's rating (1-10)"}
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={10}
+                    step={0.1}
+                    value={thirdReviewerRating}
+                    onChange={(e) => setThirdReviewerRating(e.target.value)}
+                    placeholder="Leave blank to reuse the first rating"
+                    className={inputClass}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         <div>
           <label className="mb-1 block text-sm font-semibold text-foreground">
             Description
@@ -794,6 +993,30 @@ export default function ReviewForm({ mode, initial, unlocked = true }: Props) {
               onVideoPicked={(file) => setSecondReviewerVideoFile(file ?? null)}
               videoQuality={secondReviewerVideoQuality}
               onVideoQualityChange={setSecondReviewerVideoQuality}
+            />
+          </div>
+        )}
+
+        {hasThirdReviewer && (
+          <div>
+            <p className="mb-2 text-xs text-foreground/50">
+              Optional — only add {thirdReviewer || "the third reviewer"}&apos;s video/thumbnail
+              below if they filmed a separate reaction. Viewers get a switch between all three on
+              the video page.
+            </p>
+            <MediaUploadFields
+              label={thirdReviewer || "Third reviewer"}
+              thumbnailKey={thirdReviewerThumbnailKey}
+              thumbnailPreviewUrl={thirdReviewerThumbnailPreviewUrl}
+              thumbnailProgress={thirdReviewerThumbnailProgress}
+              onThumbnailPicked={handleThirdReviewerThumbnailPicked}
+              videoKey={thirdReviewerVideoKey}
+              videoFile={thirdReviewerVideoFile}
+              videoProgress={thirdReviewerVideoProgress}
+              videoPhase={thirdReviewerVideoPhase}
+              onVideoPicked={(file) => setThirdReviewerVideoFile(file ?? null)}
+              videoQuality={thirdReviewerVideoQuality}
+              onVideoQualityChange={setThirdReviewerVideoQuality}
             />
           </div>
         )}

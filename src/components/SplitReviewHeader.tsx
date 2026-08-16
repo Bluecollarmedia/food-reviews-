@@ -4,6 +4,13 @@ import { useState } from "react";
 import VideoPlayer from "./VideoPlayer";
 import ScoreBadge from "./ScoreBadge";
 
+export type SplitReviewer = {
+  name: string;
+  videoUrl: string | null;
+  thumbnailUrl: string | null;
+  rating: number;
+};
+
 export default function SplitReviewHeader({
   slug,
   categories,
@@ -11,14 +18,7 @@ export default function SplitReviewHeader({
   store,
   city,
   price,
-  firstReviewerName,
-  firstVideoUrl,
-  firstThumbnailUrl,
-  firstRating,
-  secondReviewerName,
-  secondVideoUrl,
-  secondThumbnailUrl,
-  secondRating,
+  reviewers,
 }: {
   slug: string;
   categories: string[];
@@ -26,52 +26,36 @@ export default function SplitReviewHeader({
   store: string;
   city: string;
   price?: string;
-  firstReviewerName: string;
-  firstVideoUrl: string | null;
-  firstThumbnailUrl: string | null;
-  firstRating: number;
-  secondReviewerName: string;
-  secondVideoUrl: string | null;
-  secondThumbnailUrl: string | null;
-  secondRating?: number;
+  reviewers: SplitReviewer[];
 }) {
-  const [selected, setSelected] = useState<"first" | "second">("first");
-
-  const videoUrl = selected === "first" ? firstVideoUrl : secondVideoUrl;
-  const thumbnailUrl = selected === "first" ? firstThumbnailUrl : secondThumbnailUrl;
-  const rating = selected === "first" ? firstRating : secondRating ?? firstRating;
-  const selectedName = selected === "first" ? firstReviewerName : secondReviewerName;
+  const [selected, setSelected] = useState(0);
+  const current = reviewers[selected] ?? reviewers[0];
 
   return (
     <>
       <div className="mt-4">
-        <div className="mb-3 flex gap-2">
-          {(
-            [
-              { key: "first", name: firstReviewerName },
-              { key: "second", name: secondReviewerName },
-            ] as const
-          ).map(({ key, name }) => (
+        <div className="mb-3 flex flex-wrap gap-2">
+          {reviewers.map((r, i) => (
             <button
-              key={key}
+              key={i}
               type="button"
-              onClick={() => setSelected(key)}
+              onClick={() => setSelected(i)}
               className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
-                selected === key
+                selected === i
                   ? "border-primary bg-primary text-white"
                   : "border-border bg-surface text-foreground/70 hover:border-primary hover:text-primary"
               }`}
             >
-              {name}&apos;s Review
+              {r.name}&apos;s Review
             </button>
           ))}
         </div>
 
-        {videoUrl ? (
-          <VideoPlayer key={videoUrl} src={videoUrl} poster={thumbnailUrl} slug={slug} />
+        {current?.videoUrl ? (
+          <VideoPlayer key={current.videoUrl} src={current.videoUrl} poster={current.thumbnailUrl} slug={slug} />
         ) : (
           <div className="flex aspect-video items-center justify-center rounded-2xl bg-surface-muted text-sm text-foreground/60">
-            {selectedName}&apos;s video coming soon
+            {current?.name}&apos;s video coming soon
           </div>
         )}
       </div>
@@ -93,10 +77,10 @@ export default function SplitReviewHeader({
           </h1>
           <p className="mt-1 text-foreground/60">
             {store} &middot; {city}
-            {price ? ` · ${price}` : ""} &middot; Reviewed by {selectedName}
+            {price ? ` · ${price}` : ""} &middot; Reviewed by {current?.name}
           </p>
         </div>
-        <ScoreBadge rating={rating} size="lg" />
+        <ScoreBadge rating={current?.rating ?? 0} size="lg" />
       </div>
     </>
   );

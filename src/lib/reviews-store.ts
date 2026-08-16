@@ -258,6 +258,10 @@ export type ReviewInput = {
   secondReviewerVideoKey?: string;
   secondReviewerThumbnailKey?: string;
   secondReviewerRating?: number;
+  thirdReviewer?: string;
+  thirdReviewerVideoKey?: string;
+  thirdReviewerThumbnailKey?: string;
+  thirdReviewerRating?: number;
   showBothScores?: boolean;
 };
 
