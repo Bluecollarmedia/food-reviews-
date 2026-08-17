@@ -58,6 +58,16 @@ export const reviewers: Reviewer[] = ["David", "Shmuel"];
 
 export const prices = ["$", "$$", "$$$"] as const;
 
+/** All reviewers on a review, joined nicely: "David", "David & Shmuel",
+ * "David, Shmuel & Chana". */
+export function reviewerNames(review: Pick<Review, "reviewer" | "secondReviewer" | "thirdReviewer">): string {
+  const names = [review.reviewer, review.secondReviewer, review.thirdReviewer].filter(
+    (n): n is string => !!n && n.trim().length > 0
+  );
+  if (names.length <= 1) return names[0] ?? "";
+  return `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`;
+}
+
 export function getRelatedReviews(review: Review, pool: Review[], limit = 8) {
   const scored = pool
     .filter((r) => r.slug !== review.slug)
