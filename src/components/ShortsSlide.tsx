@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { getPublicFileUrl } from "@/lib/media-url";
-import type { Review } from "@/lib/data";
+import { reviewerNames, type Review } from "@/lib/data";
 import AllCommentsClient from "./AllCommentsClient";
 
 type UserReaction = "like" | "dislike" | null;
@@ -226,8 +226,7 @@ export default function ShortsSlide({ review }: { review: Review }) {
           {review.title}
         </Link>
         <p className="mt-1 text-sm text-white/80">
-          {review.reviewer}
-          {review.secondReviewer ? ` & ${review.secondReviewer}` : ""} &middot; {review.city}
+          {reviewerNames(review)} &middot; {review.city}
         </p>
       </div>
 

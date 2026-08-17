@@ -7,7 +7,7 @@ import {
   getReview,
   listPublishedReviews,
 } from "@/lib/reviews-store";
-import { getRelatedReviews } from "@/lib/data";
+import { getRelatedReviews, reviewerNames } from "@/lib/data";
 import { getPublicFileUrl } from "@/lib/media-url";
 import { incrementViews } from "@/lib/views";
 import { formatViewsFull } from "@/lib/view-format";
@@ -201,8 +201,7 @@ export default async function VideoPage({
               </h1>
               <p className="mt-1 text-foreground/60">
                 {review.store} &middot; {review.city}
-                {review.price ? ` · ${review.price}` : ""} &middot; Reviewed by {review.reviewer}
-                {review.secondReviewer ? ` & ${review.secondReviewer}` : ""}
+                {review.price ? ` · ${review.price}` : ""} &middot; Reviewed by {reviewerNames(review)}
               </p>
               {typeof review.displayViews === "number" && (
                 <p className="mt-1 text-sm font-medium text-foreground/50">

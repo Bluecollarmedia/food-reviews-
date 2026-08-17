@@ -3,7 +3,7 @@ import ScoreBadge from "./ScoreBadge";
 import ThumbnailImage from "./ThumbnailImage";
 import { getPublicFileUrl } from "@/lib/media-url";
 import { formatViewsShort } from "@/lib/view-format";
-import type { Review } from "@/lib/data";
+import { reviewerNames, type Review } from "@/lib/data";
 
 function Thumbnail({
   review,
@@ -90,8 +90,7 @@ export default function VideoCard({
             {review.title}
           </h3>
           <p className="mt-1 truncate text-xs text-foreground/60">
-            {review.reviewer}
-            {review.secondReviewer ? ` & ${review.secondReviewer}` : ""} &middot; {review.city}
+            {reviewerNames(review)} &middot; {review.city}
           </p>
           {typeof review.displayViews === "number" && (
             <p className="mt-0.5 truncate text-xs text-foreground/50">
