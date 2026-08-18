@@ -16,6 +16,7 @@ type Row = {
   parent_id: string | null;
   image_key: string | null;
   created_at: string;
+  deleted_at: string | null;
   profiles: { display_name: string; avatar_key: string | null } | null;
 };
 
@@ -30,7 +31,7 @@ export default function AdminAllComments({ reviewTitles }: { reviewTitles: Recor
     const { data } = await supabase
       .from("comments")
       .select(
-        "id, slug, user_id, guest_name, message, parent_id, image_key, created_at, profiles(display_name, avatar_key)"
+        "id, slug, user_id, guest_name, message, parent_id, image_key, created_at, deleted_at, profiles(display_name, avatar_key)"
       )
       .order("created_at", { ascending: false })
       .range(offset, offset + PAGE_SIZE - 1);
@@ -53,10 +54,11 @@ export default function AdminAllComments({ reviewTitles }: { reviewTitles: Recor
   }
 
   async function handleDelete(row: Row) {
-    if (!confirm("Delete this comment?")) return;
+    if (!confirm("Delete this comment? It'll be hidden from the site but you'll still see it here, marked deleted.")) return;
     setBusyId(row.id);
     await fetch(`/api/admin/comments/${row.slug}/${row.id}`, { method: "DELETE" });
-    setRows((prev) => prev.filter((r) => r.id !== row.id));
+    const now = new Date().toISOString();
+    setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, deleted_at: now } : r)));
     setBusyId(null);
   }
 
@@ -78,8 +80,10 @@ export default function AdminAllComments({ reviewTitles }: { reviewTitles: Recor
         const imageUrl = getPublicFileUrl(row.image_key);
         const videoTitle = reviewTitles[row.slug] ?? row.slug;
 
+        const deleted = !!row.deleted_at;
+
         return (
-          <div key={row.id} className="flex items-start gap-3 py-4">
+          <div key={row.id} className={`flex items-start gap-3 py-4 ${deleted ? "opacity-60" : ""}`}>
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={avatarUrl} alt={authorName} loading="lazy" className="h-9 w-9 shrink-0 rounded-full object-cover" />
@@ -97,6 +101,11 @@ export default function AdminAllComments({ reviewTitles }: { reviewTitles: Recor
                     Reply
                   </span>
                 )}
+                {deleted && (
+                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                    Deleted
+                  </span>
+                )}
                 <span className="text-xs text-foreground/40">{relativeTime(row.created_at)}</span>
               </div>
 
@@ -110,13 +119,15 @@ export default function AdminAllComments({ reviewTitles }: { reviewTitles: Recor
 
               <div className="mt-1.5 flex flex-wrap items-center gap-3">
                 <span className="text-xs font-semibold text-foreground/50">{videoTitle}</span>
-                <button
-                  onClick={() => handleDelete(row)}
-                  disabled={busyId === row.id}
-                  className="text-xs font-semibold text-primary hover:underline disabled:opacity-50"
-                >
-                  Delete
-                </button>
+                {!deleted && (
+                  <button
+                    onClick={() => handleDelete(row)}
+                    disabled={busyId === row.id}
+                    className="text-xs font-semibold text-primary hover:underline disabled:opacity-50"
+                  >
+                    Delete
+                  </button>
+                )}
               </div>
             </div>
           </div>
