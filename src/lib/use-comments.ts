@@ -60,6 +60,7 @@ export function useComments(slug: string) {
         "id, user_id, guest_name, message, parent_id, created_at, image_key, profiles(display_name, avatar_key)"
       )
       .eq("slug", slug)
+      .is("deleted_at", null)
       .order("created_at", { ascending: true });
     setComments(buildTree((data as unknown as Row[]) ?? []));
   }, [slug]);

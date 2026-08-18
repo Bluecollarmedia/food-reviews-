@@ -55,6 +55,11 @@ create table if not exists public.comments (
 create index if not exists comments_slug_idx on public.comments (slug);
 create index if not exists comments_parent_idx on public.comments (parent_id);
 
+-- Soft-delete: deleting a comment stamps this instead of removing the row, so
+-- the owner can still see deleted comments in the admin panel. Public views
+-- filter out rows where this is set.
+alter table public.comments add column if not exists deleted_at timestamptz;
+
 alter table public.comments enable row level security;
 
 drop policy if exists "Comments are viewable by everyone" on public.comments;
