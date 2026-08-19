@@ -18,6 +18,28 @@ function prettySlug(slug: string): string {
   return slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+// Auth/login-type pages. A visitor who only ever hit these (and has no name) is
+// almost always a bot or a quick test — worth tucking away.
+const LOGIN_PATHS = new Set([
+  "/login",
+  "/signup",
+  "/admin/login",
+  "/locked/login",
+  "/locked/vault/login",
+  "/site-locked",
+  "/reset-password",
+  "/pending",
+]);
+function isLoginOnly(v: VisitorRecord): boolean {
+  if (v.label) return false; // a named visitor is never hidden
+  const hits = v.hits ?? [];
+  if (hits.length === 0) return true;
+  return hits.every((h) => {
+    const clean = h.p.split("?")[0].replace(/\/+$/, "") || "/";
+    return LOGIN_PATHS.has(clean);
+  });
+}
+
 type VideoMeta = Record<string, { title: string; status: string }>;
 
 // Turn a raw URL path into a plain-English "what they did" line.
@@ -374,6 +396,7 @@ export default function AdminVisitors({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
+  const [showLoginOnly, setShowLoginOnly] = useState(false);
   const [messageInput, setMessageInput] = useState(banMessage);
   const [myId, setMyId] = useState("");
 
@@ -423,8 +446,20 @@ export default function AdminVisitors({
   const bannedSet = new Set(bannedIps);
   const isBanned = (v: VisitorRecord) =>
     bannedSet.has(v.id) || (v.locations ?? []).some((l) => bannedSet.has(l.ip));
-  const visible = visitors.filter((v) => !hiddenSet.has(v.id));
+  const notHidden = visitors.filter((v) => !hiddenSet.has(v.id));
   const hiddenVisitors = visitors.filter((v) => hiddenSet.has(v.id));
+
+  // Login-only visitors (bots/tests) get tucked into a dropdown. Everyone else
+  // is shown, with named visitors floated to the top and the rest by recency.
+  const loginOnlyVisitors = notHidden.filter(isLoginOnly);
+  const visible = notHidden
+    .filter((v) => !isLoginOnly(v))
+    .sort((a, b) => {
+      const aNamed = a.label ? 0 : 1;
+      const bNamed = b.label ? 0 : 1;
+      if (aNamed !== bNamed) return aNamed - bNamed;
+      return b.lastSeen.localeCompare(a.lastSeen);
+    });
 
   return (
     <div className="mt-8 flex flex-col gap-4">
@@ -466,9 +501,14 @@ export default function AdminVisitors({
         </div>
       )}
 
-      {visible.length === 0 && (
+      {notHidden.length === 0 && (
         <p className="text-center text-foreground/60">
           No visitors logged yet. As people browse the site, their devices show up here.
+        </p>
+      )}
+      {visible.length === 0 && loginOnlyVisitors.length > 0 && (
+        <p className="text-center text-sm text-foreground/50">
+          Only login-page visitors so far — see them in the dropdown below.
         </p>
       )}
 
@@ -484,6 +524,34 @@ export default function AdminVisitors({
           busy={busy}
         />
       ))}
+
+      {loginOnlyVisitors.length > 0 && (
+        <div className="mt-2">
+          <button
+            onClick={() => setShowLoginOnly((v) => !v)}
+            className="text-sm font-semibold text-foreground/60 hover:text-primary"
+          >
+            {showLoginOnly ? "Hide" : "Show"} login-only visitors ({loginOnlyVisitors.length}) —
+            mostly bots &amp; tests
+          </button>
+          {showLoginOnly && (
+            <div className="mt-3 flex flex-col gap-4">
+              {loginOnlyVisitors.map((v) => (
+                <VisitorRow
+                  key={v.id}
+                  visitor={v}
+                  isMe={!!myId && v.id === myId}
+                  hidden={false}
+                  banned={isBanned(v)}
+                  videos={videos}
+                  onAction={onAction}
+                  busy={busy}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {hiddenVisitors.length > 0 && (
         <div className="mt-4">
