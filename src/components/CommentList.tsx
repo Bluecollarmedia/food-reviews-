@@ -216,6 +216,13 @@ function RepliesSection({
               />
             ) : (
               <>
+                {r.quoted && (
+                  <div className="mt-1 flex items-center gap-1.5 overflow-hidden rounded-md border-l-[3px] border-accent bg-surface-muted px-2 py-1 text-[11px] text-foreground/50">
+                    <span className="shrink-0">↳</span>
+                    <span className="shrink-0 font-semibold text-foreground/60">{r.quoted.author}:</span>
+                    <span className="truncate">{r.quoted.text}</span>
+                  </div>
+                )}
                 {r.message && <p className="mt-0.5 break-words text-xs text-foreground/80">{renderMessage(r.message)}</p>}
                 {r.imageUrl && <AttachedImage url={r.imageUrl} className="mt-1.5 max-h-48 rounded-lg object-cover" />}
                 <div className="flex gap-3">
@@ -247,6 +254,7 @@ function RepliesSection({
                 <CommentForm
                   slug={slug}
                   parentId={rootId}
+                  replyToId={r.id}
                   initialValue={`@${r.authorName} `}
                   placeholder={`Reply to ${r.authorName}...`}
                   onPosted={() => {

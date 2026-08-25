@@ -8,12 +8,14 @@ import { uploadCommentImage } from "@/lib/upload-comment-image";
 export default function CommentForm({
   slug,
   parentId,
+  replyToId,
   placeholder = "Add a comment...",
   initialValue = "",
   onPosted,
 }: {
   slug: string;
   parentId?: string;
+  replyToId?: string;
   placeholder?: string;
   initialValue?: string;
   onPosted: () => void;
@@ -65,6 +67,7 @@ export default function CommentForm({
         slug,
         message: message.trim(),
         parentId: parentId ?? null,
+        replyToId: replyToId ?? null,
         guestName: user ? undefined : guestName.trim(),
         imageKey,
       }),

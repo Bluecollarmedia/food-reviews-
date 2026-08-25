@@ -8,6 +8,8 @@ export type Comment = {
   isGuest: boolean;
   userId: string | null;
   replies: Comment[];
+  /** The specific message this reply is answering, for a quoted snippet. */
+  quoted?: { author: string; text: string };
 };
 
 export type Reviewer = string;
