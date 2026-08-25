@@ -19,6 +19,7 @@ type Props = {
   mode: "create" | "edit";
   initial?: Review;
   unlocked?: boolean;
+  allReviews?: { slug: string; title: string }[];
 };
 
 function UploadDropzone({
@@ -199,7 +200,7 @@ function MediaUploadFields({
   );
 }
 
-export default function ReviewForm({ mode, initial, unlocked = true }: Props) {
+export default function ReviewForm({ mode, initial, unlocked = true, allReviews = [] }: Props) {
   const router = useRouter();
 
   // A Locked/Vault video's visibility is frozen unless the security passcode has
@@ -217,6 +218,8 @@ export default function ReviewForm({ mode, initial, unlocked = true }: Props) {
   const [rating, setRating] = useState(initial?.rating?.toString() ?? "8");
   const [price, setPrice] = useState<string>(initial?.price ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
+  const [originalReviewSlug, setOriginalReviewSlug] = useState(initial?.originalReviewSlug ?? "");
+  const [showLinkPicker, setShowLinkPicker] = useState(!!initial?.originalReviewSlug);
   const [reviewer, setReviewer] = useState(initial?.reviewer ?? reviewers[0]);
   const [isGuestReviewer, setIsGuestReviewer] = useState(
     initial ? !reviewers.includes(initial.reviewer) : false
@@ -532,6 +535,7 @@ export default function ReviewForm({ mode, initial, unlocked = true }: Props) {
         thirdReviewerRating:
           hasThirdReviewer && thirdReviewerRating ? parseFloat(thirdReviewerRating) : undefined,
         showBothScores: hasSecondReviewer ? showBothScores : false,
+        originalReviewSlug: originalReviewSlug || undefined,
       };
 
       const url =
@@ -954,6 +958,51 @@ export default function ReviewForm({ mode, initial, unlocked = true }: Props) {
             required
             className={`${inputClass} resize-none`}
           />
+        </div>
+
+        <div>
+          {showLinkPicker ? (
+            <>
+              <label className="mb-1 block text-sm font-semibold text-foreground">
+                Follow-up to an earlier review?
+              </label>
+              <p className="mb-2 text-xs text-foreground/50">
+                Pick the review this one revisits. Both pages will show a link between them.
+              </p>
+              <select
+                value={originalReviewSlug}
+                onChange={(e) => setOriginalReviewSlug(e.target.value)}
+                className={`${inputClass} max-w-md`}
+              >
+                <option value="">— None (standalone review) —</option>
+                {allReviews
+                  .filter((r) => r.slug !== initial?.slug)
+                  .map((r) => (
+                    <option key={r.slug} value={r.slug}>
+                      {r.title}
+                    </option>
+                  ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => {
+                  setOriginalReviewSlug("");
+                  setShowLinkPicker(false);
+                }}
+                className="mt-2 block text-xs font-semibold text-foreground/40 hover:text-primary"
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowLinkPicker(true)}
+              className="text-xs font-semibold text-foreground/40 hover:text-primary"
+            >
+              ↩ Link this to an earlier review (a revisit) — optional
+            </button>
+          )}
         </div>
 
         <div>

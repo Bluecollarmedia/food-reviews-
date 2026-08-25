@@ -102,6 +102,13 @@ export default async function VideoPage({
 
   const allPublished = await listPublishedReviews();
   const related = getRelatedReviews(review, allPublished);
+
+  // Follow-up links: the earlier review this one revisits, and any later review
+  // that revisits this one. Shown as a banner so viewers can jump between them.
+  const originalReview = review.originalReviewSlug
+    ? allPublished.find((r) => r.slug === review.originalReviewSlug)
+    : undefined;
+  const followUpReview = allPublished.find((r) => r.originalReviewSlug === review.slug);
   const videoUrl = getPublicFileUrl(review.videoKey);
   const thumbnailUrl = getPublicFileUrl(review.thumbnailKey);
   const secondReviewerVideoUrl = getPublicFileUrl(review.secondReviewerVideoKey);
@@ -141,6 +148,31 @@ export default async function VideoPage({
       <Link href="/reviews" className="text-sm font-medium text-primary hover:underline">
         &larr; Back to all reviews
       </Link>
+
+      {originalReview && (
+        <Link
+          href={`/videos/${originalReview.slug}`}
+          className="mt-4 flex items-center gap-2 rounded-xl border border-border bg-surface-muted px-4 py-3 text-sm font-semibold text-foreground/80 transition-colors hover:border-primary hover:text-primary"
+        >
+          <span className="text-base">↩</span>
+          <span className="min-w-0">
+            See our original review
+            <span className="ml-1 font-normal text-foreground/50">— {originalReview.title}</span>
+          </span>
+        </Link>
+      )}
+      {followUpReview && (
+        <Link
+          href={`/videos/${followUpReview.slug}`}
+          className="mt-4 flex items-center gap-2 rounded-xl border border-primary/40 bg-primary/5 px-4 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
+        >
+          <span className="text-base">↪</span>
+          <span className="min-w-0">
+            We went back — see the updated review
+            <span className="ml-1 font-normal text-foreground/50">— {followUpReview.title}</span>
+          </span>
+        </Link>
+      )}
 
       {hasSplitReviews ? (
         <SplitReviewHeader

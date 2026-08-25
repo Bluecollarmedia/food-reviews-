@@ -38,6 +38,8 @@ export type Review = {
   thirdReviewerRating?: number;
   /** Show each reviewer's own score on the card, not just the first reviewer's. */
   showBothScores?: boolean;
+  /** Slug of an earlier review this one follows up on (a redo/redemption). */
+  originalReviewSlug?: string;
   createdAt: string;
   updatedAt: string;
   /** Public-facing padded view count, attached when the review is read. */
