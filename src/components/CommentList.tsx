@@ -10,6 +10,19 @@ import CommentForm from "./CommentForm";
 
 const REPLIES_BATCH = 4;
 
+// Highlight @mentions in a comment so you can see who a reply is aimed at.
+function renderMessage(text: string) {
+  return text.split(/(\s+)/).map((part, i) =>
+    part.length > 1 && part.startsWith("@") ? (
+      <span key={i} className="font-semibold text-primary">
+        {part}
+      </span>
+    ) : (
+      <span key={i}>{part}</span>
+    )
+  );
+}
+
 function Avatar({ url, name, size = "md" }: { url: string | null; name: string; size?: "sm" | "md" }) {
   const dims = size === "sm" ? "h-7 w-7 text-[11px]" : "h-9 w-9 text-sm";
   const [failed, setFailed] = useState(false);
@@ -185,7 +198,7 @@ function RepliesSection({
   const remaining = replies.length - visible.length;
 
   return (
-    <div className="mt-2 flex flex-col gap-3">
+    <div className="mt-2 flex flex-col gap-3 border-l-2 border-border pl-3.5">
       {visible.map((r) => (
         <div key={r.id} id={`comment-${r.id}`} className="flex gap-2.5 transition-colors duration-1000">
           <Avatar url={r.avatarUrl} name={r.authorName} size="sm" />
@@ -203,7 +216,14 @@ function RepliesSection({
               />
             ) : (
               <>
-                {r.message && <p className="mt-0.5 break-words text-xs text-foreground/80">{r.message}</p>}
+                {r.quoted && (
+                  <div className="mt-1 flex items-center gap-1.5 overflow-hidden rounded-md border-l-[3px] border-accent bg-surface-muted px-2 py-1 text-[11px] text-foreground/50">
+                    <span className="shrink-0">↳</span>
+                    <span className="shrink-0 font-semibold text-foreground/60">{r.quoted.author}:</span>
+                    <span className="truncate">{r.quoted.text}</span>
+                  </div>
+                )}
+                {r.message && <p className="mt-0.5 break-words text-xs text-foreground/80">{renderMessage(r.message)}</p>}
                 {r.imageUrl && <AttachedImage url={r.imageUrl} className="mt-1.5 max-h-48 rounded-lg object-cover" />}
                 <div className="flex gap-3">
                   {currentUserId ? (
@@ -234,6 +254,7 @@ function RepliesSection({
                 <CommentForm
                   slug={slug}
                   parentId={rootId}
+                  replyToId={r.id}
                   initialValue={`@${r.authorName} `}
                   placeholder={`Reply to ${r.authorName}...`}
                   onPosted={() => {
@@ -329,7 +350,7 @@ export default function CommentList({
               <>
                 {c.message && (
                   <p className="mt-0.5 break-words text-sm leading-snug text-foreground/80">
-                    {c.message}
+                    {renderMessage(c.message)}
                   </p>
                 )}
                 {c.imageUrl && <AttachedImage url={c.imageUrl} className="mt-1.5 max-h-64 rounded-lg object-cover" />}

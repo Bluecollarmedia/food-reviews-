@@ -11,10 +11,15 @@ type Row = {
   guest_name: string | null;
   message: string;
   parent_id: string | null;
+  reply_to_id: string | null;
   created_at: string;
   image_key: string | null;
   profiles: { display_name: string; avatar_key: string | null } | null;
 };
+
+function authorNameOf(row: Row): string {
+  return row.user_id ? row.profiles?.display_name ?? "Deleted user" : row.guest_name ?? "Guest";
+}
 
 function toComment(row: Row): Comment {
   return {
@@ -34,7 +39,42 @@ function toComment(row: Row): Comment {
 
 function buildTree(rows: Row[]): Comment[] {
   const byId = new Map<string, Comment>();
-  rows.forEach((r) => byId.set(r.id, toComment(r)));
+  const rowById = new Map<string, Row>();
+  rows.forEach((r) => {
+    byId.set(r.id, toComment(r));
+    rowById.set(r.id, r);
+  });
+
+  // Attach the quoted snippet: the exact message each reply is answering. Prefer
+  // the stored reply_to_id; for older replies with no target, fall back to
+  // matching a leading @Name to an earlier reply in the same thread.
+  rows.forEach((r) => {
+    if (!r.parent_id) return; // only replies quote
+    let target: Row | undefined;
+    if (r.reply_to_id && r.reply_to_id !== r.parent_id) {
+      target = rowById.get(r.reply_to_id);
+    }
+    if (!target) {
+      const m = r.message.match(/^@(\w+)/);
+      if (m) {
+        const name = m[1].toLowerCase();
+        const matches = rows.filter(
+          (o) =>
+            o.parent_id === r.parent_id &&
+            o.id !== r.id &&
+            o.created_at < r.created_at &&
+            authorNameOf(o).toLowerCase().startsWith(name)
+        );
+        target = matches[matches.length - 1];
+      }
+    }
+    if (target && target.id !== r.parent_id) {
+      byId.get(r.id)!.quoted = {
+        author: authorNameOf(target),
+        text: target.message.slice(0, 120),
+      };
+    }
+  });
 
   const roots: Comment[] = [];
   rows.forEach((r) => {
@@ -57,7 +97,7 @@ export function useComments(slug: string) {
     const { data } = await supabase
       .from("comments")
       .select(
-        "id, user_id, guest_name, message, parent_id, created_at, image_key, profiles(display_name, avatar_key)"
+        "id, user_id, guest_name, message, parent_id, reply_to_id, created_at, image_key, profiles(display_name, avatar_key)"
       )
       .eq("slug", slug)
       .is("deleted_at", null)

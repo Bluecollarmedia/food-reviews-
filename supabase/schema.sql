@@ -60,6 +60,10 @@ create index if not exists comments_parent_idx on public.comments (parent_id);
 -- filter out rows where this is set.
 alter table public.comments add column if not exists deleted_at timestamptz;
 
+-- The exact comment a reply is answering (vs. parent_id, which is the thread
+-- root). Lets a reply show a quoted snippet of the specific message it answers.
+alter table public.comments add column if not exists reply_to_id uuid references public.comments(id) on delete set null;
+
 alter table public.comments enable row level security;
 
 drop policy if exists "Comments are viewable by everyone" on public.comments;

@@ -7,6 +7,7 @@ export async function POST(req: NextRequest) {
   const slug = typeof body?.slug === "string" ? body.slug : "";
   const message = typeof body?.message === "string" ? body.message.trim().slice(0, 500) : "";
   const parentId = typeof body?.parentId === "string" ? body.parentId : null;
+  const replyToId = typeof body?.replyToId === "string" ? body.replyToId : null;
   const guestName =
     typeof body?.guestName === "string" ? body.guestName.trim().slice(0, 60) : "";
   const imageKey = typeof body?.imageKey === "string" ? body.imageKey : null;
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
       slug,
       message,
       parent_id: parentId,
+      reply_to_id: replyToId,
       user_id: user?.id ?? null,
       guest_name: user ? null : guestName,
       image_key: imageKey,

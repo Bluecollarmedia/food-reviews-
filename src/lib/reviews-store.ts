@@ -263,6 +263,7 @@ export type ReviewInput = {
   thirdReviewerThumbnailKey?: string;
   thirdReviewerRating?: number;
   showBothScores?: boolean;
+  originalReviewSlug?: string;
 };
 
 export async function createReview(input: ReviewInput): Promise<Review> {
