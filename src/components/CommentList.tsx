@@ -135,16 +135,21 @@ function hashMatchesAny(replies: Comment[]) {
 
 function RepliesSection({
   replies,
+  slug,
+  rootId,
   currentUserId,
   onChanged,
 }: {
   replies: Comment[];
+  slug: string;
+  rootId: string;
   currentUserId: string | null;
   onChanged: () => void;
 }) {
   const [expanded, setExpanded] = useState(() => hashMatchesAny(replies));
   const [visibleCount, setVisibleCount] = useState(REPLIES_BATCH);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [replyingToId, setReplyingToId] = useState<string | null>(null);
 
   if (replies.length === 0) return null;
 
@@ -200,12 +205,43 @@ function RepliesSection({
               <>
                 {r.message && <p className="mt-0.5 break-words text-xs text-foreground/80">{r.message}</p>}
                 {r.imageUrl && <AttachedImage url={r.imageUrl} className="mt-1.5 max-h-48 rounded-lg object-cover" />}
-                {currentUserId && r.userId === currentUserId && (
-                  <div className="flex gap-3">
+                <div className="flex gap-3">
+                  {currentUserId ? (
+                    <button
+                      type="button"
+                      onClick={() => setReplyingToId(replyingToId === r.id ? null : r.id)}
+                      className="mt-1.5 text-xs font-semibold text-foreground/50 hover:text-primary"
+                    >
+                      Reply
+                    </button>
+                  ) : (
+                    <Link
+                      href={`/login?redirect=${encodeURIComponent(`/videos/${slug}`)}`}
+                      className="mt-1.5 inline-block text-xs font-semibold text-foreground/50 hover:text-primary hover:underline"
+                    >
+                      Log in to reply
+                    </Link>
+                  )}
+                  {currentUserId && r.userId === currentUserId && (
                     <OwnerActions onEdit={() => setEditingId(r.id)} onDelete={() => handleDelete(r.id)} />
-                  </div>
-                )}
+                  )}
+                </div>
               </>
+            )}
+
+            {replyingToId === r.id && (
+              <div className="mt-2">
+                <CommentForm
+                  slug={slug}
+                  parentId={rootId}
+                  initialValue={`@${r.authorName} `}
+                  placeholder={`Reply to ${r.authorName}...`}
+                  onPosted={() => {
+                    setReplyingToId(null);
+                    onChanged();
+                  }}
+                />
+              </div>
             )}
           </div>
         </div>
@@ -336,7 +372,13 @@ export default function CommentList({
               </div>
             )}
 
-            <RepliesSection replies={c.replies} currentUserId={user?.id ?? null} onChanged={onChanged} />
+            <RepliesSection
+              replies={c.replies}
+              slug={slug}
+              rootId={c.id}
+              currentUserId={user?.id ?? null}
+              onChanged={onChanged}
+            />
           </div>
         </div>
       ))}

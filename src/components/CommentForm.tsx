@@ -9,16 +9,18 @@ export default function CommentForm({
   slug,
   parentId,
   placeholder = "Add a comment...",
+  initialValue = "",
   onPosted,
 }: {
   slug: string;
   parentId?: string;
   placeholder?: string;
+  initialValue?: string;
   onPosted: () => void;
 }) {
   const { user, displayName, avatarUrl } = useSupabaseUser();
   const [guestName, setGuestName] = useState("");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(initialValue);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
