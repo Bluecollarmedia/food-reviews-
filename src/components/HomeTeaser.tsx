@@ -101,18 +101,41 @@ export default function HomeTeaser({ reviews }: { reviews: Review[] }) {
             </button>
           ))}
         </div>
-        <select
-          value={reviewer}
-          onChange={(e) => setReviewer(e.target.value as "All" | Reviewer)}
-          className="shrink-0 rounded-full bg-surface-muted px-3 py-1.5 text-sm font-semibold text-foreground/70 outline-none"
-        >
-          <option value="All">All Reviewers</option>
-          {reviewers.map((r) => (
-            <option key={r} value={r}>
-              {r}
-            </option>
-          ))}
-        </select>
+        {/* Compact reviewer filter: just a person icon when set to "All" (so the
+            category chips get the whole row), expanding to show the name only
+            when a specific reviewer is picked. The native <select> sits
+            invisibly on top so the dropdown still works. */}
+        <div className="relative shrink-0">
+          <div
+            className={`pointer-events-none flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm font-semibold transition-colors ${
+              reviewer !== "All"
+                ? "bg-foreground text-background"
+                : "bg-surface-muted text-foreground/60"
+            }`}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 21c0-4 3.5-6 8-6s8 2 8 6" strokeLinecap="round" />
+            </svg>
+            {reviewer !== "All" && <span className="max-w-[6rem] truncate">{reviewer}</span>}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5 opacity-70">
+              <path d="M8 9l4-4 4 4M8 15l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <select
+            value={reviewer}
+            onChange={(e) => setReviewer(e.target.value as "All" | Reviewer)}
+            aria-label="Filter by reviewer"
+            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+          >
+            <option value="All">All Reviewers</option>
+            {reviewers.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="mt-8 flex flex-wrap gap-6">
