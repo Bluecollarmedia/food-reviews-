@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { categories, cities, reviewers, prices, type Review } from "@/lib/data";
 import ImageCropper from "../ImageCropper";
@@ -235,6 +235,27 @@ export default function ReviewForm({ mode, initial, unlocked = true, allReviews 
   const [videoProgress, setVideoProgress] = useState<number | null>(null);
   const [videoPhase, setVideoPhase] = useState<"compressing" | "uploading">("uploading");
   const [videoQuality, setVideoQuality] = useState<"full" | VideoQuality>("full");
+  const [durationSeconds, setDurationSeconds] = useState<number | undefined>(
+    initial?.durationSeconds
+  );
+
+  // Read the selected video's length in the browser (no upload needed) so the
+  // card can show a duration badge. Falls back to the existing value on edits.
+  useEffect(() => {
+    if (!videoFile) return;
+    const url = URL.createObjectURL(videoFile);
+    const probe = document.createElement("video");
+    probe.preload = "metadata";
+    probe.onloadedmetadata = () => {
+      if (Number.isFinite(probe.duration) && probe.duration > 0) {
+        setDurationSeconds(Math.round(probe.duration));
+      }
+      URL.revokeObjectURL(url);
+    };
+    probe.onerror = () => URL.revokeObjectURL(url);
+    probe.src = url;
+    return () => URL.revokeObjectURL(url);
+  }, [videoFile]);
 
   const [thumbnailKey, setThumbnailKey] = useState<string | undefined>(
     initial?.thumbnailKey
@@ -536,6 +557,7 @@ export default function ReviewForm({ mode, initial, unlocked = true, allReviews 
           hasThirdReviewer && thirdReviewerRating ? parseFloat(thirdReviewerRating) : undefined,
         showBothScores: hasSecondReviewer ? showBothScores : false,
         originalReviewSlug: originalReviewSlug || undefined,
+        durationSeconds,
       };
 
       const url =

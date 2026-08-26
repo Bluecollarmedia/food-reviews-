@@ -188,7 +188,7 @@ export default async function VideoPage({
         <>
           {videoUrl ? (
             <div className="mt-4">
-              <VideoPlayer key={videoUrl} src={videoUrl} poster={thumbnailUrl} slug={review.slug} />
+              <VideoPlayer key={videoUrl} src={videoUrl} poster={thumbnailUrl} slug={review.slug} reportDuration />
             </div>
           ) : (
             <div className="relative mt-4 flex aspect-video items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-accent shadow-lg">

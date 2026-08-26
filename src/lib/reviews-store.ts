@@ -264,6 +264,7 @@ export type ReviewInput = {
   thirdReviewerRating?: number;
   showBothScores?: boolean;
   originalReviewSlug?: string;
+  durationSeconds?: number;
 };
 
 export async function createReview(input: ReviewInput): Promise<Review> {
@@ -290,6 +291,9 @@ export async function updateReview(
   const updated: Review = {
     ...input,
     slug,
+    // Keep a known video length if this edit didn't supply a new one (e.g. the
+    // form was saved without re-uploading the video).
+    durationSeconds: input.durationSeconds ?? existing.durationSeconds,
     createdAt: existing.createdAt,
     updatedAt: new Date().toISOString(),
   };
@@ -299,4 +303,18 @@ export async function updateReview(
 
 export async function deleteReview(slug: string): Promise<void> {
   await reviewsStore().delete(slug);
+}
+
+/** Backfill the main video's length for a review, but only if it isn't already
+ * known — used to fill in durations for older videos as they get watched. */
+export async function setReviewDurationIfMissing(
+  slug: string,
+  seconds: number
+): Promise<boolean> {
+  if (!Number.isFinite(seconds) || seconds < 1 || seconds > 36000) return false;
+  const store = reviewsStore();
+  const existing = (await store.get(slug, { type: "json" })) as Review | null;
+  if (!existing || typeof existing.durationSeconds === "number") return false;
+  await store.setJSON(slug, { ...existing, durationSeconds: Math.round(seconds) });
+  return true;
 }
