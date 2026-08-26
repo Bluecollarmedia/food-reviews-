@@ -19,12 +19,18 @@ export default function VideoPlayer({
   src,
   poster,
   slug,
+  reportDuration,
 }: {
   src: string;
   poster?: string | null;
   slug?: string;
+  /** When true, save this video's measured length to the review (once), so
+   *  older videos get a duration badge on cards. Only pass for the review's
+   *  main video. */
+  reportDuration?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const reportedDurationRef = useRef(false);
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -128,7 +134,20 @@ export default function VideoPlayer({
             reportProgress(time, e.currentTarget.duration);
           }
         }}
-        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
+        onLoadedMetadata={(e) => {
+          const dur = e.currentTarget.duration;
+          setDuration(dur);
+          // Backfill the review's stored duration the first time its main video
+          // is opened (the endpoint only writes if it isn't already known).
+          if (reportDuration && slug && !reportedDurationRef.current && dur > 0) {
+            reportedDurationRef.current = true;
+            fetch(`/api/reviews/${slug}/duration`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ seconds: dur }),
+            }).catch(() => {});
+          }
+        }}
       />
 
       {!playing && (

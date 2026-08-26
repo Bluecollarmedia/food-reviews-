@@ -42,6 +42,8 @@ export type Review = {
   showBothScores?: boolean;
   /** Slug of an earlier review this one follows up on (a redo/redemption). */
   originalReviewSlug?: string;
+  /** Length of the main video in seconds, shown as a duration badge on cards. */
+  durationSeconds?: number;
   createdAt: string;
   updatedAt: string;
   /** Public-facing padded view count, attached when the review is read. */
@@ -70,6 +72,18 @@ export function reviewerNames(review: Pick<Review, "reviewer" | "secondReviewer"
   );
   if (names.length <= 1) return names[0] ?? "";
   return `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`;
+}
+
+/** Seconds -> "m:ss" (or "h:mm:ss"). Returns null for missing/invalid values. */
+export function formatDuration(seconds?: number): string | null {
+  if (typeof seconds !== "number" || !Number.isFinite(seconds) || seconds < 1) return null;
+  const total = Math.round(seconds);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const ss = String(s).padStart(2, "0");
+  if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${ss}`;
+  return `${m}:${ss}`;
 }
 
 export function getRelatedReviews(review: Review, pool: Review[], limit = 8) {
