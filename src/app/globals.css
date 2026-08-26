@@ -99,6 +99,16 @@ textarea,
   }
 }
 
+/* Hide the scrollbar (keep scrolling) — used by the full-screen Shorts feed so
+   you can't drag the scrollbar to fling through the whole feed at once. */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Sweeping shimmer band for thumbnail placeholders while they load. */
 @keyframes shimmer {
   0% {
