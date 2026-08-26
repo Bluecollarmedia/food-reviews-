@@ -6,6 +6,7 @@ import { getPublicFileUrl } from "@/lib/media-url";
 import { reviewerNames, type Review } from "@/lib/data";
 import AllCommentsClient from "./AllCommentsClient";
 import { haptic } from "@/lib/haptics";
+import { createClient } from "@/lib/supabase/client";
 
 type UserReaction = "like" | "dislike" | null;
 
@@ -44,6 +45,7 @@ export default function ShortsSlide({ review }: { review: Review }) {
   const [dislikes, setDislikes] = useState<number | null>(null);
   const [userReaction, setUserReaction] = useState<UserReaction>(null);
   const [showComments, setShowComments] = useState(false);
+  const [commentCount, setCommentCount] = useState<number | null>(null);
 
   const videoUrl = getPublicFileUrl(review.videoKey);
   const thumbnailUrl = getPublicFileUrl(review.thumbnailKey);
@@ -91,6 +93,24 @@ export default function ShortsSlide({ review }: { review: Review }) {
     const stored = window.localStorage.getItem(`reaction:${review.slug}`) as UserReaction;
     setUserReaction(stored === "like" || stored === "dislike" ? stored : null);
   }, [inView, review.slug]);
+
+  // Live comment count for the button. Recounts when the sheet closes so a
+  // freshly posted comment is reflected.
+  useEffect(() => {
+    if (!inView) return;
+    let cancelled = false;
+    createClient()
+      .from("comments")
+      .select("id", { count: "exact", head: true })
+      .eq("slug", review.slug)
+      .is("deleted_at", null)
+      .then(({ count }) => {
+        if (!cancelled) setCommentCount(count ?? 0);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [inView, review.slug, showComments]);
 
   async function sendDelta(type: "like" | "dislike", delta: 1 | -1) {
     const res = await fetch(`/api/reactions/${review.slug}`, {
@@ -183,7 +203,7 @@ export default function ShortsSlide({ review }: { review: Review }) {
       >
         <ActionButton
           active={userReaction === "like"}
-          label={likes === null ? "–" : String(likes)}
+          label={likes === null ? "" : String(likes)}
           onClick={() => handleReaction("like")}
           icon={
             <svg viewBox="0 0 24 24" fill="currentColor" className="h-8 w-8">
@@ -193,7 +213,7 @@ export default function ShortsSlide({ review }: { review: Review }) {
         />
         <ActionButton
           active={userReaction === "dislike"}
-          label={dislikes === null ? "–" : String(dislikes)}
+          label={dislikes === null ? "" : String(dislikes)}
           onClick={() => handleReaction("dislike")}
           icon={
             <svg viewBox="0 0 24 24" fill="currentColor" className="h-8 w-8 rotate-180">
@@ -202,7 +222,7 @@ export default function ShortsSlide({ review }: { review: Review }) {
           }
         />
         <ActionButton
-          label="Comments"
+          label={commentCount === null ? "" : String(commentCount)}
           onClick={() => setShowComments(true)}
           icon={
             <svg viewBox="0 0 24 24" fill="currentColor" className="h-8 w-8">
@@ -238,14 +258,25 @@ export default function ShortsSlide({ review }: { review: Review }) {
 
       {showComments && (
         <>
-          <button
-            aria-label="Close comments"
+          {/* Full-screen fixed backdrop: catches every touch so the video feed
+              behind can't swipe to the next short while you're reading. */}
+          <div
+            className="fixed inset-0 z-[55] bg-black/50"
             onClick={() => setShowComments(false)}
-            className="absolute inset-x-0 top-0 z-20 h-1/2"
           />
-          <div className="absolute inset-x-0 bottom-0 z-30 flex h-1/2 flex-col rounded-t-2xl bg-background shadow-2xl">
-            <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
-              <p className="font-display text-lg tracking-wide text-foreground">Comments</p>
+          <div
+            className="fixed inset-x-0 bottom-0 z-[60] flex h-[72vh] flex-col rounded-t-2xl bg-background shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="shrink-0 px-4 pt-2.5">
+              <div className="mx-auto h-1 w-10 rounded-full bg-foreground/20" />
+            </div>
+            <div className="flex shrink-0 items-center justify-between px-4 pb-3 pt-2">
+              <p className="font-display text-lg tracking-wide text-foreground">
+                {commentCount !== null && commentCount > 0
+                  ? `${commentCount} Comment${commentCount === 1 ? "" : "s"}`
+                  : "Comments"}
+              </p>
               <button
                 onClick={() => setShowComments(false)}
                 aria-label="Close comments"
@@ -256,9 +287,10 @@ export default function ShortsSlide({ review }: { review: Review }) {
                 </svg>
               </button>
             </div>
+            <div className="border-t border-border" />
             <div
-              className="flex-1 overflow-y-auto overscroll-contain px-4 py-3"
-              style={{ paddingBottom: "calc(4rem + env(safe-area-inset-bottom, 0px))" }}
+              className="flex-1 touch-pan-y overflow-y-auto overscroll-contain px-4 py-3"
+              style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
             >
               <AllCommentsClient slug={review.slug} />
             </div>
