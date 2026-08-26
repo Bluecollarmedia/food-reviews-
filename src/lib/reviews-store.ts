@@ -265,6 +265,9 @@ export type ReviewInput = {
   showBothScores?: boolean;
   originalReviewSlug?: string;
   durationSeconds?: number;
+  lat?: number;
+  lng?: number;
+  mapAddress?: string;
 };
 
 export async function createReview(input: ReviewInput): Promise<Review> {

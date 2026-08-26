@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { categories, cities, reviewers, prices, type Review } from "@/lib/data";
 import ImageCropper from "../ImageCropper";
+import LocationPicker from "./LocationPicker";
 import { compressVideo, type VideoQuality } from "@/lib/compress-video";
 import { uploadFile } from "@/lib/upload-file";
 
@@ -256,6 +257,12 @@ export default function ReviewForm({ mode, initial, unlocked = true, allReviews 
     probe.src = url;
     return () => URL.revokeObjectURL(url);
   }, [videoFile]);
+
+  const [location, setLocation] = useState<{ lat?: number; lng?: number; address?: string }>({
+    lat: initial?.lat,
+    lng: initial?.lng,
+    address: initial?.mapAddress,
+  });
 
   const [thumbnailKey, setThumbnailKey] = useState<string | undefined>(
     initial?.thumbnailKey
@@ -558,6 +565,9 @@ export default function ReviewForm({ mode, initial, unlocked = true, allReviews 
         showBothScores: hasSecondReviewer ? showBothScores : false,
         originalReviewSlug: originalReviewSlug || undefined,
         durationSeconds,
+        lat: location.lat,
+        lng: location.lng,
+        mapAddress: location.address,
       };
 
       const url =
@@ -665,6 +675,22 @@ export default function ReviewForm({ mode, initial, unlocked = true, allReviews 
               ))}
             </datalist>
           </div>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-semibold text-foreground">
+            Store location (map)
+          </label>
+          <p className="mb-2 text-xs text-foreground/55">
+            Paste the store&apos;s Google Maps link (from the app&apos;s Share button) or type its
+            name/address, hit Find, then fine-tune the pin. This is what shows on the Map.
+          </p>
+          <LocationPicker
+            lat={location.lat}
+            lng={location.lng}
+            address={location.address}
+            onChange={setLocation}
+          />
         </div>
 
         <div>
