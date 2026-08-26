@@ -1,5 +1,6 @@
 import ProtectedBanner from "@/components/ProtectedBanner";
 import HomeTeaser from "@/components/HomeTeaser";
+import HomeShortsShelf from "@/components/HomeShortsShelf";
 import { listPublishedReviews } from "@/lib/reviews-store";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +24,9 @@ export default async function Home() {
       <p className="mt-2.5 text-center text-[13px] font-medium text-foreground/55 sm:text-sm">
         Honest. Brutal. Non-biased. — no sponsorships, no sugarcoating.
       </p>
+
+      {/* A swipeable Shorts row, YouTube-style, right up top. */}
+      {reviews.length > 0 && <HomeShortsShelf reviews={reviews} />}
 
       {/* Reviews are the hero now: first thing you scroll to. */}
       <section className="flex-1 pb-14 pt-6">

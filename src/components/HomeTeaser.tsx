@@ -96,16 +96,16 @@ export default function HomeTeaser({ reviews }: { reviews: Review[] }) {
         />
       </div>
 
-      <div className="mt-4 flex items-center justify-between border-b border-border">
-        <div className="flex gap-5 overflow-x-auto">
+      <div className="mt-4 flex items-center gap-2">
+        <div className="no-scrollbar flex flex-1 gap-2 overflow-x-auto">
           {["All", ...categories].map((cat) => (
             <button
               key={cat}
               onClick={() => setCategory(cat)}
-              className={`whitespace-nowrap border-b-2 pb-2.5 text-sm font-semibold transition-colors ${
+              className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors active:scale-95 ${
                 category === cat
-                  ? "border-primary text-primary"
-                  : "border-transparent text-foreground/50 hover:text-foreground"
+                  ? "bg-foreground text-background"
+                  : "bg-surface-muted text-foreground/70 hover:bg-border"
               }`}
             >
               {cat}
@@ -115,7 +115,7 @@ export default function HomeTeaser({ reviews }: { reviews: Review[] }) {
         <select
           value={reviewer}
           onChange={(e) => setReviewer(e.target.value as "All" | Reviewer)}
-          className="ml-4 shrink-0 bg-transparent pb-2.5 text-sm font-semibold text-foreground/60 outline-none"
+          className="shrink-0 rounded-full bg-surface-muted px-3 py-1.5 text-sm font-semibold text-foreground/70 outline-none"
         >
           <option value="All">All Reviewers</option>
           {reviewers.map((r) => (
