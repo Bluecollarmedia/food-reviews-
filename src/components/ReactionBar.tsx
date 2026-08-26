@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { haptic } from "@/lib/haptics";
 
 type UserReaction = "like" | "dislike" | null;
 
@@ -45,6 +46,9 @@ export default function ReactionBar({
 
   async function handleReaction(type: "like" | "dislike") {
     const opposite = type === "like" ? "dislike" : "like";
+    // A little tactile pop: a soft tap when turning a reaction off, a firmer
+    // one when adding a like/dislike.
+    haptic(userReaction === type ? "light" : "medium");
 
     if (userReaction === type) {
       await sendDelta(type, -1);
@@ -63,6 +67,7 @@ export default function ReactionBar({
   }
 
   async function handleShare() {
+    haptic("light");
     const url = window.location.href;
     if (navigator.share) {
       try {

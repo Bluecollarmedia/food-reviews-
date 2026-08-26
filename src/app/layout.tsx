@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Bebas_Neue } from "next/font/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import BottomNav from "@/components/BottomNav";
 import VisitorTracker from "@/components/VisitorTracker";
 import AnnouncementScreen from "@/components/AnnouncementScreen";
 import { getActiveBanner } from "@/lib/site-settings";
@@ -48,6 +49,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#c8102e",
+  // Let content extend into the notch/gesture areas so the app is truly
+  // edge-to-edge; components use env(safe-area-inset-*) to stay clear.
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({
@@ -83,6 +87,7 @@ export default async function RootLayout({
         <Header />
         <main className="flex flex-1 flex-col">{children}</main>
         <Footer />
+        <BottomNav />
       </body>
     </html>
   );
