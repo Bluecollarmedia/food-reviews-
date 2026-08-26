@@ -186,8 +186,8 @@ export default function ShortsSlide({ review }: { review: Review }) {
           label={likes === null ? "–" : String(likes)}
           onClick={() => handleReaction("like")}
           icon={
-            <svg viewBox="0 0 24 24" fill={userReaction === "like" ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} className="h-8 w-8">
-              <path d="M7 10v11M2 10h3.5a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H2v-11zM7 10l4.5-8a1.5 1.5 0 0 1 2.7 1.3L13 10h6.3a2 2 0 0 1 2 2.4l-1.6 8A2 2 0 0 1 17.7 22H7" strokeLinecap="round" strokeLinejoin="round" />
+            <svg viewBox="0 0 24 24" fill="currentColor" className="h-8 w-8">
+              <path d="M2 21h4V9H2v12zm19.83-7.12c.11-.25.17-.52.17-.8V11c0-1.1-.9-2-2-2h-5.5l.92-4.65c.05-.22.02-.46-.08-.66-.23-.45-.52-.86-.88-1.22L14 2 7.59 8.41C7.21 8.79 7 9.3 7 9.83v7.84C7 18.95 8.05 20 9.34 20h8.11c.7 0 1.36-.37 1.72-.97l2.66-5.15z" />
             </svg>
           }
         />
@@ -196,8 +196,8 @@ export default function ShortsSlide({ review }: { review: Review }) {
           label={dislikes === null ? "–" : String(dislikes)}
           onClick={() => handleReaction("dislike")}
           icon={
-            <svg viewBox="0 0 24 24" fill={userReaction === "dislike" ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} className="h-8 w-8 rotate-180">
-              <path d="M7 10v11M2 10h3.5a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H2v-11zM7 10l4.5-8a1.5 1.5 0 0 1 2.7 1.3L13 10h6.3a2 2 0 0 1 2 2.4l-1.6 8A2 2 0 0 1 17.7 22H7" strokeLinecap="round" strokeLinejoin="round" />
+            <svg viewBox="0 0 24 24" fill="currentColor" className="h-8 w-8 rotate-180">
+              <path d="M2 21h4V9H2v12zm19.83-7.12c.11-.25.17-.52.17-.8V11c0-1.1-.9-2-2-2h-5.5l.92-4.65c.05-.22.02-.46-.08-.66-.23-.45-.52-.86-.88-1.22L14 2 7.59 8.41C7.21 8.79 7 9.3 7 9.83v7.84C7 18.95 8.05 20 9.34 20h8.11c.7 0 1.36-.37 1.72-.97l2.66-5.15z" />
             </svg>
           }
         />
@@ -205,8 +205,8 @@ export default function ShortsSlide({ review }: { review: Review }) {
           label="Comments"
           onClick={() => setShowComments(true)}
           icon={
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-8 w-8">
-              <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" strokeLinecap="round" strokeLinejoin="round" />
+            <svg viewBox="0 0 24 24" fill="currentColor" className="h-8 w-8">
+              <path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18z" />
             </svg>
           }
         />
@@ -214,11 +214,8 @@ export default function ShortsSlide({ review }: { review: Review }) {
           label="Share"
           onClick={handleShare}
           icon={
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-8 w-8">
-              <circle cx="18" cy="5" r="3" />
-              <circle cx="6" cy="12" r="3" />
-              <circle cx="18" cy="19" r="3" />
-              <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" strokeLinecap="round" />
+            <svg viewBox="0 0 24 24" fill="currentColor" className="h-8 w-8">
+              <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z" />
             </svg>
           }
         />

@@ -1,20 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { categories, reviewers, type Review, type Reviewer } from "@/lib/data";
 import VideoCard from "./VideoCard";
+import HomeShortsShelf from "./HomeShortsShelf";
 
 const INITIAL_COUNT = 7;
 const BATCH_SIZE = 10;
-const DESKTOP_QUERY = "(min-width: 640px)";
 
 export default function HomeTeaser({ reviews }: { reviews: Review[] }) {
   const [category, setCategory] = useState<string>("All");
   const [reviewer, setReviewer] = useState<"All" | Reviewer>("All");
   const [query, setQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
-  const [pressed, setPressed] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const filtered = useMemo(() => {
@@ -45,35 +43,26 @@ export default function HomeTeaser({ reviews }: { reviews: Review[] }) {
   const visible = filtered.slice(0, visibleCount);
   const hasMore = visibleCount < filtered.length;
 
-  useEffect(() => {
-    const mql = window.matchMedia(DESKTOP_QUERY);
-    setIsDesktop(mql.matches);
-    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
-    mql.addEventListener("change", handler);
-    return () => mql.removeEventListener("change", handler);
-  }, []);
+  // Only surface the Shorts shelf on the default (unfiltered) view, tucked in
+  // after the first few reviews — not in the middle of a filtered result.
+  const showShelf =
+    category === "All" && reviewer === "All" && !query.trim() && visible.length > 3;
 
+  // Auto-load the next batch as the sentinel nears the viewport — on every
+  // screen size, so the feed just keeps scrolling instead of asking.
   useEffect(() => {
-    if (!isDesktop || !hasMore) return;
+    if (!hasMore) return;
     const el = sentinelRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
-          setVisibleCount((v) => v + BATCH_SIZE);
-        }
+        if (entries[0].isIntersecting) setVisibleCount((v) => v + BATCH_SIZE);
       },
-      { rootMargin: "400px" }
+      { rootMargin: "600px" }
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [isDesktop, hasMore, visibleCount]);
-
-  function handleClick() {
-    setPressed(true);
-    setVisibleCount((v) => v + BATCH_SIZE);
-    setTimeout(() => setPressed(false), 300);
-  }
+  }, [hasMore, visibleCount]);
 
   return (
     <>
@@ -128,39 +117,20 @@ export default function HomeTeaser({ reviews }: { reviews: Review[] }) {
 
       <div className="mt-8 flex flex-wrap gap-6">
         {visible.map((review, index) => (
-          <div
-            key={review.slug}
-            className="w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)] xl:w-[calc(25%-1.125rem)]"
-          >
-            <VideoCard review={review} priority={index < 4} />
-          </div>
+          <Fragment key={review.slug}>
+            <div className="w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)] xl:w-[calc(25%-1.125rem)]">
+              <VideoCard review={review} priority={index < 4} />
+            </div>
+            {showShelf && index === 2 && (
+              <div className="w-full py-2">
+                <HomeShortsShelf reviews={reviews} />
+              </div>
+            )}
+          </Fragment>
         ))}
       </div>
 
-      {hasMore && !isDesktop && (
-        <div className="mt-8 text-center">
-          <button
-            type="button"
-            onClick={handleClick}
-            className={`inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-primary-dark active:scale-95 ${
-              pressed ? "scale-95" : "scale-100"
-            }`}
-          >
-            View More
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              className={`h-4 w-4 animate-bounce ${pressed ? "animate-none" : ""}`}
-            >
-              <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        </div>
-      )}
-
-      {hasMore && isDesktop && <div ref={sentinelRef} className="h-1" />}
+      {hasMore && <div ref={sentinelRef} className="h-1" />}
 
       {filtered.length === 0 && (
         <p className="mt-12 text-center text-foreground/60">
