@@ -44,6 +44,10 @@ export type Review = {
   originalReviewSlug?: string;
   /** Length of the main video in seconds, shown as a duration badge on cards. */
   durationSeconds?: number;
+  /** Store location for the map. lat/lng are the pin; mapAddress is a label. */
+  lat?: number;
+  lng?: number;
+  mapAddress?: string;
   createdAt: string;
   updatedAt: string;
   /** Public-facing padded view count, attached when the review is read. */
