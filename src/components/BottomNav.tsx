@@ -22,13 +22,13 @@ const TABS: Tab[] = [
     ),
   },
   {
-    href: "/reviews",
-    label: "Reviews",
-    match: (p) => p.startsWith("/reviews") || p.startsWith("/videos"),
+    href: "/rankings",
+    label: "Rankings",
+    match: (p) => p.startsWith("/rankings"),
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={iconCls}>
-        <rect x="3" y="4" width="18" height="16" rx="2" />
-        <path d="M3 9h18M8 4v16" strokeLinecap="round" />
+        <path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4z" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M17 5h2.5a1.5 1.5 0 0 1 0 4H17M7 5H4.5a1.5 1.5 0 0 0 0 4H7" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
   },
