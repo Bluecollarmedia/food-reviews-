@@ -77,7 +77,12 @@ export default function BottomNav() {
             <Link
               key={tab.href}
               href={tab.href}
-              onClick={() => haptic("light")}
+              onClick={() => {
+                haptic("light");
+                // Tapping the tab you're already on scrolls back to the top
+                // (like the native apps do), instead of doing nothing.
+                if (active) window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
               className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-semibold transition-colors active:scale-95 ${
                 active ? "text-primary" : "text-foreground/50"
               }`}

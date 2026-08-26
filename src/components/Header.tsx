@@ -24,7 +24,10 @@ export default function Header() {
     return () => observer.disconnect();
   }, []);
 
-  if (pathname?.startsWith("/admin") || pathname === "/site-locked") return null;
+  // Shorts is a full-screen, immersive feed (its own top bar / gestures), so
+  // the site header would just steal space and break the app feel there.
+  if (pathname?.startsWith("/admin") || pathname === "/site-locked" || pathname?.startsWith("/shorts"))
+    return null;
 
   return (
     <header ref={headerRef} className="sticky top-0 z-40 bg-surface/90 backdrop-blur">

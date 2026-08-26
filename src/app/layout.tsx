@@ -38,6 +38,13 @@ export const metadata: Metadata = {
     googleBot: { index: false, follow: false },
   },
   manifest: "/manifest.json",
+  // Make "Add to Home Screen" on iPhone launch full-screen (no Safari address
+  // bar), like a real app, with a dark status bar over our red theme.
+  appleWebApp: {
+    capable: true,
+    title: "D&S Food Reviews",
+    statusBarStyle: "black-translucent",
+  },
   icons: {
     icon: [
       { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },

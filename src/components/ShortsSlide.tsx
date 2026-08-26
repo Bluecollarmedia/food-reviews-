@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getPublicFileUrl } from "@/lib/media-url";
 import { reviewerNames, type Review } from "@/lib/data";
 import AllCommentsClient from "./AllCommentsClient";
+import { haptic } from "@/lib/haptics";
 
 type UserReaction = "like" | "dislike" | null;
 
@@ -22,16 +23,13 @@ function ActionButton({
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-center gap-1 text-white drop-shadow"
+      className={`flex select-none flex-col items-center gap-1 transition-transform active:scale-90 ${
+        active ? "text-primary" : "text-white"
+      }`}
+      style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.6))" }}
     >
-      <span
-        className={`flex h-11 w-11 items-center justify-center rounded-full transition-colors ${
-          active ? "bg-primary" : "bg-black/35"
-        }`}
-      >
-        {icon}
-      </span>
-      <span className="text-[11px] font-semibold">{label}</span>
+      {icon}
+      <span className="text-xs font-bold">{label}</span>
     </button>
   );
 }
@@ -107,6 +105,7 @@ export default function ShortsSlide({ review }: { review: Review }) {
 
   async function handleReaction(type: "like" | "dislike") {
     const opposite = type === "like" ? "dislike" : "like";
+    haptic(userReaction === type ? "light" : "medium");
     if (userReaction === type) {
       await sendDelta(type, -1);
       setUserReaction(null);
@@ -120,6 +119,7 @@ export default function ShortsSlide({ review }: { review: Review }) {
   }
 
   async function handleShare() {
+    haptic("light");
     const url = `${window.location.origin}/videos/${review.slug}`;
     if (navigator.share) {
       try {
@@ -151,7 +151,7 @@ export default function ShortsSlide({ review }: { review: Review }) {
           loop
           playsInline
           preload={inView ? "auto" : "none"}
-          className="absolute inset-0 h-full w-full select-none object-contain"
+          className="absolute inset-0 h-full w-full select-none object-cover"
           style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none" }}
           onContextMenu={(e) => e.preventDefault()}
           onPointerDown={() => {
@@ -177,13 +177,16 @@ export default function ShortsSlide({ review }: { review: Review }) {
         </div>
       )}
 
-      <div className="absolute bottom-28 right-3 flex flex-col items-center gap-5 sm:bottom-8">
+      <div
+        className="absolute right-3 z-10 flex flex-col items-center gap-6"
+        style={{ bottom: "calc(5rem + env(safe-area-inset-bottom, 0px))" }}
+      >
         <ActionButton
           active={userReaction === "like"}
           label={likes === null ? "–" : String(likes)}
           onClick={() => handleReaction("like")}
           icon={
-            <svg viewBox="0 0 24 24" fill={userReaction === "like" ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} className="h-5 w-5">
+            <svg viewBox="0 0 24 24" fill={userReaction === "like" ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} className="h-8 w-8">
               <path d="M7 10v11M2 10h3.5a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H2v-11zM7 10l4.5-8a1.5 1.5 0 0 1 2.7 1.3L13 10h6.3a2 2 0 0 1 2 2.4l-1.6 8A2 2 0 0 1 17.7 22H7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           }
@@ -193,7 +196,7 @@ export default function ShortsSlide({ review }: { review: Review }) {
           label={dislikes === null ? "–" : String(dislikes)}
           onClick={() => handleReaction("dislike")}
           icon={
-            <svg viewBox="0 0 24 24" fill={userReaction === "dislike" ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} className="h-5 w-5 rotate-180">
+            <svg viewBox="0 0 24 24" fill={userReaction === "dislike" ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} className="h-8 w-8 rotate-180">
               <path d="M7 10v11M2 10h3.5a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H2v-11zM7 10l4.5-8a1.5 1.5 0 0 1 2.7 1.3L13 10h6.3a2 2 0 0 1 2 2.4l-1.6 8A2 2 0 0 1 17.7 22H7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           }
@@ -202,7 +205,7 @@ export default function ShortsSlide({ review }: { review: Review }) {
           label="Comments"
           onClick={() => setShowComments(true)}
           icon={
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-8 w-8">
               <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           }
@@ -211,7 +214,7 @@ export default function ShortsSlide({ review }: { review: Review }) {
           label="Share"
           onClick={handleShare}
           icon={
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-8 w-8">
               <circle cx="18" cy="5" r="3" />
               <circle cx="6" cy="12" r="3" />
               <circle cx="18" cy="19" r="3" />
@@ -221,8 +224,14 @@ export default function ShortsSlide({ review }: { review: Review }) {
         />
       </div>
 
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-4 pb-6 pt-14 text-white sm:pb-4">
-        <Link href={`/videos/${review.slug}`} className="font-semibold hover:underline">
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 select-none bg-gradient-to-t from-black/80 to-transparent px-4 pt-14 pr-20 text-white"
+        style={{ paddingBottom: "calc(4.5rem + env(safe-area-inset-bottom, 0px))" }}
+      >
+        <Link
+          href={`/videos/${review.slug}`}
+          className="pointer-events-auto inline-block font-semibold hover:underline"
+        >
           {review.title}
         </Link>
         <p className="mt-1 text-sm text-white/80">
@@ -250,7 +259,10 @@ export default function ShortsSlide({ review }: { review: Review }) {
                 </svg>
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-3">
+            <div
+              className="flex-1 overflow-y-auto overscroll-contain px-4 py-3"
+              style={{ paddingBottom: "calc(4rem + env(safe-area-inset-bottom, 0px))" }}
+            >
               <AllCommentsClient slug={review.slug} />
             </div>
           </div>
