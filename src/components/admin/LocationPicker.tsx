@@ -111,6 +111,8 @@ export default function LocationPicker({ lat, lng, address, onChange }: Props) {
         const data = await res.json();
         setSuggestions(data.results ?? []);
         setOpen((data.results ?? []).length > 0);
+        // Show Google's reason if it rejected the request, so problems are visible.
+        if (data.error) setStatus(`Search error: ${data.error}`);
       } catch {
         setSuggestions([]);
       }

@@ -38,6 +38,14 @@ async function googleSuggest(query: string, key: string, sessionToken?: string) 
     }),
   });
   const data = await res.json();
+  // Surface Google's real reason (billing off, API not enabled, key restricted…)
+  // instead of silently returning nothing.
+  if (!res.ok) {
+    return NextResponse.json(
+      { results: [], error: data?.error?.message || `Google error ${res.status}` },
+      { status: 200 }
+    );
+  }
   const results = (data.suggestions ?? [])
     .map((s: Record<string, unknown>) => {
       const p = s.placePrediction as
