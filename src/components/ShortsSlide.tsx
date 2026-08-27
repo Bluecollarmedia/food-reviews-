@@ -179,10 +179,7 @@ export default function ShortsSlide({ review }: { review: Review }) {
         </div>
       )}
 
-      <div
-        className="absolute right-3 z-10 flex flex-col items-center gap-6"
-        style={{ bottom: "calc(5rem + env(safe-area-inset-bottom, 0px))" }}
-      >
+      <div className="absolute right-3 top-1/2 z-10 flex -translate-y-1/2 flex-col items-center gap-7">
         <ActionButton
           active={userReaction === "like"}
           label={likes === null ? "" : String(likes)}
