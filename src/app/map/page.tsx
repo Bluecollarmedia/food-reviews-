@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { listPublishedReviews } from "@/lib/reviews-store";
 import { getPublicFileUrl } from "@/lib/media-url";
 import MapExplorer, { type MapSpot } from "@/components/MapExplorer";
@@ -22,6 +23,18 @@ export default async function MapPage() {
   return (
     <div className="fixed inset-x-0 top-[var(--header-h,64px)] bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] z-0 overflow-hidden md:bottom-0">
       <MapExplorer spots={spots} />
+
+      {/* Big, obvious way out — a red Back pill, top-left. */}
+      <Link
+        href="/"
+        aria-label="Back to home"
+        className="absolute left-3 top-3 z-[600] flex items-center gap-1.5 rounded-full bg-primary py-2.5 pl-3 pr-4 text-sm font-bold text-white shadow-lg shadow-black/25 transition-transform active:scale-95"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
+          <path d="M15 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        Back
+      </Link>
 
       {/* Floating title / count chip. */}
       <div className="pointer-events-none absolute left-1/2 top-3 z-[500] -translate-x-1/2">

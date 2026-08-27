@@ -60,10 +60,13 @@ export default function MapExplorer({ spots }: { spots: MapSpot[] }) {
     if (!elRef.current || mapRef.current) return;
 
     const map = L.map(elRef.current, {
-      zoomControl: true,
+      zoomControl: false,
       scrollWheelZoom: true,
       attributionControl: true,
     });
+    // Zoom buttons to the bottom-left so they don't collide with the back
+    // button (top-left) or the Map/Satellite toggle (top-right).
+    L.control.zoom({ position: "bottomleft" }).addTo(map);
     mapRef.current = map;
 
     const markers: L.Marker[] = [];
