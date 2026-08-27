@@ -171,7 +171,7 @@ export default function ShortsSlide({ review }: { review: Review }) {
           loop
           playsInline
           preload={inView ? "auto" : "none"}
-          className="absolute inset-0 h-full w-full select-none object-cover"
+          className="absolute inset-0 h-full w-full select-none object-contain"
           style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none" }}
           onContextMenu={(e) => e.preventDefault()}
           onPointerDown={() => {
