@@ -37,7 +37,7 @@ export default function MapExplorer({ spots }: { spots: MapSpot[] }) {
   const mapRef = useRef<L.Map | null>(null);
   const baseRef = useRef<L.TileLayer | null>(null);
   const labelRef = useRef<L.TileLayer | null>(null);
-  const [satellite, setSatellite] = useState(false);
+  const [satellite, setSatellite] = useState(true);
 
   // Lock the page so pinch-zoom / drags stay in the map and don't scroll the
   // body (which was making the iOS toolbar pop up and the layout jump).
@@ -123,16 +123,16 @@ export default function MapExplorer({ spots }: { spots: MapSpot[] }) {
         "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
         { maxZoom: 19, attribution: "Imagery &copy; Esri" }
       ).addTo(map);
-      // Keep place / road labels readable over the imagery.
+      // Keep place / road labels readable over the imagery (free Esri layer).
       labelRef.current = L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png",
-        { maxZoom: 20, subdomains: "abcd", attribution: "&copy; CARTO" }
+        "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+        { maxZoom: 19, attribution: "Labels &copy; Esri" }
       ).addTo(map);
     } else {
-      baseRef.current = L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-        { maxZoom: 20, subdomains: "abcd", attribution: "&copy; OpenStreetMap &copy; CARTO" }
-      ).addTo(map);
+      baseRef.current = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap contributors",
+      }).addTo(map);
     }
   }, [satellite]);
 
