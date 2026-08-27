@@ -11,44 +11,33 @@ type Props = {
   onChange: (v: { lat?: number; lng?: number; address?: string }) => void;
 };
 
-// Pull coordinates straight out of a pasted Google Maps URL (or plain
-// "lat, lng" text). Covers the common link shapes; short goo.gl links can't be
-// resolved in the browser, so those fall through to address search.
-function parseCoords(input: string): { lat: number; lng: number } | null {
-  const patterns = [
-    /@(-?\d+\.\d+),(-?\d+\.\d+)/,
-    /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/,
-    /[?&](?:q|query|ll|destination|center)=(-?\d+\.\d+),(-?\d+\.\d+)/,
-    /^\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)\s*$/,
-  ];
-  for (const re of patterns) {
-    const m = input.match(re);
-    if (m) {
-      const lat = parseFloat(m[1]);
-      const lng = parseFloat(m[2]);
-      if (Math.abs(lat) <= 90 && Math.abs(lng) <= 180) return { lat, lng };
-    }
-  }
-  return null;
+type Suggestion = { label: string; lat: number; lng: number };
+
+// True when the text is a link or raw coordinates (paste path) rather than
+// something to autocomplete.
+function isLinkOrCoords(s: string) {
+  return /^https?:\/\//i.test(s) || /^\s*-?\d+\.\d+\s*,\s*-?\d+\.\d+\s*$/.test(s);
 }
 
 export default function LocationPicker({ lat, lng, address, onChange }: Props) {
   const [query, setQuery] = useState(address ?? "");
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const elRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Initialise the mini-map once.
   useEffect(() => {
     if (!elRef.current || mapRef.current) return;
     const start: [number, number] =
       typeof lat === "number" && typeof lng === "number" ? [lat, lng] : [40.09, -74.22];
     const map = L.map(elRef.current, { zoomControl: true }).setView(
       start,
-      typeof lat === "number" ? 15 : 9
+      typeof lat === "number" ? 16 : 10
     );
     mapRef.current = map;
     L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
@@ -84,27 +73,51 @@ export default function LocationPicker({ lat, lng, address, onChange }: Props) {
     const marker = markerRef.current;
     if (map && marker) {
       marker.setLatLng([nlat, nlng]).setOpacity(1);
-      map.setView([nlat, nlng], 15);
+      map.setView([nlat, nlng], 16);
     }
     onChange({ lat: nlat, lng: nlng, address: label ?? query ?? undefined });
   }
 
-  async function resolve() {
-    const q = query.trim();
-    if (!q) return;
-
-    // Instant path: coordinates or a full URL we can read on the spot.
-    const coords = parseCoords(q);
-    if (coords) {
-      place(coords.lat, coords.lng);
-      setStatus("Location set.");
+  // Debounced live suggestions as the admin types a name/address.
+  function onType(value: string) {
+    setQuery(value);
+    setStatus(null);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (isLinkOrCoords(value) || value.trim().length < 3) {
+      setSuggestions([]);
+      setOpen(false);
       return;
     }
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch("/api/admin/resolve-location", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ suggest: true, query: value }),
+        });
+        const data = await res.json();
+        setSuggestions(data.results ?? []);
+        setOpen((data.results ?? []).length > 0);
+      } catch {
+        setSuggestions([]);
+      }
+    }, 280);
+  }
 
-    // Everything else (short links, addresses, store names) is resolved on the
-    // server, which can follow Google short links and geocode reliably.
+  function pick(s: Suggestion) {
+    setQuery(s.label);
+    setSuggestions([]);
+    setOpen(false);
+    place(s.lat, s.lng, s.label);
+    setStatus(`Set: ${s.label}`);
+  }
+
+  // For a pasted link / coordinates.
+  async function resolveLink() {
+    const q = query.trim();
+    if (!q) return;
     setBusy(true);
-    setStatus("Searching…");
+    setStatus("Reading link…");
     try {
       const res = await fetch("/api/admin/resolve-location", {
         method: "POST",
@@ -113,11 +126,11 @@ export default function LocationPicker({ lat, lng, address, onChange }: Props) {
       });
       const data = await res.json();
       if (!res.ok || typeof data.lat !== "number") {
-        setStatus(data.error ?? "Couldn't find that. Paste the Google Maps link or a fuller address.");
+        setStatus(data.error ?? "Couldn't read that link.");
         return;
       }
       place(data.lat, data.lng, data.label ?? q);
-      setStatus(data.label ? String(data.label) : "Location set.");
+      setStatus("Location set from link.");
     } catch {
       setStatus("Something went wrong — try again.");
     } finally {
@@ -128,35 +141,64 @@ export default function LocationPicker({ lat, lng, address, onChange }: Props) {
   function clear() {
     markerRef.current?.setOpacity(0);
     setQuery("");
+    setSuggestions([]);
+    setOpen(false);
     setStatus(null);
     onChange({ lat: undefined, lng: undefined, address: undefined });
   }
 
   const hasPin = typeof lat === "number" && typeof lng === "number";
+  const linkMode = isLinkOrCoords(query);
 
   return (
     <div className="space-y-2">
-      <div className="flex gap-2">
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              resolve();
-            }
-          }}
-          placeholder="Paste a Google Maps link, or type the store name / address"
-          className="min-w-0 flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
-        />
-        <button
-          type="button"
-          onClick={resolve}
-          disabled={busy}
-          className="shrink-0 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-        >
-          {busy ? "…" : "Find"}
-        </button>
+      <div className="relative">
+        <div className="flex gap-2">
+          <input
+            value={query}
+            onChange={(e) => onType(e.target.value)}
+            onFocus={() => suggestions.length > 0 && setOpen(true)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                if (linkMode) resolveLink();
+                else if (suggestions[0]) pick(suggestions[0]);
+              }
+            }}
+            placeholder="Type a store name or address, or paste a Google Maps link"
+            className="min-w-0 flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+          />
+          {linkMode && (
+            <button
+              type="button"
+              onClick={resolveLink}
+              disabled={busy}
+              className="shrink-0 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              {busy ? "…" : "Use link"}
+            </button>
+          )}
+        </div>
+
+        {open && suggestions.length > 0 && (
+          <ul className="absolute z-[1000] mt-1 max-h-60 w-full overflow-auto rounded-lg border border-border bg-surface shadow-lg">
+            {suggestions.map((s, i) => (
+              <li key={i}>
+                <button
+                  type="button"
+                  onClick={() => pick(s)}
+                  className="flex w-full items-start gap-2 px-3 py-2 text-left text-sm hover:bg-surface-muted"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="mt-0.5 h-4 w-4 shrink-0 text-primary">
+                    <path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z" strokeLinecap="round" strokeLinejoin="round" />
+                    <circle cx="12" cy="11" r="2.5" />
+                  </svg>
+                  <span className="min-w-0">{s.label}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div className="h-56 w-full overflow-hidden rounded-xl border border-border">
@@ -165,7 +207,9 @@ export default function LocationPicker({ lat, lng, address, onChange }: Props) {
 
       <div className="flex items-center justify-between text-xs">
         <span className="text-foreground/55">
-          {hasPin ? `Pinned: ${lat!.toFixed(5)}, ${lng!.toFixed(5)}` : "No location set — drag/tap the map or search."}
+          {hasPin
+            ? `Pinned: ${lat!.toFixed(5)}, ${lng!.toFixed(5)} — drag the pin to fine-tune`
+            : "No location set — type to search, or drag/tap the map."}
         </span>
         {hasPin && (
           <button type="button" onClick={clear} className="font-semibold text-primary hover:underline">
