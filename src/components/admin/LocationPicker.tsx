@@ -11,7 +11,7 @@ type Props = {
   onChange: (v: { lat?: number; lng?: number; address?: string }) => void;
 };
 
-type Suggestion = { label: string; lat: number; lng: number };
+type Suggestion = { label: string; lat?: number; lng?: number; placeId?: string };
 
 // True when the text is a link or raw coordinates (paste path) rather than
 // something to autocomplete.
@@ -30,6 +30,18 @@ export default function LocationPicker({ lat, lng, address, onChange }: Props) {
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sessionRef = useRef<string | null>(null);
+
+  // One Google session token per search-and-pick, for cheapest billing.
+  function ensureSession() {
+    if (!sessionRef.current) {
+      sessionRef.current =
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : Math.random().toString(36).slice(2);
+    }
+    return sessionRef.current;
+  }
 
   useEffect(() => {
     if (!elRef.current || mapRef.current) return;
@@ -88,12 +100,13 @@ export default function LocationPicker({ lat, lng, address, onChange }: Props) {
       setOpen(false);
       return;
     }
+    const token = ensureSession();
     debounceRef.current = setTimeout(async () => {
       try {
         const res = await fetch("/api/admin/resolve-location", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ suggest: true, query: value }),
+          body: JSON.stringify({ suggest: true, query: value, sessionToken: token }),
         });
         const data = await res.json();
         setSuggestions(data.results ?? []);
@@ -104,12 +117,36 @@ export default function LocationPicker({ lat, lng, address, onChange }: Props) {
     }, 280);
   }
 
-  function pick(s: Suggestion) {
+  async function pick(s: Suggestion) {
     setQuery(s.label);
     setSuggestions([]);
     setOpen(false);
-    place(s.lat, s.lng, s.label);
-    setStatus(`Set: ${s.label}`);
+
+    // Photon results carry coords directly; Google predictions need a Details
+    // lookup (same session token, cheapest field set).
+    if (typeof s.lat === "number" && typeof s.lng === "number") {
+      place(s.lat, s.lng, s.label);
+      setStatus(`Set: ${s.label}`);
+    } else if (s.placeId) {
+      setStatus("Getting location…");
+      try {
+        const res = await fetch("/api/admin/resolve-location", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ placeId: s.placeId, sessionToken: sessionRef.current }),
+        });
+        const data = await res.json();
+        if (typeof data.lat === "number") {
+          place(data.lat, data.lng, s.label);
+          setStatus(`Set: ${s.label}`);
+        } else {
+          setStatus(data.error ?? "Couldn't get that location.");
+        }
+      } catch {
+        setStatus("Couldn't get that location.");
+      }
+    }
+    sessionRef.current = null; // end the billing session after a pick
   }
 
   // For a pasted link / coordinates.
