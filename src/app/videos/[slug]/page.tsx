@@ -242,7 +242,26 @@ export default async function VideoPage({
                 </p>
               )}
             </div>
-            <ScoreBadge rating={review.rating} size="lg" />
+            {review.showBothScores &&
+            review.secondReviewer &&
+            typeof review.secondReviewerRating === "number" ? (
+              <div className="flex shrink-0 items-start gap-4">
+                <div className="flex flex-col items-center gap-1.5">
+                  <ScoreBadge rating={review.rating} size="lg" />
+                  <span className="max-w-[5rem] truncate text-xs font-bold uppercase tracking-wide text-foreground/60">
+                    {review.reviewer}
+                  </span>
+                </div>
+                <div className="flex flex-col items-center gap-1.5">
+                  <ScoreBadge rating={review.secondReviewerRating} size="lg" />
+                  <span className="max-w-[5rem] truncate text-xs font-bold uppercase tracking-wide text-foreground/60">
+                    {review.secondReviewer}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <ScoreBadge rating={review.rating} size="lg" />
+            )}
           </div>
         </>
       )}
