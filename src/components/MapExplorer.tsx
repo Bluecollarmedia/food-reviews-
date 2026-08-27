@@ -77,14 +77,20 @@ export default function MapExplorer({ spots }: { spots: MapSpot[] }) {
       });
       const marker = L.marker([spot.lat, spot.lng], { icon }).addTo(map);
       marker.bindPopup(
-        `<a class="dsm-pop" href="/videos/${spot.slug}">
-           ${spot.thumbnailUrl ? `<img src="${spot.thumbnailUrl}" alt="" />` : ""}
-           <span class="dsm-pop-body">
-             <strong>${spot.title.replace(/</g, "&lt;")}</strong>
-             <span class="dsm-pop-meta">${spot.store.replace(/</g, "&lt;")} · ${spot.city.replace(/</g, "&lt;")}</span>
-             <span class="dsm-pop-cta">Watch review →</span>
-           </span>
-         </a>`,
+        `<div class="dsm-pop-wrap">
+           <a class="dsm-pop" href="/videos/${spot.slug}">
+             ${spot.thumbnailUrl ? `<img src="${spot.thumbnailUrl}" alt="" />` : ""}
+             <span class="dsm-pop-body">
+               <strong>${spot.title.replace(/</g, "&lt;")}</strong>
+               <span class="dsm-pop-meta">${spot.store.replace(/</g, "&lt;")} · ${spot.city.replace(/</g, "&lt;")}</span>
+               <span class="dsm-pop-cta">Watch review →</span>
+             </span>
+           </a>
+           <a class="dsm-sv" href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${spot.lat},${spot.lng}" target="_blank" rel="noopener">
+             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3"/><path d="M6.5 20a5.5 5.5 0 0 1 11 0" stroke-linecap="round"/></svg>
+             Street View
+           </a>
+         </div>`,
         { closeButton: true, minWidth: 200 }
       );
       markers.push(marker);
@@ -188,6 +194,9 @@ export default function MapExplorer({ spots }: { spots: MapSpot[] }) {
         .dsm-pop-body strong { font-size: 13px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .dsm-pop-meta { font-size: 11px; color: #6f645b; margin-top: 2px; }
         .dsm-pop-cta { font-size: 11px; font-weight: 700; color: #c8102e; margin-top: 4px; }
+        .dsm-pop-wrap { width: 220px; }
+        .dsm-sv { display: flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; color: #221d19; font-size: 12px; font-weight: 700; padding: 8px; border-top: 1px solid #e7dcc9; }
+        .dsm-sv:hover { background: #f2e9dc; }
       `}</style>
     </>
   );
