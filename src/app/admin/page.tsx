@@ -3,7 +3,9 @@ import { listAllReviews } from "@/lib/reviews-store";
 import { getAllViews } from "@/lib/views";
 import { getAllViewSettings } from "@/lib/view-counts";
 import { isSettingsUnlocked } from "@/lib/settings-guard";
+import { getPublicFileUrl } from "@/lib/media-url";
 import AdminReviewCard from "@/components/admin/AdminReviewCard";
+import BackfillDurations from "@/components/admin/BackfillDurations";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +15,12 @@ export default async function AdminPage() {
   const views = await getAllViews(slugs);
   const settings = await getAllViewSettings(slugs);
   const unlocked = await isSettingsUnlocked();
+
+  // Videos that don't have a stored length yet — the backfill tool measures them.
+  const missingDurations = reviews
+    .filter((r) => r.videoKey && typeof r.durationSeconds !== "number")
+    .map((r) => ({ slug: r.slug, videoUrl: getPublicFileUrl(r.videoKey) }))
+    .filter((x): x is { slug: string; videoUrl: string } => !!x.videoUrl);
 
   return (
     <div className="mx-auto w-full max-w-3xl px-5 py-10">
@@ -28,7 +36,11 @@ export default async function AdminPage() {
         </Link>
       </div>
 
-      <div className="mt-8 flex flex-col gap-4">
+      <div className="mt-8">
+        <BackfillDurations items={missingDurations} />
+      </div>
+
+      <div className="mt-2 flex flex-col gap-4">
         {reviews.map((r) => (
           <AdminReviewCard
             key={r.slug}
