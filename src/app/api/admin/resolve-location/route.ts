@@ -20,10 +20,46 @@ function parseCoords(input: string): { lat: number; lng: number } | null {
   return null;
 }
 
+// Live suggestions as you type, biased toward the D&S home turf (Lakewood NJ).
+// Photon (OSM-based) handles business names far better than Nominatim.
+async function suggest(query: string) {
+  if (query.length < 3) return NextResponse.json({ results: [] });
+  try {
+    const url =
+      `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}` +
+      `&limit=6&lang=en&lat=40.09&lon=-74.22`;
+    const res = await fetch(url, {
+      headers: { "User-Agent": "DSFoodReviews/1.0 (admin location picker)" },
+    });
+    const data = (await res.json()) as {
+      features?: Array<{
+        geometry: { coordinates: [number, number] };
+        properties: Record<string, string>;
+      }>;
+    };
+    const results = (data.features ?? []).map((f) => {
+      const p = f.properties;
+      const label = [p.name, p.street, p.city ?? p.county, p.state]
+        .filter((x, i, a) => x && a.indexOf(x) === i)
+        .join(", ");
+      return {
+        label: label || p.name || "Unknown place",
+        lat: f.geometry.coordinates[1],
+        lng: f.geometry.coordinates[0],
+      };
+    });
+    return NextResponse.json({ results });
+  } catch {
+    return NextResponse.json({ results: [] });
+  }
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const query: string = (body?.query ?? "").toString().trim();
   if (!query) return NextResponse.json({ error: "Empty query." }, { status: 400 });
+
+  if (body?.suggest) return suggest(query);
 
   // 1) Already coordinates, or a full Maps URL with coords in it.
   const direct = parseCoords(query);
