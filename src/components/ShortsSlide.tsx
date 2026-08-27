@@ -138,24 +138,6 @@ export default function ShortsSlide({ review }: { review: Review }) {
     window.localStorage.setItem(`reaction:${review.slug}`, type);
   }
 
-  async function handleShare() {
-    haptic("light");
-    const url = `${window.location.origin}/videos/${review.slug}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: review.title, url });
-      } catch {
-        // user cancelled
-      }
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch {
-      // clipboard unavailable
-    }
-  }
-
   return (
     <div
       ref={containerRef}
@@ -212,30 +194,11 @@ export default function ShortsSlide({ review }: { review: Review }) {
           }
         />
         <ActionButton
-          active={userReaction === "dislike"}
-          label={dislikes === null ? "" : String(dislikes)}
-          onClick={() => handleReaction("dislike")}
-          icon={
-            <svg viewBox="0 0 24 24" fill="currentColor" className="h-8 w-8 rotate-180">
-              <path d="M2 21h4V9H2v12zm19.83-7.12c.11-.25.17-.52.17-.8V11c0-1.1-.9-2-2-2h-5.5l.92-4.65c.05-.22.02-.46-.08-.66-.23-.45-.52-.86-.88-1.22L14 2 7.59 8.41C7.21 8.79 7 9.3 7 9.83v7.84C7 18.95 8.05 20 9.34 20h8.11c.7 0 1.36-.37 1.72-.97l2.66-5.15z" />
-            </svg>
-          }
-        />
-        <ActionButton
           label={commentCount === null ? "" : String(commentCount)}
           onClick={() => setShowComments(true)}
           icon={
             <svg viewBox="0 0 24 24" fill="currentColor" className="h-8 w-8">
               <path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18z" />
-            </svg>
-          }
-        />
-        <ActionButton
-          label="Share"
-          onClick={handleShare}
-          icon={
-            <svg viewBox="0 0 24 24" fill="currentColor" className="h-8 w-8">
-              <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z" />
             </svg>
           }
         />
