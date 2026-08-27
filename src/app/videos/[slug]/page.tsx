@@ -20,7 +20,6 @@ import RelatedVideosRow from "@/components/RelatedVideosRow";
 import ReactionBar from "@/components/ReactionBar";
 import VideoPlayer from "@/components/VideoPlayer";
 import SplitReviewHeader from "@/components/SplitReviewHeader";
-import StreetViewEmbed from "@/components/StreetViewEmbed";
 
 export const dynamic = "force-dynamic";
 
@@ -273,8 +272,6 @@ export default async function VideoPage({
       <div className="mt-6">
         <ReactionBar slug={review.slug} title={review.title} />
       </div>
-
-      <StreetViewEmbed lat={review.lat} lng={review.lng} label={review.store} />
 
       <div className="mt-10 border-t border-border pt-8">
         <CommentSection slug={review.slug} />
