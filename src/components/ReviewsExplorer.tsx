@@ -78,41 +78,60 @@ export default function ReviewsExplorer({ reviews }: { reviews: Review[] }) {
         />
       </div>
 
-      <div className="mt-4 flex items-center justify-between border-b border-border">
-        <div className="flex gap-5 overflow-x-auto">
+      <div className="mt-4 flex items-center gap-2">
+        <div className="no-scrollbar flex flex-1 gap-2 overflow-x-auto">
           {["All", ...categories].map((cat) => (
             <button
               key={cat}
               onClick={() => setCategory(cat)}
-              className={`whitespace-nowrap border-b-2 pb-2.5 text-sm font-semibold transition-colors ${
+              className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors active:scale-95 ${
                 category === cat
-                  ? "border-primary text-primary"
-                  : "border-transparent text-foreground/50 hover:text-foreground"
+                  ? "bg-foreground text-background"
+                  : "bg-surface-muted text-foreground/70 hover:bg-border"
               }`}
             >
               {cat}
             </button>
           ))}
         </div>
-        <select
-          value={reviewer}
-          onChange={(e) => setReviewer(e.target.value as "All" | Reviewer)}
-          className="ml-4 shrink-0 bg-transparent pb-2.5 text-sm font-semibold text-foreground/60 outline-none"
-        >
-          <option value="All">All Reviewers</option>
-          {reviewers.map((r) => (
-            <option key={r} value={r}>
-              {r}
-            </option>
-          ))}
-        </select>
+        <div className="relative shrink-0">
+          <div
+            className={`pointer-events-none flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm font-semibold transition-colors ${
+              reviewer !== "All"
+                ? "bg-foreground text-background"
+                : "bg-surface-muted text-foreground/60"
+            }`}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 21c0-4 3.5-6 8-6s8 2 8 6" strokeLinecap="round" />
+            </svg>
+            {reviewer !== "All" && <span className="max-w-[6rem] truncate">{reviewer}</span>}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5 opacity-70">
+              <path d="M8 9l4-4 4 4M8 15l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <select
+            value={reviewer}
+            onChange={(e) => setReviewer(e.target.value as "All" | Reviewer)}
+            aria-label="Filter by reviewer"
+            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+          >
+            <option value="All">All Reviewers</option>
+            {reviewers.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      <div className="mt-8 flex flex-wrap gap-4 sm:gap-6 lg:gap-8">
+      <div className="mt-8 flex flex-wrap gap-6">
         {visible.map((review, index) => (
           <div
             key={review.slug}
-            className="w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-1rem)] lg:w-[calc(25%-1.5rem)]"
+            className="w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)] xl:w-[calc(25%-1.125rem)]"
           >
             <VideoCard review={review} priority={index < 4} />
           </div>
