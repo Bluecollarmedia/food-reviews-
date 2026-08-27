@@ -52,10 +52,9 @@ export default function LocationPicker({ lat, lng, address, onChange }: Props) {
       typeof lat === "number" ? 16 : 10
     );
     mapRef.current = map;
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-      maxZoom: 20,
-      subdomains: "abcd",
-      attribution: "&copy; OpenStreetMap &copy; CARTO",
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap contributors",
     }).addTo(map);
 
     const marker = L.marker(start, { draggable: true, opacity: typeof lat === "number" ? 1 : 0 });
