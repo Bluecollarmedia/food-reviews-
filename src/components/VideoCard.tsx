@@ -16,6 +16,20 @@ function ScoreRing({ rating }: { rating: number }) {
   );
 }
 
+// A score with the reviewer's first name under it, so two scores read clearly
+// as "David 8.7 / Chana 7.5" instead of two random numbers.
+function ScoreWithName({ rating, name }: { rating: number; name: string }) {
+  const first = name.trim().split(/\s+/)[0];
+  return (
+    <span className="flex flex-col items-center gap-0.5">
+      <ScoreRing rating={rating} />
+      <span className="max-w-[3.75rem] truncate text-[9px] font-bold uppercase leading-none tracking-wide text-white">
+        {first}
+      </span>
+    </span>
+  );
+}
+
 export default function VideoCard({
   review,
   progressPercent,
@@ -46,15 +60,18 @@ export default function VideoCard({
         {/* Legibility scrim so overlays never fight the image. */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/10 transition-colors group-hover:from-black/65" />
 
-        {/* Score, top-left. */}
-        <div className="absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-full bg-black/40 px-2 py-1 backdrop-blur-sm">
-          <ScoreRing rating={review.rating} />
-          {showBoth ? (
-            <ScoreRing rating={review.secondReviewerRating!} />
-          ) : (
+        {/* Score, top-left. Two scores show each reviewer's name underneath. */}
+        {showBoth ? (
+          <div className="absolute left-2.5 top-2.5 flex items-start gap-3 rounded-2xl bg-black/40 px-2.5 py-1.5 backdrop-blur-sm">
+            <ScoreWithName rating={review.rating} name={review.reviewer} />
+            <ScoreWithName rating={review.secondReviewerRating!} name={review.secondReviewer!} />
+          </div>
+        ) : (
+          <div className="absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-full bg-black/40 px-2 py-1 backdrop-blur-sm">
+            <ScoreRing rating={review.rating} />
             <span className="pr-0.5 text-[11px] font-bold text-white">/10</span>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Category, bottom-left. */}
         {review.categories[0] && (
