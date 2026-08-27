@@ -38,6 +38,7 @@ function ActionButton({
 export default function ShortsSlide({ review }: { review: Review }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const reportedDurationRef = useRef(false);
   const [inView, setInView] = useState(false);
   const [muted, setMuted] = useState(false);
   const [held, setHeld] = useState(false);
@@ -156,6 +157,19 @@ export default function ShortsSlide({ review }: { review: Review }) {
           className="absolute inset-0 h-full w-full select-none object-contain"
           style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none" }}
           onContextMenu={(e) => e.preventDefault()}
+          onLoadedMetadata={(e) => {
+            // Backfill this review's stored duration the first time its clip
+            // loads here (endpoint only writes if it isn't already known).
+            const d = e.currentTarget.duration;
+            if (!reportedDurationRef.current && Number.isFinite(d) && d > 0) {
+              reportedDurationRef.current = true;
+              fetch(`/api/reviews/${review.slug}/duration`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ seconds: d }),
+              }).catch(() => {});
+            }
+          }}
           onPointerDown={() => {
             if (videoRef.current) videoRef.current.playbackRate = 2;
             setHeld(true);
