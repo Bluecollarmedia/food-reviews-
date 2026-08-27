@@ -51,9 +51,10 @@ export default function LocationPicker({ lat, lng, address, onChange }: Props) {
       typeof lat === "number" ? 15 : 9
     );
     mapRef.current = map;
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "&copy; OpenStreetMap",
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+      maxZoom: 20,
+      subdomains: "abcd",
+      attribution: "&copy; OpenStreetMap &copy; CARTO",
     }).addTo(map);
 
     const marker = L.marker(start, { draggable: true, opacity: typeof lat === "number" ? 1 : 0 });
@@ -92,35 +93,33 @@ export default function LocationPicker({ lat, lng, address, onChange }: Props) {
     const q = query.trim();
     if (!q) return;
 
+    // Instant path: coordinates or a full URL we can read on the spot.
     const coords = parseCoords(q);
     if (coords) {
       place(coords.lat, coords.lng);
-      setStatus("Location set from link.");
+      setStatus("Location set.");
       return;
     }
 
-    if (/goo\.gl|maps\.app\.goo\.gl/.test(q)) {
-      setStatus("Short Google links can't be read here — open it and paste the full URL, or type the address.");
-      return;
-    }
-
+    // Everything else (short links, addresses, store names) is resolved on the
+    // server, which can follow Google short links and geocode reliably.
     setBusy(true);
     setStatus("Searching…");
     try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(q)}`,
-        { headers: { Accept: "application/json" } }
-      );
-      const data = (await res.json()) as Array<{ lat: string; lon: string; display_name: string }>;
-      if (data.length === 0) {
-        setStatus("No match — try a fuller address, or paste a Google Maps link.");
+      const res = await fetch("/api/admin/resolve-location", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: q }),
+      });
+      const data = await res.json();
+      if (!res.ok || typeof data.lat !== "number") {
+        setStatus(data.error ?? "Couldn't find that. Paste the Google Maps link or a fuller address.");
         return;
       }
-      const hit = data[0];
-      place(parseFloat(hit.lat), parseFloat(hit.lon), q);
-      setStatus(hit.display_name);
+      place(data.lat, data.lng, data.label ?? q);
+      setStatus(data.label ? String(data.label) : "Location set.");
     } catch {
-      setStatus("Search failed — paste a Google Maps link instead.");
+      setStatus("Something went wrong — try again.");
     } finally {
       setBusy(false);
     }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -35,6 +35,26 @@ function markerHtml(spot: MapSpot) {
 export default function MapExplorer({ spots }: { spots: MapSpot[] }) {
   const elRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
+  const baseRef = useRef<L.TileLayer | null>(null);
+  const labelRef = useRef<L.TileLayer | null>(null);
+  const [satellite, setSatellite] = useState(false);
+
+  // Lock the page so pinch-zoom / drags stay in the map and don't scroll the
+  // body (which was making the iOS toolbar pop up and the layout jump).
+  useEffect(() => {
+    const html = document.documentElement;
+    const prevBody = document.body.style.overflow;
+    const prevHtml = html.style.overflow;
+    const prevOver = html.style.overscrollBehavior;
+    document.body.style.overflow = "hidden";
+    html.style.overflow = "hidden";
+    html.style.overscrollBehavior = "none";
+    return () => {
+      document.body.style.overflow = prevBody;
+      html.style.overflow = prevHtml;
+      html.style.overscrollBehavior = prevOver;
+    };
+  }, []);
 
   useEffect(() => {
     if (!elRef.current || mapRef.current) return;
@@ -45,11 +65,6 @@ export default function MapExplorer({ spots }: { spots: MapSpot[] }) {
       attributionControl: true,
     });
     mapRef.current = map;
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors',
-    }).addTo(map);
 
     const markers: L.Marker[] = [];
     for (const spot of spots) {
@@ -88,9 +103,61 @@ export default function MapExplorer({ spots }: { spots: MapSpot[] }) {
     };
   }, [spots]);
 
+  // Base tiles — swaps between the clean street map and satellite imagery.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (baseRef.current) map.removeLayer(baseRef.current);
+    if (labelRef.current) {
+      map.removeLayer(labelRef.current);
+      labelRef.current = null;
+    }
+    if (satellite) {
+      baseRef.current = L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        { maxZoom: 19, attribution: "Imagery &copy; Esri" }
+      ).addTo(map);
+      // Keep place / road labels readable over the imagery.
+      labelRef.current = L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png",
+        { maxZoom: 20, subdomains: "abcd", attribution: "&copy; CARTO" }
+      ).addTo(map);
+    } else {
+      baseRef.current = L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+        { maxZoom: 20, subdomains: "abcd", attribution: "&copy; OpenStreetMap &copy; CARTO" }
+      ).addTo(map);
+    }
+  }, [satellite]);
+
   return (
     <>
       <div ref={elRef} className="h-full w-full" />
+
+      {/* Map / Satellite toggle. */}
+      <button
+        type="button"
+        onClick={() => setSatellite((s) => !s)}
+        className="absolute right-3 top-3 z-[500] flex items-center gap-1.5 rounded-full bg-surface/95 px-3 py-1.5 text-sm font-bold text-foreground shadow-md backdrop-blur active:scale-95"
+      >
+        {satellite ? (
+          <>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+              <path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3V6z" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M9 3v15M15 6v15" strokeLinecap="round" />
+            </svg>
+            Map
+          </>
+        ) : (
+          <>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18" strokeLinecap="round" />
+            </svg>
+            Satellite
+          </>
+        )}
+      </button>
       <style>{`
         .dsm-wrap { background: transparent; border: 0; }
         .dsm { position: relative; display: block; width: 52px; height: 60px; }

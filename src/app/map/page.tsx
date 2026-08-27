@@ -20,10 +20,7 @@ export default async function MapPage() {
     }));
 
   return (
-    <div
-      className="relative w-full"
-      style={{ height: "calc(100dvh - var(--header-h, 64px))" }}
-    >
+    <div className="fixed inset-x-0 top-[var(--header-h,64px)] bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] z-0 overflow-hidden md:bottom-0">
       <MapExplorer spots={spots} />
 
       {/* Floating title / count chip. */}
