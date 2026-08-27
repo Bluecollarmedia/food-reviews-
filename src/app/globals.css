@@ -44,6 +44,15 @@ body {
   color: var(--foreground);
 }
 
+/* Never allow the page to scroll/swipe sideways. `clip` (not `hidden`) stops
+   horizontal overflow without creating a scroll container, so the sticky
+   header keeps working. */
+html,
+body {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
 /* ---- Native-app feel (installed PWA / APK wrapper) ---- */
 /* Kill the "webpage" tells: the grey tap flash, the long-press callout menu,
    the rubber-band overscroll, and the double-tap-to-zoom delay. */
