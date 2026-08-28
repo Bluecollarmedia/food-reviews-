@@ -13,9 +13,24 @@ function shuffle(items: Review[]): Review[] {
   return shuffled;
 }
 
-export default async function ShortsPage() {
+export default async function ShortsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ v?: string }>;
+}) {
+  const { v } = await searchParams;
   const withVideo = (await listPublishedReviews()).filter((r) => r.videoKey);
   const reviews = shuffle(withVideo);
+
+  // If opened from a specific thumbnail (?v=slug), start the feed on that video
+  // instead of a random one.
+  if (v) {
+    const idx = reviews.findIndex((r) => r.slug === v);
+    if (idx > 0) {
+      const [picked] = reviews.splice(idx, 1);
+      reviews.unshift(picked);
+    }
+  }
 
   if (reviews.length === 0) {
     return (

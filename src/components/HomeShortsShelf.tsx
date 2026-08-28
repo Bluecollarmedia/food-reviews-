@@ -29,7 +29,7 @@ export default function HomeShortsShelf({ reviews }: { reviews: Review[] }) {
           return (
             <Link
               key={clip.slug}
-              href="/shorts"
+              href={`/shorts?v=${clip.slug}`}
               onClick={() => haptic("light")}
               className="group relative w-36 shrink-0 overflow-hidden rounded-xl bg-surface-muted transition-transform active:scale-95"
             >
