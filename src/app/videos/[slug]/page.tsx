@@ -2,11 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import {
-  getPublishedReview,
-  getReview,
-  listPublishedReviews,
-} from "@/lib/reviews-store";
+import { getReview, listPublishedReviews } from "@/lib/reviews-store";
 import { getRelatedReviews, reviewerNames } from "@/lib/data";
 import { getPublicFileUrl } from "@/lib/media-url";
 import { incrementViews } from "@/lib/views";
@@ -30,8 +26,11 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const review = await getPublishedReview(slug);
-  if (!review) return {};
+  // Use getReview (not getPublishedReview) so locked/vault videos still get a
+  // link-preview thumbnail + title when shared — the video itself stays gated
+  // behind the passcode, but the teaser preview shows. Drafts stay hidden.
+  const review = await getReview(slug);
+  if (!review || review.status === "draft") return {};
 
   const thumbnailUrl = getPublicFileUrl(review.thumbnailKey);
   const description = `${review.store} · ${review.city} · ${review.rating}/10 — ${review.description}`;
