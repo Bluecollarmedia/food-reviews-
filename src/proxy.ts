@@ -218,6 +218,7 @@ function isBasicAdminPath(pathname: string): boolean {
   }
   if (pathname === "/api/admin/upload-url") return true;
   if (pathname === "/api/admin/views") return true;
+  if (pathname === "/api/admin/resolve-location") return true;
   if (pathname === "/api/admin/settings/unlock") return true;
   return false;
 }
