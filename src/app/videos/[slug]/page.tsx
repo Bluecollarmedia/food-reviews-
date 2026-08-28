@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getReview, listPublishedReviews } from "@/lib/reviews-store";
@@ -9,6 +9,7 @@ import { incrementViews } from "@/lib/views";
 import { formatViewsFull } from "@/lib/view-format";
 import { LOCKED_SESSION_COOKIE, VAULT_SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 import { getLockedPasscode, getVaultPasscode } from "@/lib/locked-passcode";
+import { isPreviewBot } from "@/lib/preview-bot";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
 import ScoreBadge from "@/components/ScoreBadge";
 import CommentSection from "@/components/CommentSection";
@@ -62,14 +63,19 @@ export default async function VideoPage({
   const review = await getReview(slug);
   if (!review || review.status === "draft") notFound();
 
-  if (review.status === "locked") {
+  // Let link-preview crawlers (WhatsApp, iMessage, Facebook…) through the
+  // passcode gate so the shared thumbnail renders. They only read the OG tags;
+  // real visitors still hit the passcode below.
+  const isBot = isPreviewBot((await headers()).get("user-agent") || "");
+
+  if (review.status === "locked" && !isBot) {
     const cookieStore = await cookies();
     const token = cookieStore.get(LOCKED_SESSION_COOKIE)?.value;
     const valid = await verifySessionToken(token, await getLockedPasscode());
     if (!valid) redirect(`/locked/login?redirect=/videos/${slug}`);
   }
 
-  if (review.status === "vault") {
+  if (review.status === "vault" && !isBot) {
     const cookieStore = await cookies();
     const lockedToken = cookieStore.get(LOCKED_SESSION_COOKIE)?.value;
     if (!(await verifySessionToken(lockedToken, await getLockedPasscode()))) {
@@ -81,7 +87,7 @@ export default async function VideoPage({
     }
   }
 
-  await incrementViews(slug).catch(() => {});
+  if (!isBot) await incrementViews(slug).catch(() => {});
 
   const supabase = await createSupabaseServerClient();
   const {
