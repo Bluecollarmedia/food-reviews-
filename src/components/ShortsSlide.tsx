@@ -66,7 +66,13 @@ export default function ShortsSlide({ review }: { review: Review }) {
     const v = videoRef.current;
     if (!v) return;
     if (inView) {
+      // Fresh start each time this clip scrolls into view: normal speed, and a
+      // clean attempt at sound (a held 2x or a prior mute shouldn't carry over).
       v.currentTime = 0;
+      v.playbackRate = 1;
+      v.muted = false;
+      setMuted(false);
+      setHeld(false);
       v.play().catch(() => {
         // Autoplay with sound can be blocked without a prior user gesture —
         // fall back to muted autoplay so playback still starts either way.
@@ -76,8 +82,17 @@ export default function ShortsSlide({ review }: { review: Review }) {
       });
     } else {
       v.pause();
+      v.playbackRate = 1;
     }
   }, [inView]);
+
+  // While the comments sheet is open, freeze the feed so a swipe in the sheet
+  // can't scroll through to the next video.
+  useEffect(() => {
+    if (!showComments) return;
+    document.body.classList.add("shorts-comments-open");
+    return () => document.body.classList.remove("shorts-comments-open");
+  }, [showComments]);
 
   useEffect(() => {
     if (!inView) return;
@@ -179,6 +194,10 @@ export default function ShortsSlide({ review }: { review: Review }) {
             setHeld(false);
           }}
           onPointerLeave={() => {
+            if (videoRef.current) videoRef.current.playbackRate = 1;
+            setHeld(false);
+          }}
+          onPointerCancel={() => {
             if (videoRef.current) videoRef.current.playbackRate = 1;
             setHeld(false);
           }}

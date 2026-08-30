@@ -118,6 +118,12 @@ textarea,
   display: none;
 }
 
+/* Freeze the Shorts feed while the comments sheet is open, so scrolling the
+   comments can't bleed through and snap to the next video. */
+body.shorts-comments-open .shorts-feed {
+  overflow: hidden !important;
+}
+
 /* Sweeping shimmer band for thumbnail placeholders while they load. */
 @keyframes shimmer {
   0% {

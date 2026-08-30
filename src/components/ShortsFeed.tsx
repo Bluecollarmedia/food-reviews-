@@ -10,7 +10,7 @@ export default function ShortsFeed({ reviews }: { reviews: Review[] }) {
     // 100dvh keeps it exactly the visible height even as the browser bars
     // show/hide.
     <div
-      className="no-scrollbar fixed inset-0 z-30 snap-y snap-mandatory overflow-y-scroll bg-black"
+      className="shorts-feed no-scrollbar fixed inset-0 z-30 snap-y snap-mandatory overflow-y-scroll bg-black"
       style={{ height: "100dvh", overscrollBehaviorY: "contain" }}
     >
       {reviews.map((review) => (
