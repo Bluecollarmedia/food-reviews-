@@ -1,12 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export async function DELETE() {
+export async function DELETE(req: NextRequest) {
   const supabase = await createSupabaseServerClient();
+  // Same Bearer-token fallback as avatar-upload-url: lets the native app
+  // (no shared cookie session) authenticate with its own Supabase token.
+  const bearer = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = bearer ? await supabase.auth.getUser(bearer) : await supabase.auth.getUser();
 
   if (!user) {
     return NextResponse.json({ error: "Not logged in." }, { status: 401 });

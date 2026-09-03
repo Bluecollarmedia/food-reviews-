@@ -4,9 +4,14 @@ import { getUploadUrl } from "@/lib/r2";
 
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseServerClient();
+  // Browser callers are authenticated via cookies (default). A non-browser
+  // caller (the native app, which has no shared cookie store) can instead
+  // send its own Supabase session token as a Bearer header; getUser(token)
+  // verifies that JWT directly instead of reading the cookie session.
+  const bearer = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = bearer ? await supabase.auth.getUser(bearer) : await supabase.auth.getUser();
 
   if (!user) {
     return NextResponse.json({ error: "Log in first." }, { status: 401 });

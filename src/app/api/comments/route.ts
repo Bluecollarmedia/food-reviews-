@@ -17,9 +17,12 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = await createSupabaseServerClient();
+  // Same Bearer-token fallback as the other routes: lets the native app
+  // (no shared cookie session) authenticate with its own Supabase token.
+  const bearer = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = bearer ? await supabase.auth.getUser(bearer) : await supabase.auth.getUser();
 
   if (!user && !guestName) {
     return NextResponse.json({ error: "Your name is required." }, { status: 400 });
